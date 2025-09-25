@@ -1,0 +1,10 @@
+[package]
+name = "arrOgpu"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bytemuck = "1.23.2"
+pollster = "=0.2.4"
+wgpu = "26.0.1"
+
