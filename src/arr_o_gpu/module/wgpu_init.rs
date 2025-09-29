@@ -5,8 +5,8 @@ use wgpu::{
 };
 
 pub struct WgpuInit {
-    device: Device,
-    queue: Queue,
+    pub device: Device,
+    pub queue: Queue,
 }
 
 impl WgpuInit {

@@ -1,7 +1,9 @@
 // use arr_o_gpu::*;
 
+use arr_o_gpu::ArrOgpuModule;
+
 fn main() {
-    // let _module = ArrOgpuModule::init();
+    let _module = ArrOgpuModule::default();
 
     let arr: Vec<Vec<f32>> = vec![vec![1.0, 2.0, 3.0, 4.0, 5.0], vec![6.0, 7.0, 8.0, 9.0, 0.0]];
     println!("{:?}", arr.flatten());
