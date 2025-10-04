@@ -1,5 +1,4 @@
 mod method;
-pub use method::*;
 use std::ops::Range;
 
 pub struct Allocator {

@@ -1,17 +1,12 @@
-use std::{ ops::Range, sync::{ Arc, RwLock } };
-
 use wgpu::{
     util::DeviceExt,
-    BindGroup,
     BindGroupEntry,
-    BindGroupLayout,
     BindGroupLayoutEntry,
     BindingType,
     BufferUsages,
     ComputePipelineDescriptor,
     PipelineCompilationOptions,
     PipelineLayoutDescriptor,
-    ShaderModule,
     ShaderModuleDescriptor,
     ShaderSource,
     ShaderStages,
@@ -77,7 +72,7 @@ impl Default for ArrOgpuModule {
 
         let shaders = wgpu.device.create_shader_module(ShaderModuleDescriptor {
             label: Some("get shader"),
-            source: ShaderSource::Wgsl(include_str!("./../shaders/init.wgsl").into()),
+            source: ShaderSource::Wgsl(include_str!("./../shader/shaders/init.wgsl").into()),
         });
 
         let pipeline_layout = wgpu.device.create_pipeline_layout(

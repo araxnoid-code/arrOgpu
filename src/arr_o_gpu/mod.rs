@@ -7,5 +7,5 @@ pub use array::*;
 mod allocator;
 pub use allocator::*;
 
-mod shaders;
-pub use shaders::*;
+mod shader;
+pub use shader::*;
