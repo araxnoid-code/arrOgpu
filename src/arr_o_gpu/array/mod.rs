@@ -1,5 +1,5 @@
-struct GpuArray {
-    // allocator
-    pointer: usize,
-    length: usize,
-}
+mod array;
+pub use array::*;
+
+mod array_trait;
+pub use array_trait::*;

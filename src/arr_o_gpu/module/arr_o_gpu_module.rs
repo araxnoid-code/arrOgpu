@@ -2,7 +2,9 @@ use std::{ ops::Range, sync::{ Arc, RwLock } };
 
 use wgpu::{
     util::DeviceExt,
+    BindGroup,
     BindGroupEntry,
+    BindGroupLayout,
     BindGroupLayoutEntry,
     BindingType,
     BufferUsages,
@@ -15,22 +17,24 @@ use wgpu::{
     ShaderStages,
 };
 
-use crate::arr_o_gpu::WgpuInit;
+use crate::{ arr_o_gpu::WgpuInit, Allocator, BindGroupCompound };
 
 pub struct ArrOgpuModule {
-    free: Vec<Range<usize>>,
-    max_size: usize,
-    wgpu_init: Arc<RwLock<WgpuInit>>,
-    main_shader: ShaderModule,
+    pub allocator: Allocator,
+    pub maximum: u32,
+    pub wgpu_init: WgpuInit,
+    // binding_layout
+    pub binding_compounds: Vec<BindGroupCompound>,
 }
 
 impl Default for ArrOgpuModule {
     fn default() -> Self {
         // create heap
-        let max_size = 1_000_000;
+        let maximum = 1_000_000u32;
+        //
         let wgpu = WgpuInit::init();
 
-        let heap: Vec<f32> = vec![0.0; max_size];
+        let heap: Vec<f32> = vec![0.0; maximum as usize];
         let buffer_heap = wgpu.device.create_buffer_init(
             &(wgpu::util::BufferInitDescriptor {
                 label: Some("create heap"),
@@ -39,6 +43,7 @@ impl Default for ArrOgpuModule {
             })
         );
 
+        // group 0
         let binding_layout = wgpu.device.create_bind_group_layout(
             &(wgpu::BindGroupLayoutDescriptor {
                 label: Some("create binding layout for heap"),
@@ -72,7 +77,7 @@ impl Default for ArrOgpuModule {
 
         let shaders = wgpu.device.create_shader_module(ShaderModuleDescriptor {
             label: Some("get shader"),
-            source: ShaderSource::Wgsl(include_str!("./../shaders/main.wgsl").into()),
+            source: ShaderSource::Wgsl(include_str!("./../shaders/init.wgsl").into()),
         });
 
         let pipeline_layout = wgpu.device.create_pipeline_layout(
@@ -116,10 +121,16 @@ impl Default for ArrOgpuModule {
         wgpu.queue.submit(Some(encoder.finish()));
 
         Self {
-            free: Vec::new(),
-            max_size,
-            wgpu_init: Arc::new(RwLock::new(wgpu)),
-            main_shader: shaders,
+            allocator: Allocator::init(maximum),
+            maximum,
+            wgpu_init: wgpu,
+            // bind_group_layouts: vec![binding_layout],
+            // bind_groups: vec![(0, binding)],
+            binding_compounds: vec![BindGroupCompound {
+                group: 0,
+                binding_group_layouts: binding_layout,
+                binding_groups: binding,
+            }],
         }
     }
 }
