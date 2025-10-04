@@ -1,10 +1,10 @@
-use std::sync::Arc;
+use std::sync::{ Arc, RwLock };
 
 use crate::ArrOgpuModule;
 
-struct GpuArray {
-    module: Arc<ArrOgpuModule>,
-    pointer: usize,
-    length: usize,
-    shape: Vec<usize>,
+pub struct GpuArray<'a> {
+    pub module: Arc<RwLock<ArrOgpuModule>>,
+    pub pointer: (usize, usize),
+    pub length: usize,
+    pub shape: &'a [u32],
 }

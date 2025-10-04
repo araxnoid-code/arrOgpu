@@ -1,3 +1,5 @@
+use std::sync::{ Arc, RwLock };
+
 use wgpu::{
     util::DeviceExt,
     wgt::PollType,
@@ -110,15 +112,19 @@ impl Default for ArrOgpuModule {
         wgpu.device.poll(PollType::Wait).unwrap();
 
         Self {
-            allocator: Allocator::init(maximum),
+            allocator: Arc::new(RwLock::new(Allocator::init(maximum))),
             maximum,
             wgpu_init: wgpu,
-            binding_compounds: vec![BindGroupCompound {
-                group: 0,
-                binding_group_layouts: binding_layout,
-                binding_groups: binding,
-            }],
-            heap_buffer: buffer_heap,
+            binding_compounds: Arc::new(
+                RwLock::new(
+                    vec![BindGroupCompound {
+                        group: 0,
+                        binding_group_layouts: binding_layout,
+                        binding_groups: binding,
+                    }]
+                )
+            ),
+            heap_buffer: Arc::new(buffer_heap),
         }
     }
 }

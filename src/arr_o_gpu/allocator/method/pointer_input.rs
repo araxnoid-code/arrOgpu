@@ -16,7 +16,7 @@ impl Allocator {
 
                 if (idx as u32) >= data_length - 1 {
                     // using last space
-                    pointer = (self.last_space.0, data_length);
+                    pointer = (self.last_space.0, self.last_space.0 + data_length);
                     // update last_space
                     let start = self.last_space.0 + data_length;
                     if start > self.last_space.1 {
@@ -26,7 +26,7 @@ impl Allocator {
                 }
             }
         } else {
-            pointer = (0, data_length);
+            pointer = (self.last_space.0, self.last_space.0 + data_length);
             // update last_space
             let start = self.last_space.0 + data_length;
             if start > self.last_space.1 {

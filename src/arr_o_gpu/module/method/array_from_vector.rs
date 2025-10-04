@@ -1,3 +1,5 @@
+use std::sync::{ Arc, RwLock };
+
 use wgpu::{
     util::{ BufferInitDescriptor, DeviceExt },
     wgt::{ CommandEncoderDescriptor, PollType },
@@ -21,7 +23,7 @@ use crate::*;
 
 impl ArrOgpuModule {
     // array init
-    pub fn array_from_vector(&mut self, vector: &[f32], shape: &[u32]) {
+    pub fn array_from_vector<'a>(&'a mut self, vector: &[f32], shape: &'a [u32]) -> GpuArray<'a> {
         let wgpu = &self.wgpu_init;
         let flatten = vector.flatten();
 
@@ -144,12 +146,21 @@ impl ArrOgpuModule {
             bcp.set_bind_group(0, &self.binding_compounds[0].binding_groups, &[]);
 
             bcp.set_bind_group(1, &binding, &[]);
-            let x = ((flatten.len() as f32) / 32.0).ceil() as u32;
+            let x = ((flatten.len() as f32) / 128.0).ceil() as u32;
             bcp.dispatch_workgroups(x, 1, 1);
         }
 
         wgpu.queue.submit(Some(encoder.finish()));
 
         wgpu.device.poll(PollType::Wait).unwrap();
+
+        let pointer = (pointer[0] as usize, pointer[1] as usize);
+
+        GpuArray {
+            module: Arc::new(RwLock::new(self)),
+            pointer,
+            length: pointer.1 - pointer.0,
+            shape: shape,
+        }
     }
 }

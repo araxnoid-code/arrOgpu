@@ -2,9 +2,9 @@ mod method;
 use std::ops::Range;
 
 pub struct Allocator {
-    range_space: Vec<Option<Range<u32>>>,
-    last_space: (u32, u32),
-    maximum: u32,
+    pub range_space: Vec<Option<Range<u32>>>,
+    pub last_space: (u32, u32),
+    pub maximum: u32,
 }
 
 impl Allocator {
