@@ -1,6 +1,6 @@
 use wgpu::{
     util::{ BufferInitDescriptor, DeviceExt },
-    wgt::CommandEncoderDescriptor,
+    wgt::{ CommandEncoderDescriptor, PollType },
     BindGroupDescriptor,
     BindGroupEntry,
     BindGroupLayoutDescriptor,
@@ -98,7 +98,7 @@ impl ArrOgpuModule {
 
         let pipeline_layout = wgpu.device.create_pipeline_layout(
             &(PipelineLayoutDescriptor {
-                label: Some("create pipeline for array_init"),
+                label: Some("create pipeline layout for array_init"),
                 bind_group_layouts: &[
                     &self.binding_compounds[0].binding_group_layouts, // heap
                     &binding_layout,
@@ -109,11 +109,13 @@ impl ArrOgpuModule {
 
         let shaders = wgpu.device.create_shader_module(ShaderModuleDescriptor {
             label: Some("create shaders module 'array_init.wgsl'"),
-            source: ShaderSource::Wgsl(include_str!("./../shader/shaders/array_init.wgsl").into()),
+            source: ShaderSource::Wgsl(
+                include_str!("./../../shader/shaders/array_init.wgsl").into()
+            ),
         });
         let pipeline = wgpu.device.create_compute_pipeline(
             &(ComputePipelineDescriptor {
-                label: Some("array compute pipeline for array_init"),
+                label: Some("create pipeline for array_init"),
                 cache: None,
                 compilation_options: PipelineCompilationOptions::default(),
                 entry_point: Some("array_init"),
@@ -147,5 +149,7 @@ impl ArrOgpuModule {
         }
 
         wgpu.queue.submit(Some(encoder.finish()));
+
+        wgpu.device.poll(PollType::Wait).unwrap();
     }
 }

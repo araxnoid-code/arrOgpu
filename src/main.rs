@@ -7,5 +7,6 @@ struct MyOpp {
 
 fn main() {
     let mut module = ArrOgpuModule::default();
-    module.array_from_vector(&vec![1.0, 2.0, 3.0, 4.0, 5.0], &[1, 5]);
+    module.array_from_vector(&vec![100.0; 99], &[1, 64]);
+    module.get_heap();
 }

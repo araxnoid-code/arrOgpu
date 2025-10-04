@@ -4,5 +4,6 @@ pub use arr_o_gpu_module::*;
 mod wgpu_init;
 pub use wgpu_init::*;
 
-mod arr_o_gpu_method;
-pub use arr_o_gpu_method::*;
+//
+mod method;
+pub use method::*;
