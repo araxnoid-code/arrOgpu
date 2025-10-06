@@ -21,6 +21,7 @@ impl Default for ArrOgpuModule {
     fn default() -> Self {
         // create heap
         let maximum = 1_00u32;
+        // let maximum = 15u32;
         //
         let wgpu = WgpuInit::init();
 
@@ -113,8 +114,8 @@ impl Default for ArrOgpuModule {
 
         Self {
             allocator: Arc::new(RwLock::new(Allocator::init(maximum))),
-            maximum,
-            wgpu_init: wgpu,
+            maximum: Arc::new(maximum),
+            wgpu_init: Arc::new(RwLock::new(wgpu)),
             binding_compounds: Arc::new(
                 RwLock::new(
                     vec![BindGroupCompound {

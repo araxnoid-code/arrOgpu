@@ -1,19 +1,21 @@
 use std::ops::{ Range, RangeBounds };
 
-use wgpu::{ wgt::{ BufferDescriptor, CommandEncoderDescriptor, PollType }, BufferUsages };
+use wgpu::{ wgt::{ BufferDescriptor, CommandEncoderDescriptor, PollType }, BufferUsages, MapMode };
 
 use crate::GpuArray;
 
-impl<'a> GpuArray<'a> {
-    pub fn get_heap_pointer(&self) -> Vec<f32> {
-        let module = &self.module.write().unwrap();
-        let wgpu_init = &module.wgpu_init;
+impl GpuArray {
+    pub fn get_heap(&self) -> Vec<f32> {
+        let module = &self.module;
+        let wgpu_init = &module.wgpu_init.read().unwrap();
         let heap_buffer = &module.heap_buffer;
 
         let pointer = self.pointer;
         let len = pointer.1 - pointer.0;
-        println!("{}", len);
-        let size = (std::mem::size_of::<f32>() * len) as u64;
+        let mem = std::mem::size_of::<f32>();
+        let size = (mem * len) as u64;
+
+        // println!("{}", size);
         let copy_buffer = wgpu_init.device.create_buffer(
             &(BufferDescriptor {
                 label: Some("create buffer copy for get_heap_pointer"),
@@ -29,10 +31,12 @@ impl<'a> GpuArray<'a> {
             })
         );
 
-        encoder.copy_buffer_to_buffer(heap_buffer, 0, &copy_buffer, 0, size);
+        let start = pointer.0 * mem;
+        encoder.copy_buffer_to_buffer(heap_buffer, start as u64, &copy_buffer, 0, size);
+        wgpu_init.queue.submit(Some(encoder.finish()));
 
-        let range = pointer.0 as u64..pointer.1 as u64;
-        let buffer_slice = copy_buffer.slice(range);
+        let buffer_slice = copy_buffer.slice(..size);
+        buffer_slice.map_async(MapMode::Read, |e| e.unwrap());
         wgpu_init.device.poll(PollType::Wait).unwrap();
 
         let data = buffer_slice.get_mapped_range();

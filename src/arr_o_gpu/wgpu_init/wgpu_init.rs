@@ -1,7 +1,16 @@
 use pollster::FutureExt;
 use wgpu::{
-    Backends, Device, Features, Instance, InstanceDescriptor, Limits, MemoryHints, PowerPreference,
-    Queue, RequestAdapterOptions, wgt::DeviceDescriptor,
+    Backends,
+    Device,
+    Features,
+    Instance,
+    InstanceDescriptor,
+    Limits,
+    MemoryHints,
+    PowerPreference,
+    Queue,
+    RequestAdapterOptions,
+    wgt::DeviceDescriptor,
 };
 
 pub struct WgpuInit {
@@ -16,7 +25,7 @@ impl WgpuInit {
             &(InstanceDescriptor {
                 backends: Backends::all(),
                 ..Default::default()
-            }),
+            })
         );
 
         let adapter = instance
@@ -25,7 +34,7 @@ impl WgpuInit {
                     compatible_surface: None,
                     force_fallback_adapter: false,
                     power_preference: PowerPreference::LowPower,
-                }),
+                })
             )
             .block_on()
             .unwrap();
@@ -38,7 +47,7 @@ impl WgpuInit {
                     required_features: Features::empty(),
                     required_limits: Limits::defaults(),
                     trace: wgpu::Trace::Off,
-                }),
+                })
             )
             .block_on()
             .unwrap();

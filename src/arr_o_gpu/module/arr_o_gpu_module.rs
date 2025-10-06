@@ -4,17 +4,38 @@ use wgpu::Buffer;
 
 use crate::{ arr_o_gpu::WgpuInit, Allocator, BindGroupCompound };
 
+#[derive(Clone)]
 pub struct ArrOgpuModule {
-    pub allocator: Arc<RwLock<Allocator>>,
-    pub maximum: u32,
-    pub wgpu_init: WgpuInit,
-    pub heap_buffer: Arc<Buffer>,
-    pub binding_compounds: Arc<RwLock<Vec<BindGroupCompound>>>,
+    pub(crate) allocator: Arc<RwLock<Allocator>>,
+    pub(crate) maximum: Arc<u32>,
+    pub(crate) wgpu_init: Arc<RwLock<WgpuInit>>,
+    pub(crate) heap_buffer: Arc<Buffer>,
+    pub(crate) binding_compounds: Arc<RwLock<Vec<BindGroupCompound>>>,
 }
 
 // basic
 impl ArrOgpuModule {
-    pub fn allocator(&self) -> std::sync::RwLockWriteGuard<'_, Allocator> {
+    pub fn allocator_read(&self) -> std::sync::RwLockReadGuard<'_, Allocator> {
+        self.allocator.read().unwrap()
+    }
+
+    pub fn get_maximum(&self) -> u32 {
+        *self.maximum
+    }
+
+    pub fn wgpu_init(&self) -> &Arc<RwLock<WgpuInit>> {
+        &self.wgpu_init
+    }
+
+    pub fn heap_buffer(&self) -> &Buffer {
+        &*self.heap_buffer
+    }
+
+    pub fn binding_compounds(&self) -> &RwLock<Vec<BindGroupCompound>> {
+        &self.binding_compounds
+    }
+
+    pub fn allocator_write(&self) -> std::sync::RwLockWriteGuard<'_, Allocator> {
         self.allocator.write().unwrap()
     }
 }

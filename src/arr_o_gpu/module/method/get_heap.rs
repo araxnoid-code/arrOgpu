@@ -4,8 +4,8 @@ use crate::ArrOgpuModule;
 
 impl ArrOgpuModule {
     pub fn get_heap(&self) -> Vec<f32> {
-        let wgpu_init = &self.wgpu_init;
-        let size = (std::mem::size_of::<f32>() * (self.maximum as usize)) as u64;
+        let wgpu_init = &self.wgpu_init.read().unwrap();
+        let size = (std::mem::size_of::<f32>() * (*self.maximum as usize)) as u64;
 
         let copy_buffer = wgpu_init.device.create_buffer(
             &(BufferDescriptor {

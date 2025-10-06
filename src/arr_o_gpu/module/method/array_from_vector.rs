@@ -23,8 +23,8 @@ use crate::*;
 
 impl ArrOgpuModule {
     // array init
-    pub fn array_from_vector<'a>(&'a mut self, vector: &[f32], shape: &'a [u32]) -> GpuArray<'a> {
-        let wgpu = &self.wgpu_init;
+    pub fn array_from_vector(&self, vector: &[f32], shape: &[u32]) -> GpuArray {
+        let wgpu = &self.wgpu_init.read().unwrap();
         let flatten = vector.flatten();
 
         let vector_buffer = wgpu.device.create_buffer_init(
@@ -36,7 +36,10 @@ impl ArrOgpuModule {
         );
 
         // allocator
-        let pointer = self.allocator.pointer_input(flatten.len() as u32);
+        let pointer = self.allocator
+            .write()
+            .unwrap()
+            .pointer_input(flatten.len() as u32);
         let pointer = [pointer.0, pointer.1];
 
         // pointer
@@ -102,7 +105,7 @@ impl ArrOgpuModule {
             &(PipelineLayoutDescriptor {
                 label: Some("create pipeline layout for array_init"),
                 bind_group_layouts: &[
-                    &self.binding_compounds[0].binding_group_layouts, // heap
+                    &self.binding_compounds.read().unwrap()[0].binding_group_layouts, // heap
                     &binding_layout,
                 ],
                 push_constant_ranges: &[],
@@ -143,7 +146,7 @@ impl ArrOgpuModule {
             bcp.set_pipeline(&pipeline);
 
             // heap
-            bcp.set_bind_group(0, &self.binding_compounds[0].binding_groups, &[]);
+            bcp.set_bind_group(0, &self.binding_compounds.read().unwrap()[0].binding_groups, &[]);
 
             bcp.set_bind_group(1, &binding, &[]);
             let x = ((flatten.len() as f32) / 128.0).ceil() as u32;
@@ -157,10 +160,10 @@ impl ArrOgpuModule {
         let pointer = (pointer[0] as usize, pointer[1] as usize);
 
         GpuArray {
-            module: Arc::new(RwLock::new(self)),
+            module: Arc::new(self.clone()),
             pointer,
             length: pointer.1 - pointer.0,
-            shape: shape,
+            shape: shape.to_vec(),
         }
     }
 }
