@@ -1,12 +1,13 @@
 use std::sync::{ Arc, RwLock };
 
-use crate::ArrOgpuModule;
+use crate::{ ArrOgpuModule, SpaceType };
 
 pub struct GpuArray {
     pub(crate) module: Arc<ArrOgpuModule>,
     pub(crate) pointer: (usize, usize),
     pub(crate) length: usize,
     pub(crate) shape: Vec<u32>,
+    pub(crate) space_type: SpaceType,
 }
 
 impl GpuArray {
@@ -24,5 +25,9 @@ impl GpuArray {
 
     pub fn shape(&self) -> &Vec<u32> {
         &self.shape
+    }
+
+    pub fn space_type(&self) -> &SpaceType {
+        &self.space_type
     }
 }

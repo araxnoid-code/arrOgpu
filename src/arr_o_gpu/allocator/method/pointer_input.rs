@@ -1,22 +1,41 @@
-use crate::arr_o_gpu::allocator::Allocator;
+use uuid::Uuid;
+
+use crate::{ arr_o_gpu::allocator::Allocator, SpaceType };
 
 impl Allocator {
-    pub fn pointer_input(&mut self, data_length: u32) -> (u32, u32) {
-        let mut pointer: (u32, u32) = (0, 0);
+    pub fn pointer_input(&mut self, data_length: u32) -> (SpaceType, u32, u32) {
+        let mut pointer = (SpaceType::RangeSpace(0), 0, 0);
         if !self.range_space.is_empty() {
             for (idx, space) in self.range_space.iter().enumerate() {
-                if let Some(range) = space {
+                if let Some((_, _, range)) = space {
                     let len_space = range.end - range.start;
-                    if data_length >= len_space {
-                        pointer = (range.start, range.end);
+                    if data_length == len_space {
+                        let id = Uuid::new_v4().as_u128();
+                        pointer = (SpaceType::RangeSpace(id), range.start, range.end);
                         self.range_space[idx] = None;
+                        self.empty_idx.push(idx);
+                        break;
+                    } else if data_length < len_space {
+                        let id = Uuid::new_v4().as_u128();
+                        pointer = (
+                            SpaceType::FragmentSpace(id, idx),
+                            range.start,
+                            range.start + data_length,
+                        );
+                        let update_range = range.start + data_length..range.end;
+                        self.range_space[idx] = Some((id, idx, update_range));
                         break;
                     }
                 }
 
-                if (idx as u32) >= data_length - 1 {
+                if idx >= self.range_space.len() - 1 {
                     // using last space
-                    pointer = (self.last_space.0, self.last_space.0 + data_length);
+                    let id = Uuid::new_v4().as_u128();
+                    pointer = (
+                        SpaceType::RangeSpace(id),
+                        self.last_space.0,
+                        self.last_space.0 + data_length,
+                    );
                     // update last_space
                     let start = self.last_space.0 + data_length;
                     if start > self.last_space.1 {
@@ -26,7 +45,12 @@ impl Allocator {
                 }
             }
         } else {
-            pointer = (self.last_space.0, self.last_space.0 + data_length);
+            let id = Uuid::new_v4().as_u128();
+            pointer = (
+                SpaceType::RangeSpace(id),
+                self.last_space.0,
+                self.last_space.0 + data_length,
+            );
             // update last_space
             let start = self.last_space.0 + data_length;
             if start > self.last_space.1 {

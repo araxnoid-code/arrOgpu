@@ -12,3 +12,9 @@ bytemuck = "1.23.2"
 pollster = "=0.2.4"
 wgpu = "26.0.1"
 
+[dependencies.uuid]
+version = "1.18.1"
+# Lets you generate random UUIDs
+features = [
+    "v4",
+]

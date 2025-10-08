@@ -40,7 +40,8 @@ impl ArrOgpuModule {
             .write()
             .unwrap()
             .pointer_input(flatten.len() as u32);
-        let pointer = [pointer.0, pointer.1];
+        let space_type = pointer.0;
+        let pointer = [pointer.1, pointer.2];
 
         // pointer
         let pointer_buffer = wgpu.device.create_buffer_init(
@@ -164,6 +165,7 @@ impl ArrOgpuModule {
             pointer,
             length: pointer.1 - pointer.0,
             shape: shape.to_vec(),
+            space_type: space_type,
         }
     }
 }

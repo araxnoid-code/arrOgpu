@@ -1,7 +1,7 @@
 use crate::Allocator;
 
 impl Allocator {
-    pub fn clean_allocate(&mut self) {
+    pub(crate) fn clean_allocate(&mut self) {
         self.last_space = (0, self.maximum);
         self.range_space = vec![];
     }
