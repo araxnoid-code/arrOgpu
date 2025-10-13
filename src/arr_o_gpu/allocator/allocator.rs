@@ -2,12 +2,17 @@ use std::ops::Range;
 
 use uuid::Uuid;
 
+use crate::{ Monagement, MonagementInit };
+
 #[derive(Clone)]
 pub struct Allocator {
     pub(crate) range_space: Vec<Option<(u128, usize, Range<u32>)>>,
     pub(crate) empty_idx: Vec<usize>,
     pub(crate) last_space: (u32, u32),
     pub(crate) maximum: u32,
+
+    // monagement branch
+    pub(crate) monanagement: Monagement,
 }
 
 impl Allocator {
@@ -17,6 +22,9 @@ impl Allocator {
             empty_idx: Vec::new(),
             last_space: (0, maximum),
             maximum,
+
+            // monagement branch
+            monanagement: Monagement::init(),
         }
     }
 
