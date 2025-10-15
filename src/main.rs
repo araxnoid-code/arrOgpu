@@ -23,11 +23,22 @@ fn main() {
     }
     // println!("{:?} (3)", module.allocator_read().range_space());
     println!("{:?} (3)", module.allocator_read().monanagement.range_space);
+    println!("{:?}", module.get_heap());
 
     {
         let _a = module.array_from_vector(&[51.0, 52.0, 53.0, 54.0], &[1, 4]);
         println!("{:?} (4)", module.allocator_read().monanagement.range_space);
+
+        println!("{:?}", module.get_heap());
+
         let _b = module.array_from_vector(&[101.0, 102.0, 103.0], &[1, 3]);
+
+        println!("{:?} (4)", module.allocator_read().monanagement.range_space);
+
+        println!("{:?}", module.get_heap());
+
+        let _c = module.array_from_vector(&[201.0, 202.0, 203.0], &[1, 3]);
+
         println!("{:?} (4)", module.allocator_read().monanagement.range_space);
         // let _c = module.array_from_vector(&[101.0, 102.0, 103.0], &[1, 3]);
         // println!("{:?} (4)", module.allocator_read().monanagement.range_space);
@@ -37,4 +48,6 @@ fn main() {
         // println!("{:?} (5)", module.allocator_read().range_space());
     }
     println!("{:?} (5)", module.allocator_read().monanagement.range_space);
+
+    println!("{:?}", module.get_heap());
 }
