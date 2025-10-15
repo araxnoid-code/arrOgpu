@@ -3,3 +3,6 @@ pub use get_heap::*;
 
 mod drop;
 pub use drop::*;
+
+mod display;
+pub use display::*;

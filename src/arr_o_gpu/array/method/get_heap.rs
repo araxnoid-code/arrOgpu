@@ -15,7 +15,6 @@ impl GpuArray {
         let mem = std::mem::size_of::<f32>();
         let size = (mem * len) as u64;
 
-        // println!("{}", size);
         let copy_buffer = wgpu_init.device.create_buffer(
             &(BufferDescriptor {
                 label: Some("create buffer copy for get_heap_pointer"),

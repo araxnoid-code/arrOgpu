@@ -1,4 +1,4 @@
-use std::sync::{ Arc, RwLock };
+use std::{ sync::{ Arc, RwLock }, vec };
 
 use wgpu::{
     util::{ BufferInitDescriptor, DeviceExt },
@@ -23,10 +23,17 @@ use crate::*;
 
 impl ArrOgpuModule {
     // array init
-    pub fn array_from_vector(&self, vector: &[f32], shape: &[u32]) -> GpuArray {
-        let wgpu = &self.wgpu_init.read().unwrap();
+    pub fn array_from_vector(&self, vector: &[f32], shape: &[u32]) -> Result<GpuArray, &str> {
         let flatten = vector.flatten();
 
+        let len = flatten.len();
+        let shape_len = shape.iter().product::<u32>();
+
+        if (len as u32) != shape_len {
+            return Err("Array Initialization Error, len of vector and len of shape not same");
+        }
+
+        let wgpu = &self.wgpu_init.read().unwrap();
         let vector_buffer = wgpu.device.create_buffer_init(
             &(BufferInitDescriptor {
                 label: Some(&format!("create array buffer with shape:{shape:?}")),
@@ -39,7 +46,7 @@ impl ArrOgpuModule {
         let pointer = self.allocator
             .write()
             .unwrap()
-            .pointer_input(flatten.len() as u32);
+            .pointer_input(len as u32);
         let space_type = pointer.0;
         let pointer = [pointer.1, pointer.2];
 
@@ -150,7 +157,7 @@ impl ArrOgpuModule {
             bcp.set_bind_group(0, &self.binding_compounds.read().unwrap()[0].binding_groups, &[]);
 
             bcp.set_bind_group(1, &binding, &[]);
-            let x = ((flatten.len() as f32) / 128.0).ceil() as u32;
+            let x = ((len as f32) / 128.0).ceil() as u32;
             bcp.dispatch_workgroups(x, 1, 1);
         }
 
@@ -160,12 +167,12 @@ impl ArrOgpuModule {
 
         let pointer = (pointer[0] as usize, pointer[1] as usize);
 
-        GpuArray {
+        Ok(GpuArray {
             module: Arc::new(self.clone()),
             pointer,
             length: pointer.1 - pointer.0,
             shape: shape.to_vec(),
             space_type: space_type,
-        }
+        })
     }
 }
