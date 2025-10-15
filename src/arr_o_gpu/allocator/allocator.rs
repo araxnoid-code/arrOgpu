@@ -12,7 +12,7 @@ pub struct Allocator {
     pub(crate) maximum: u32,
 
     // monagement branch
-    pub(crate) monanagement: Monagement,
+    pub monanagement: Monagement,
 }
 
 impl Allocator {

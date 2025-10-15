@@ -2,6 +2,7 @@ use uuid::Uuid;
 
 use crate::{
     arr_o_gpu::allocator::Allocator,
+    MonagementInsertRemove,
     MonagementIsEmpty,
     MonagementIter,
     MonagementRemove,
@@ -13,56 +14,35 @@ impl Allocator {
         let mut pointer = (SpaceType::RangeSpace(0), 0, 0);
 
         // monagement branch
-
         if !self.monanagement.is_empty() {
             // not empty
-            let mut remove_key = None;
-            for (key, (_, range)) in self.monanagement.iter() {
+            for (idx, (key, (_, range))) in self.monanagement.iter().enumerate() {
                 let len = range.end - range.start;
                 if data_length == len {
                     // range is same => Range Mode
                     let id = Uuid::new_v4().as_u128();
                     pointer = (SpaceType::RangeSpace(id), range.start, range.end);
-                    remove_key = Some(*key);
+
+                    let key = *key;
+                    self.monanagement.remove(&key);
                     break;
-                } else {
-                    // range is lower => Fragement Mode
+                } else if data_length < len {
+                    // range is bigger => Fragement Mode
+                    let id = Uuid::new_v4().as_u128();
+                    pointer = (
+                        SpaceType::FragmentSpace(id, 0),
+                        range.start,
+                        range.start + data_length,
+                    );
 
+                    // update range
+                    let key = *key;
+                    let start = range.start + data_length;
+                    let end = range.end;
+
+                    self.monanagement.remove(&key);
+                    self.monanagement.insert(start, (id, start..end));
                     break;
-                }
-            }
-
-            if let Some(key) = remove_key {
-                self.monanagement.remove(&key);
-            }
-        } else {
-            // empty
-
-        }
-
-        // monagement branch
-
-        if !self.range_space.is_empty() {
-            for (idx, space) in self.range_space.iter().enumerate() {
-                if let Some((_, _, range)) = space {
-                    let len_space = range.end - range.start;
-                    if data_length == len_space {
-                        let id = Uuid::new_v4().as_u128();
-                        pointer = (SpaceType::RangeSpace(id), range.start, range.end);
-                        self.range_space[idx] = None;
-                        self.empty_idx.push(idx);
-                        break;
-                    } else if data_length < len_space {
-                        let id = Uuid::new_v4().as_u128();
-                        pointer = (
-                            SpaceType::FragmentSpace(id, idx),
-                            range.start,
-                            range.start + data_length,
-                        );
-                        let update_range = range.start + data_length..range.end;
-                        self.range_space[idx] = Some((id, idx, update_range));
-                        break;
-                    }
                 }
 
                 if idx >= self.range_space.len() - 1 {
@@ -82,7 +62,9 @@ impl Allocator {
                 }
             }
         } else {
+            // empty
             let id = Uuid::new_v4().as_u128();
+
             pointer = (
                 SpaceType::RangeSpace(id),
                 self.last_space.0,
@@ -95,6 +77,7 @@ impl Allocator {
             }
             self.last_space.0 = start;
         }
+        // monagement branch
 
         pointer
     }
