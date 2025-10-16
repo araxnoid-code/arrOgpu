@@ -1,13 +1,15 @@
-use arr_o_gpu::ArrOgpuModule;
+use arr_o_gpu::{ ArrOgpuModule, GpuArray };
 
 fn main() {
     let module = ArrOgpuModule::default();
 
-    let array_a = module
-        .array_from_vector(&(0..36).map(|v| v as f32).collect::<Vec<f32>>(), &[2, 2, 3, 3])
-        .unwrap();
+    {
+        let array_a = module
+            .array_from_vector(&(0..18).map(|v| v as f32).collect::<Vec<f32>>(), &[2, 3, 3])
+            .unwrap();
 
-    // let array_b = module.array_from_vector(&[11.0, 12.0, 13.0, 14.0, 15.0, 29.0], &[6]);
+        let indexing = array_a.index(&[1, 1]).unwrap();
+    }
 
-    println!("{}", array_a);
+    println!("{:?}", module.allocator_read().monanagement.range_space);
 }

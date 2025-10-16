@@ -4,3 +4,6 @@ pub use arr_o_gpu_module::*;
 //
 mod method;
 pub use method::*;
+
+mod error;
+pub use error::*;

@@ -34,7 +34,7 @@ impl GpuArray {
         encoder.copy_buffer_to_buffer(heap_buffer, start as u64, &copy_buffer, 0, size);
         wgpu_init.queue.submit(Some(encoder.finish()));
 
-        let buffer_slice = copy_buffer.slice(..size);
+        let buffer_slice = copy_buffer.slice(..);
         buffer_slice.map_async(MapMode::Read, |e| e.unwrap());
         wgpu_init.device.poll(PollType::Wait).unwrap();
 

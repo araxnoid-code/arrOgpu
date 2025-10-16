@@ -12,3 +12,6 @@ pub use shader::*;
 
 mod wgpu_init;
 pub use wgpu_init::*;
+
+mod utils;
+pub use utils::*;

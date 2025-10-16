@@ -6,3 +6,6 @@ pub use drop::*;
 
 mod display;
 pub use display::*;
+
+mod indexing;
+pub use indexing::*;

@@ -22,7 +22,7 @@ fn recursion(output: &mut String, shape: &[u32], vector: &[f32], stride: u32, sp
             recursion(output, &shape[1..], vector, stride, space);
         }
 
-        space.remove(0);
+        space.pop();
         output.push_str(&format!("{}]\n", space));
     } else {
         // row / dim = 1

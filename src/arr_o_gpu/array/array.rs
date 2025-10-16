@@ -7,6 +7,9 @@ pub struct GpuArray {
     pub(crate) pointer: (usize, usize),
     pub(crate) length: usize,
     pub(crate) shape: Vec<u32>,
+    pub(crate) stride: Vec<u32>,
+
+    //
     pub(crate) space_type: SpaceType,
 }
 
@@ -27,7 +30,15 @@ impl GpuArray {
         &self.shape
     }
 
+    pub fn stride(&self) -> &Vec<u32> {
+        &self.stride
+    }
+
     pub fn space_type(&self) -> &SpaceType {
         &self.space_type
+    }
+
+    pub fn dim(&self) -> usize {
+        self.shape.len()
     }
 }

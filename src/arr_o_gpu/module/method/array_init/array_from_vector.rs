@@ -23,14 +23,18 @@ use crate::*;
 
 impl ArrOgpuModule {
     // array init
-    pub fn array_from_vector(&self, vector: &[f32], shape: &[u32]) -> Result<GpuArray, &str> {
+    pub fn array_from_vector(&self, vector: &[f32], shape: &[u32]) -> Result<GpuArray, ArrOgpuErr> {
         let flatten = vector.flatten();
 
         let len = flatten.len();
         let shape_len = shape.iter().product::<u32>();
 
         if (len as u32) != shape_len {
-            return Err("Array Initialization Error, len of vector and len of shape not same");
+            return Err(
+                ArrOgpuErr::Init(
+                    "Array Initialization Error, len of vector and len of shape not same".to_string()
+                )
+            );
         }
 
         let wgpu = &self.wgpu_init.read().unwrap();
@@ -123,7 +127,7 @@ impl ArrOgpuModule {
         let shaders = wgpu.device.create_shader_module(ShaderModuleDescriptor {
             label: Some("create shaders module 'array_init.wgsl'"),
             source: ShaderSource::Wgsl(
-                include_str!("./../../shader/shaders/array_init.wgsl").into()
+                include_str!("./../../../shader/shaders/array_init.wgsl").into()
             ),
         });
         let pipeline = wgpu.device.create_compute_pipeline(
@@ -172,6 +176,7 @@ impl ArrOgpuModule {
             pointer,
             length: pointer.1 - pointer.0,
             shape: shape.to_vec(),
+            stride: get_stride_from_shape(shape),
             space_type: space_type,
         })
     }
