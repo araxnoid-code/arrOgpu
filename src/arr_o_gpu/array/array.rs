@@ -41,4 +41,8 @@ impl GpuArray {
     pub fn dim(&self) -> usize {
         self.shape.len()
     }
+
+    pub fn pointer_to_arr(&self) -> [u32; 2] {
+        [self.pointer.0 as u32, self.pointer.1 as u32]
+    }
 }
