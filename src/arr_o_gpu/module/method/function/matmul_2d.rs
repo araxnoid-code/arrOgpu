@@ -108,7 +108,7 @@ impl ArrOgpuModule {
         // output
         // size
         let mem_f32 = std::mem::size_of::<f32>() as u64;
-        let size = (out_shape.iter().product::<u32>() as u64) * (k_n[0] as u64) * mem_f32;
+        let size = (out_shape.iter().product::<u32>() as u64) * mem_f32;
         let output = wgpu_init.device.create_buffer(
             &(BufferDescriptor {
                 label: Some("Create Buffer Output For Matmul 2D"),
@@ -118,8 +118,7 @@ impl ArrOgpuModule {
             })
         );
         // stride
-        let mut stride_out = out_shape.to_vec();
-        stride_out.push(k_n[0]);
+        let stride_out = out_shape.to_vec();
         let stride_out = get_stride_from_shape(&stride_out);
         let stride_out = wgpu_init.device.create_buffer_init(
             &(BufferInitDescriptor {
@@ -243,11 +242,14 @@ impl ArrOgpuModule {
             // group 1 binding 0 - 5
             bcp.set_bind_group(1, Some(&binding), &[]);
 
-            let m = ((out_shape[0] as f32) / 8.0).ceil() as u32;
-            let n = ((out_shape[1] as f32) / 8.0).ceil() as u32;
-            let k = ((k_n[0] as f32) / 4.0).ceil() as u32;
+            // let m = ((out_shape[0] as f32) / 8.0).ceil() as u32;
+            // let n = ((out_shape[1] as f32) / 8.0).ceil() as u32;
+            // let k = ((k_n[0] as f32) / 4.0).ceil() as u32;
+
+            let m = ((out_shape[0] as f32) / 2.0).ceil() as u32;
+            let n = ((out_shape[1] as f32) / 2.0).ceil() as u32;
             // m, n, k
-            bcp.dispatch_workgroups(m, n, k);
+            bcp.dispatch_workgroups(m, n, 1);
         }
 
         encoder.copy_buffer_to_buffer(&output, 0, &copy_buffer, 0, size);
