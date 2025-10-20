@@ -24,7 +24,7 @@ use wgpu::{
 use crate::{ get_stride_from_shape, ArrOgpuErr, ArrOgpuModule, GpuArray };
 
 impl ArrOgpuModule {
-    pub fn matmul_2d(&self, arr_a: GpuArray, arr_b: GpuArray) -> Result<(), ArrOgpuErr> {
+    pub fn matmul_2d(&self, arr_a: GpuArray, arr_b: GpuArray) -> Result<GpuArray, ArrOgpuErr> {
         if arr_a.dim() != 2 || arr_b.dim() != 2 {
             let err = format!(
                 "Array matmul 2d Error, dim of array A is {} and dim of array B is {}",
@@ -263,9 +263,9 @@ impl ArrOgpuModule {
         let data_buffer = slice_buffer.get_mapped_range();
         let data: Vec<f32> = bytemuck::cast_slice(&data_buffer).into();
 
-        println!("{:?}", data);
+        let array = self.array_from_vector(&data, &out_shape).unwrap();
 
-        Ok(())
+        Ok(array)
     }
 }
 
