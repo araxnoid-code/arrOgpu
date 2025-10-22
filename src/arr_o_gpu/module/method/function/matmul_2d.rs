@@ -246,8 +246,8 @@ impl ArrOgpuModule {
             // let n = ((out_shape[1] as f32) / 8.0).ceil() as u32;
             // let k = ((k_n[0] as f32) / 4.0).ceil() as u32;
 
-            let m = ((out_shape[0] as f32) / 2.0).ceil() as u32;
-            let n = ((out_shape[1] as f32) / 2.0).ceil() as u32;
+            let m = ((out_shape[0] as f32) / 16.0).ceil() as u32;
+            let n = ((out_shape[1] as f32) / 16.0).ceil() as u32;
             // m, n, k
             bcp.dispatch_workgroups(m, n, 1);
         }

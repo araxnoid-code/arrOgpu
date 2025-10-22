@@ -1,4 +1,4 @@
-use std::sync::{ Arc, RwLock };
+use std::{ sync::{ Arc, RwLock }, u32 };
 
 use wgpu::{
     util::DeviceExt,
@@ -20,7 +20,7 @@ use crate::*;
 impl Default for ArrOgpuModule {
     fn default() -> Self {
         // create heap
-        let maximum = 1_00u32;
+        let maximum = 67_108_864u32;
         // let maximum = 15u32;
         //
         let wgpu = WgpuInit::init();

@@ -43,7 +43,7 @@ impl WgpuInit {
             .request_device(
                 &(DeviceDescriptor {
                     label: Some("create device and queue"),
-                    memory_hints: MemoryHints::default(),
+                    memory_hints: MemoryHints::Performance,
                     required_features: Features::empty(),
                     required_limits: Limits::defaults(),
                     trace: wgpu::Trace::Off,
