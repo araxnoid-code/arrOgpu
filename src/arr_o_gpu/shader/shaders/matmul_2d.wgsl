@@ -23,10 +23,13 @@ var <storage, read> shape_b: vec2<u32>;
 var <storage, read> stride_b: vec2<u32>;
 
 // output
-@group(1) @binding(6)
+@group(2) @binding(0)
 var <storage, read_write> output: array<f32>;
 
-@group(1) @binding(7)
+@group(2) @binding(1)
+var <storage, read> pointer_output: array<f32>;
+
+@group(2) @binding(2)
 var <storage, read> stride_output: vec2<u32>;
 
 // tiling

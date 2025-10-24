@@ -2,7 +2,7 @@ use std::{ sync::{ Arc, RwLock }, u32 };
 
 use wgpu::{
     util::DeviceExt,
-    wgt::PollType,
+    wgt::{ BufferDescriptor, PollType },
     BindGroupEntry,
     BindGroupLayoutEntry,
     BindingType,
@@ -20,19 +20,27 @@ use crate::*;
 impl Default for ArrOgpuModule {
     fn default() -> Self {
         // create heap
-        let maximum = 67_108_864u32;
-        // let maximum = 15u32;
+        // let maximum = 67_108_864u32;
+        let maximum = 5097152u32;
         //
         let wgpu = WgpuInit::init();
 
-        let heap: Vec<f32> = vec![0.0; maximum as usize];
-        let buffer_heap = wgpu.device.create_buffer_init(
-            &(wgpu::util::BufferInitDescriptor {
+        // let heap: Vec<f32> = vec![0.0; maximum as usize];
+        let buffer_heap = wgpu.device.create_buffer(
+            &(BufferDescriptor {
                 label: Some("create heap"),
-                contents: bytemuck::cast_slice(&heap),
+                mapped_at_creation: false,
                 usage: BufferUsages::STORAGE | BufferUsages::COPY_SRC,
+                size: ((std::mem::size_of::<f32>() as u32) * maximum) as u64,
             })
         );
+        // let buffer_heap = wgpu.device.create_buffer_init(
+        //     &(wgpu::util::BufferInitDescriptor {
+        //         label: Some("create heap"),
+        //         contents: bytemuck::cast_slice(&heap),
+        //         usage: BufferUsages::STORAGE | BufferUsages::COPY_SRC,
+        //     })
+        // );
 
         // group 0
         let binding_layout = wgpu.device.create_bind_group_layout(
