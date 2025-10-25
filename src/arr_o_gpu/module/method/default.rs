@@ -20,8 +20,8 @@ use crate::*;
 impl Default for ArrOgpuModule {
     fn default() -> Self {
         // create heap
-        // let maximum = 67_108_864u32;
-        let maximum = 5097152u32;
+        let maximum = 100u32;
+        // let maximum = 5097152u32;
         //
         let wgpu = WgpuInit::init();
 

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use wgpu::{
     util::{ BufferInitDescriptor, DeviceExt },
     wgt::{ BufferDescriptor, CommandEncoderDescriptor, PollType },
@@ -284,7 +286,7 @@ impl ArrOgpuModule {
 
         // let slice_buffer = copy_buffer.slice(..);
         // slice_buffer.map_async(MapMode::Read, |res| res.unwrap());
-        // wgpu_init.device.poll(PollType::Wait).unwrap();
+        wgpu_init.device.poll(PollType::Wait).unwrap();
 
         // let data_buffer = slice_buffer.get_mapped_range();
         // let data: Vec<f32> = bytemuck::cast_slice(&data_buffer).into();
@@ -292,13 +294,17 @@ impl ArrOgpuModule {
         // let array = self.array_from_vector(&data, &out_shape).unwrap();
 
         let pointer = (output_pointer_start as usize, output_pointer_end as usize);
-        let array = self.array_from_of_output(
-            &out_shape,
+
+        let len = out_shape.iter().product::<u32>() as usize;
+        let stride = get_stride_from_shape(&out_shape);
+        let array = GpuArray {
+            module: Arc::new(self.clone()),
+            shape: out_shape.to_vec(),
+            length: len,
             pointer,
-            type_output_pointer,
-            &binding_layout_of_output,
-            &binding_of_output
-        );
+            space_type: type_output_pointer,
+            stride,
+        };
 
         Ok(array)
     }

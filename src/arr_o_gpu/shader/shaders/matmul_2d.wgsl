@@ -27,7 +27,7 @@ var <storage, read> stride_b: vec2<u32>;
 var <storage, read_write> output: array<f32>;
 
 @group(2) @binding(1)
-var <storage, read> pointer_output: array<f32>;
+var <storage, read> pointer_output: vec2<u32>;
 
 @group(2) @binding(2)
 var <storage, read> stride_output: vec2<u32>;
@@ -88,7 +88,8 @@ fn main(
     let y = local_id.y + (group_y * size);
     if (x < n && y < m) {
         let output_index = pointing(x, y, stride_output);
-        output[output_index] = acc;
+        let heap_index = pointer_output.x + output_index;
+        heap[heap_index] = acc;
     }
 }
 
