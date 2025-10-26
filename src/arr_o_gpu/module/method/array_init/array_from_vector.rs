@@ -58,7 +58,7 @@ impl ArrOgpuModule {
         let pointer_buffer = wgpu.device.create_buffer_init(
             &(BufferInitDescriptor {
                 label: Some(&format!("create buffer pointer array with pointing:{pointer:?}")),
-                usage: BufferUsages::STORAGE | BufferUsages::COPY_SRC,
+                usage: BufferUsages::UNIFORM | BufferUsages::COPY_SRC,
                 contents: bytemuck::cast_slice(&pointer),
             })
         );
@@ -86,7 +86,7 @@ impl ArrOgpuModule {
                         count: None,
                         visibility: ShaderStages::COMPUTE,
                         ty: BindingType::Buffer {
-                            ty: BufferBindingType::Storage { read_only: true },
+                            ty: BufferBindingType::Uniform,
                             min_binding_size: None,
                             has_dynamic_offset: false,
                         },
@@ -161,7 +161,7 @@ impl ArrOgpuModule {
             bcp.set_bind_group(0, &self.binding_compounds.read().unwrap()[0].binding_groups, &[]);
 
             bcp.set_bind_group(1, &binding, &[]);
-            let x = ((len as f32) / 128.0).ceil() as u32;
+            let x = ((len as f32) / 256.0).ceil() as u32;
             bcp.dispatch_workgroups(x, 1, 1);
         }
 

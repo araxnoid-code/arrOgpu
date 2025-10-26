@@ -4,33 +4,33 @@ var <storage, read_write> heap: array<f32>;
 
 // array A
 @group(1) @binding(0)
-var <storage, read> pointer_a: vec2<u32>;
+var <uniform> pointer_a: vec2<u32>;
 
 @group(1) @binding(1)
-var <storage, read> shape_a: vec2<u32>;
+var <uniform> shape_a: vec2<u32>;
 
 @group(1) @binding(2)
-var <storage, read> stride_a: vec2<u32>;
+var <uniform> stride_a: vec2<u32>;
 
 // array B
 @group(1) @binding(3)
-var <storage, read> pointer_b: vec2<u32>;
+var <uniform> pointer_b: vec2<u32>;
 
 @group(1) @binding(4)
-var <storage, read> shape_b: vec2<u32>;
+var <uniform> shape_b: vec2<u32>;
 
 @group(1) @binding(5)
-var <storage, read> stride_b: vec2<u32>;
+var <uniform> stride_b: vec2<u32>;
 
 // output
+// @group(2) @binding(0)
+// var <storage, read_write> output: array<f32>;
+
 @group(2) @binding(0)
-var <storage, read_write> output: array<f32>;
+var <uniform> pointer_output: vec2<u32>;
 
 @group(2) @binding(1)
-var <storage, read> pointer_output: vec2<u32>;
-
-@group(2) @binding(2)
-var <storage, read> stride_output: vec2<u32>;
+var <uniform> stride_output: vec2<u32>;
 
 // tiling
 var <workgroup> tile_a: array<array<f32, 16>, 16>;

@@ -57,7 +57,7 @@ impl ArrOgpuModule {
         let pointer_a = wgpu_init.device.create_buffer_init(
             &(BufferInitDescriptor {
                 label: Some("Create Pointer A Buffer Layout For Matmul 2D"),
-                usage: BufferUsages::COPY_SRC | BufferUsages::STORAGE,
+                usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
                 contents: bytemuck::cast_slice(&arr_a.pointer_to_arr()),
             })
         );
@@ -66,7 +66,7 @@ impl ArrOgpuModule {
         let shape_a = wgpu_init.device.create_buffer_init(
             &(BufferInitDescriptor {
                 label: Some("Create Pointer A Buffer Layout For Matmul 2D"),
-                usage: BufferUsages::COPY_SRC | BufferUsages::STORAGE,
+                usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
                 contents: bytemuck::cast_slice(&arr_a.shape),
             })
         );
@@ -75,7 +75,7 @@ impl ArrOgpuModule {
         let stride_a = wgpu_init.device.create_buffer_init(
             &(BufferInitDescriptor {
                 label: Some("Create Pointer A Buffer Layout For Matmul 2D"),
-                usage: BufferUsages::COPY_SRC | BufferUsages::STORAGE,
+                usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
                 contents: bytemuck::cast_slice(&arr_a.stride),
             })
         );
@@ -85,7 +85,7 @@ impl ArrOgpuModule {
         let pointer_b = wgpu_init.device.create_buffer_init(
             &(BufferInitDescriptor {
                 label: Some("Create Pointer A Buffer Layout For Matmul 2D"),
-                usage: BufferUsages::COPY_SRC | BufferUsages::STORAGE,
+                usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
                 contents: bytemuck::cast_slice(&arr_b.pointer_to_arr()),
             })
         );
@@ -94,7 +94,7 @@ impl ArrOgpuModule {
         let shape_b = wgpu_init.device.create_buffer_init(
             &(BufferInitDescriptor {
                 label: Some("Create Pointer A Buffer Layout For Matmul 2D"),
-                usage: BufferUsages::COPY_SRC | BufferUsages::STORAGE,
+                usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
                 contents: bytemuck::cast_slice(&arr_b.shape),
             })
         );
@@ -103,24 +103,24 @@ impl ArrOgpuModule {
         let stride_b = wgpu_init.device.create_buffer_init(
             &(BufferInitDescriptor {
                 label: Some("Create Pointer A Buffer Layout For Matmul 2D"),
-                usage: BufferUsages::COPY_SRC | BufferUsages::STORAGE,
+                usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
                 contents: bytemuck::cast_slice(&arr_b.stride),
             })
         );
 
         // output
         // size
-        let mem_f32 = std::mem::size_of::<f32>() as u64;
+        // let mem_f32 = std::mem::size_of::<f32>() as u64;
         let len = out_shape.iter().product::<u32>();
-        let size = (len as u64) * mem_f32;
-        let output = wgpu_init.device.create_buffer(
-            &(BufferDescriptor {
-                label: Some("Create Buffer Output For Matmul 2D"),
-                mapped_at_creation: false,
-                size,
-                usage: BufferUsages::COPY_SRC | BufferUsages::STORAGE,
-            })
-        );
+        // let size = (len as u64) * mem_f32;
+        // let output = wgpu_init.device.create_buffer(
+        //     &(BufferDescriptor {
+        //         label: Some("Create Buffer Output For Matmul 2D"),
+        //         mapped_at_creation: false,
+        //         size,
+        //         usage: BufferUsages::COPY_SRC | BufferUsages::STORAGE,
+        //     })
+        // );
 
         // pointer
         let (type_output_pointer, output_pointer_start, output_pointer_end) = self
@@ -131,7 +131,7 @@ impl ArrOgpuModule {
             &(BufferInitDescriptor {
                 label: Some("Create Buffer Output Pointer For Matmul 2D"),
                 contents: bytemuck::cast_slice(&output_pointer_list),
-                usage: BufferUsages::COPY_SRC | BufferUsages::STORAGE,
+                usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
             })
         );
 
@@ -141,7 +141,7 @@ impl ArrOgpuModule {
         let stride_out = wgpu_init.device.create_buffer_init(
             &(BufferInitDescriptor {
                 label: Some("Create Stride Output Buffer Layout For Matmul 2D"),
-                usage: BufferUsages::COPY_SRC | BufferUsages::STORAGE,
+                usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
                 contents: bytemuck::cast_slice(&stride_out),
             })
         );
@@ -204,14 +204,10 @@ impl ArrOgpuModule {
                 entries: &[
                     BindGroupEntry {
                         binding: 0,
-                        resource: output.as_entire_binding(),
-                    },
-                    BindGroupEntry {
-                        binding: 1,
                         resource: output_pointer_buffer.as_entire_binding(),
                     },
                     BindGroupEntry {
-                        binding: 2,
+                        binding: 1,
                         resource: stride_out.as_entire_binding(),
                     },
                 ],
@@ -280,18 +276,8 @@ impl ArrOgpuModule {
             bcp.dispatch_workgroups(m, n, 1);
         }
 
-        // encoder.copy_buffer_to_buffer(&output, 0, &copy_buffer, 0, size);
-
         wgpu_init.queue.submit(Some(encoder.finish()));
-
-        // let slice_buffer = copy_buffer.slice(..);
-        // slice_buffer.map_async(MapMode::Read, |res| res.unwrap());
         wgpu_init.device.poll(PollType::Wait).unwrap();
-
-        // let data_buffer = slice_buffer.get_mapped_range();
-        // let data: Vec<f32> = bytemuck::cast_slice(&data_buffer).into();
-
-        // let array = self.array_from_vector(&data, &out_shape).unwrap();
 
         let pointer = (output_pointer_start as usize, output_pointer_end as usize);
 
@@ -322,7 +308,7 @@ fn build_binding_layout(device: &Device) -> wgpu::BindGroupLayout {
                     count: None,
                     visibility: ShaderStages::COMPUTE,
                     ty: BindingType::Buffer {
-                        ty: BufferBindingType::Storage { read_only: true },
+                        ty: BufferBindingType::Uniform,
                         has_dynamic_offset: false,
                         min_binding_size: None,
                     },
@@ -333,7 +319,7 @@ fn build_binding_layout(device: &Device) -> wgpu::BindGroupLayout {
                     count: None,
                     visibility: ShaderStages::COMPUTE,
                     ty: BindingType::Buffer {
-                        ty: BufferBindingType::Storage { read_only: true },
+                        ty: BufferBindingType::Uniform,
                         has_dynamic_offset: false,
                         min_binding_size: None,
                     },
@@ -344,7 +330,7 @@ fn build_binding_layout(device: &Device) -> wgpu::BindGroupLayout {
                     count: None,
                     visibility: ShaderStages::COMPUTE,
                     ty: BindingType::Buffer {
-                        ty: BufferBindingType::Storage { read_only: true },
+                        ty: BufferBindingType::Uniform,
                         has_dynamic_offset: false,
                         min_binding_size: None,
                     },
@@ -356,7 +342,7 @@ fn build_binding_layout(device: &Device) -> wgpu::BindGroupLayout {
                     count: None,
                     visibility: ShaderStages::COMPUTE,
                     ty: BindingType::Buffer {
-                        ty: BufferBindingType::Storage { read_only: true },
+                        ty: BufferBindingType::Uniform,
                         has_dynamic_offset: false,
                         min_binding_size: None,
                     },
@@ -367,7 +353,7 @@ fn build_binding_layout(device: &Device) -> wgpu::BindGroupLayout {
                     count: None,
                     visibility: ShaderStages::COMPUTE,
                     ty: BindingType::Buffer {
-                        ty: BufferBindingType::Storage { read_only: true },
+                        ty: BufferBindingType::Uniform,
                         has_dynamic_offset: false,
                         min_binding_size: None,
                     },
@@ -378,7 +364,7 @@ fn build_binding_layout(device: &Device) -> wgpu::BindGroupLayout {
                     count: None,
                     visibility: ShaderStages::COMPUTE,
                     ty: BindingType::Buffer {
-                        ty: BufferBindingType::Storage { read_only: true },
+                        ty: BufferBindingType::Uniform,
                         has_dynamic_offset: false,
                         min_binding_size: None,
                     },
@@ -394,35 +380,24 @@ fn build_binding_of_output_layout(device: &Device) -> BindGroupLayout {
         &(BindGroupLayoutDescriptor {
             label: Some("Create Binding Layout Of Output For Matmul 2D"),
             entries: &[
-                // output
+                // pointer_output
                 BindGroupLayoutEntry {
                     binding: 0,
                     visibility: ShaderStages::COMPUTE,
                     count: None,
                     ty: BindingType::Buffer {
-                        ty: BufferBindingType::Storage { read_only: false },
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                },
-                // pointer_output
-                BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: ShaderStages::COMPUTE,
-                    count: None,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Storage { read_only: true },
+                        ty: BufferBindingType::Uniform,
                         has_dynamic_offset: false,
                         min_binding_size: None,
                     },
                 },
                 // stride_output
                 BindGroupLayoutEntry {
-                    binding: 2,
+                    binding: 1,
                     visibility: ShaderStages::COMPUTE,
                     count: None,
                     ty: BindingType::Buffer {
-                        ty: BufferBindingType::Storage { read_only: true },
+                        ty: BufferBindingType::Uniform,
                         has_dynamic_offset: false,
                         min_binding_size: None,
                     },
