@@ -7,5 +7,7 @@ pub enum ArrOgpuErr {
     Indexing(String),
     Add(String),
     Sub(String),
+    Mul(String),
+    Div(String),
     Poll(PollError),
 }

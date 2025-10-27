@@ -18,11 +18,11 @@ fn main() {
         .unwrap();
 
     let array_b = module
-        .array_from_vector(&(2..17).map(|v| v as f32).collect::<Vec<f32>>(), &[5, 3])
+        .array_from_vector(&(1..16).map(|v| v as f32).collect::<Vec<f32>>(), &[5, 3])
         .unwrap();
 
     // let tick = std::time::SystemTime::now().duration_since(time::UNIX_EPOCH).unwrap().as_millis();
-    let out = module.sub(array_a, array_b).unwrap();
+    let out = module.div(array_a, array_b).unwrap();
     // let tock = std::time::SystemTime::now().duration_since(time::UNIX_EPOCH).unwrap().as_millis();
     // println!("{}", tock - tick);
     println!("{out}");
