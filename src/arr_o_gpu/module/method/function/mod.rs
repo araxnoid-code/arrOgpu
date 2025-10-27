@@ -1,5 +1,5 @@
-mod matmul_2d;
-pub use matmul_2d::*;
+mod base_operations;
+pub use base_operations::*;
 
 mod indexing;
 pub use indexing::*;

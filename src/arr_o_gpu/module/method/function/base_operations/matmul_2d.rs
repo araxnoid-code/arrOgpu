@@ -217,7 +217,7 @@ impl ArrOgpuModule {
         let shader = wgpu_init.device.create_shader_module(ShaderModuleDescriptor {
             label: Some("Create Shaders For Matmul 2D"),
             source: ShaderSource::Wgsl(
-                include_str!("./../../../shader/shaders/matmul_2d.wgsl").into()
+                include_str!("./../../../../shader/shaders/matmul_2d.wgsl").into()
             ),
         });
 
