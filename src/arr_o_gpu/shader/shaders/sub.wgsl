@@ -25,6 +25,6 @@ fn main(@builtin(global_invocation_id) global_id:vec3<u32>){
         let index_b = pointer_b.x + global_id.x;
         let v_b = heap[index_b];
 
-        heap[index_heap] = v_a + v_b;
+        heap[index_heap] = v_a - v_b;
     }
 }

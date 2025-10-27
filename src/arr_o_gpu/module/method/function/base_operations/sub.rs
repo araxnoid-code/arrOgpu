@@ -21,24 +21,24 @@ use wgpu::{
 use crate::{ get_stride_from_shape, ArrOgpuErr, ArrOgpuModule, GpuArray };
 
 impl ArrOgpuModule {
-    pub fn add(&self, arr_a: GpuArray, arr_b: GpuArray) -> Result<GpuArray, ArrOgpuErr> {
+    pub fn sub(&self, arr_a: GpuArray, arr_b: GpuArray) -> Result<GpuArray, ArrOgpuErr> {
         let wgpu_init = self.wgpu_init.read().unwrap();
         let len = arr_a.pointer.1 - arr_a.pointer.0;
 
         if arr_a.shape != arr_b.shape {
             let err = format!(
-                "Array Add Error, Shape Of A is {:?} but adding with Shape Of B is {:?}",
+                "Array Sub Error, Shape Of A is {:?} but adding with Shape Of B is {:?}",
                 arr_a.shape,
                 arr_b.shape
             );
-            return Err(ArrOgpuErr::Add(err));
+            return Err(ArrOgpuErr::Sub(err));
         }
 
         // source
         let pointer_a = arr_a.pointer_to_arr();
         let pointer_a = wgpu_init.device.create_buffer_init(
             &(BufferInitDescriptor {
-                label: Some("Create Pointer A Buffer Layout For Add"),
+                label: Some("Create Pointer A Buffer Layout For Sub"),
                 usage: BufferUsages::UNIFORM,
                 contents: bytemuck::cast_slice(&pointer_a),
             })
@@ -47,7 +47,7 @@ impl ArrOgpuModule {
         let pointer_b = arr_b.pointer_to_arr();
         let pointer_b = wgpu_init.device.create_buffer_init(
             &(BufferInitDescriptor {
-                label: Some("Create Pointer A Buffer Layout For Add"),
+                label: Some("Create Pointer A Buffer Layout For Sub"),
                 usage: BufferUsages::UNIFORM,
                 contents: bytemuck::cast_slice(&pointer_b),
             })
@@ -61,7 +61,7 @@ impl ArrOgpuModule {
         let pointer_out = [allocate.1, allocate.2];
         let pointer_out = wgpu_init.device.create_buffer_init(
             &(BufferInitDescriptor {
-                label: Some("Create Pointer A Buffer Layout For Add"),
+                label: Some("Create Pointer A Buffer Layout For Sub"),
                 usage: BufferUsages::UNIFORM,
                 contents: bytemuck::cast_slice(&pointer_out),
             })
@@ -70,7 +70,7 @@ impl ArrOgpuModule {
         // binding
         let binding_layout = wgpu_init.device.create_bind_group_layout(
             &(BindGroupLayoutDescriptor {
-                label: Some("Create Binding Group Layout Of Output For Add"),
+                label: Some("Create Binding Group Layout Of Output For Sub"),
                 entries: &[
                     BindGroupLayoutEntry {
                         binding: 0,
@@ -108,7 +108,7 @@ impl ArrOgpuModule {
 
         let binding = wgpu_init.device.create_bind_group(
             &(BindGroupDescriptor {
-                label: Some("Create Binding Group Layout Of Output For Add"),
+                label: Some("Create Binding Group Layout Of Output For Sub"),
                 layout: &binding_layout,
                 entries: &[
                     BindGroupEntry {
@@ -129,15 +129,15 @@ impl ArrOgpuModule {
 
         // pipeline
         let shader = wgpu_init.device.create_shader_module(ShaderModuleDescriptor {
-            label: Some("Create Shaders For Add"),
+            label: Some("Create Shaders For Sub"),
             source: wgpu::ShaderSource::Wgsl(
-                include_str!("./../../../../shader/shaders/add.wgsl").into()
+                include_str!("./../../../../shader/shaders/sub.wgsl").into()
             ),
         });
         let binding_of_heap = &self.binding_compounds.read().unwrap()[0];
         let pipeline_layout = wgpu_init.device.create_pipeline_layout(
             &(PipelineLayoutDescriptor {
-                label: Some("Create Pipeline Layout For Add"),
+                label: Some("Create Pipeline Layout For Sub"),
                 bind_group_layouts: &[&binding_of_heap.binding_group_layouts, &binding_layout],
                 push_constant_ranges: &[],
             })
@@ -145,7 +145,7 @@ impl ArrOgpuModule {
 
         let pipeline = wgpu_init.device.create_compute_pipeline(
             &(ComputePipelineDescriptor {
-                label: Some("Create Pipeline For Add"),
+                label: Some("Create Pipeline For Sub"),
                 cache: None,
                 compilation_options: PipelineCompilationOptions::default(),
                 entry_point: Some("main"),

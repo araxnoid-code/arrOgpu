@@ -6,5 +6,6 @@ pub enum ArrOgpuErr {
     Matmul2D(String),
     Indexing(String),
     Add(String),
+    Sub(String),
     Poll(PollError),
 }
