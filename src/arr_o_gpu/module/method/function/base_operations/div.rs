@@ -21,7 +21,7 @@ use wgpu::{
 use crate::{ get_stride_from_shape, ArrOgpuErr, ArrOgpuModule, GpuArray };
 
 impl ArrOgpuModule {
-    pub fn div(&self, arr_a: GpuArray, arr_b: GpuArray) -> Result<GpuArray, ArrOgpuErr> {
+    pub fn div(&self, arr_a: &GpuArray, arr_b: &GpuArray) -> Result<GpuArray, ArrOgpuErr> {
         let wgpu_init = self.wgpu_init.read().unwrap();
         let len = arr_a.pointer.1 - arr_a.pointer.0;
 
