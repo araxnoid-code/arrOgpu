@@ -1,0 +1,83 @@
+// heap
+@group(0) @binding(0)
+var <storage, read_write> heap: array<f32>;
+
+// A
+// pointer
+@group(1) @binding(0)
+var <uniform> pointer_a: vec2<u32>;
+
+// stride of matrix
+@group(1) @binding(1)
+var <uniform> matrix_stride_a: vec2<u32>;
+
+// shape of matrix
+@group(1) @binding(2)
+var <uniform> matrix_shape_a: vec2<u32>;
+
+// B
+// pointer
+@group(1) @binding(3)
+var <uniform> pointer_b: vec2<u32>;
+
+// stride of matrix
+@group(1) @binding(4)
+var <uniform> matrix_stride_b: vec2<u32>;
+
+// shape of matrix
+@group(1) @binding(5)
+var <uniform> matrix_shape_b: vec2<u32>;
+
+// tile
+var <workgroup> tile_a: array<array<f32, 2>, 2>;
+var <workgroup> tile_b: array<array<f32, 2>, 2>;
+
+@compute @workgroup_size(2, 2, 1)
+fn main(
+    @builtin(global_invocation_id) global_id:vec3<u32>,
+    @builtin(local_invocation_id) local_id: vec3<u32>,
+    @builtin(workgroup_id) group_id:vec3<u32>
+){
+    let stride_between_matrix = 6u; // = length of matrix
+    let k = 3u; // i, j, m, k * i, j, k, n
+    let total_group_loop = u32(ceil(f32(k) / 2.0));
+
+    // range of matrix on Array
+    let start = global_id.z * stride_between_matrix;
+    
+    let size = 2u;
+    var acc = 0.;
+    for (var i = 0u; i < k; i++){
+        // cache A
+        let index_x_a = local_id.x + (group.x * size);
+        let index_y_a = local_id.y + (i * size);
+        if (index_x_a < matrix_shape_a.x && index_y_a < matrix_shape_a.y){
+            let index_a = pointer_a.x + indexing_pointer(start, index_x_a, index_y_a, matrix_stride_a);
+            tile_a[local_id.x][local_id.y] = heap[index_a];
+        } else {
+            tile_a[local_id.x][local_id.y] = 0.;
+        }
+
+        // cache B
+        let index_x_b = local_id.x + (i * size);
+        let index_y_b = local_id.y + (group.y * size);
+        if (index_x_b < matrix_shape_b.x && index_y_b < matrix_shape_b.y){
+            let index_b = pointer_b.x + indexing_pointer(start, index_x_b, index_y_b, matrix_stride_b);
+            tile_b[local_id.x][local_id.y] = heap[index_b];
+        } else {
+            tile_b[local_id.x][local_id.y] = 0.;
+        }
+
+        workgroupBarrier();
+
+        for (var ii = 0u; ii < size; ii++){
+            acc += tile_a[local_id.x][ii] * tile_b[ii][local_id.y];
+        }
+
+        workgroupBarrier();
+    }
+}
+
+fn indexing_pointer(start:u32, x:u32, y:u32, stride:vec2<u32>)-> u32{
+    return start + x * stride.x + y * stride.y;
+}

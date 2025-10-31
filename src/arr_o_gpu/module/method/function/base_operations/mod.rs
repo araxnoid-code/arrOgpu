@@ -12,3 +12,6 @@ pub use mul::*;
 
 mod div;
 pub use div::*;
+
+mod matmul_nd;
+pub use matmul_nd::*;
