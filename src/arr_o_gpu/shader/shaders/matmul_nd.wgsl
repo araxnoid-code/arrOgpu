@@ -28,6 +28,23 @@ var <uniform> matrix_stride_b: vec2<u32>;
 @group(1) @binding(5)
 var <uniform> matrix_shape_b: vec2<u32>;
 
+// output
+// pointer ouput
+@group(1) @binding(6)
+var <uniform> pointer_out: vec2<u32>;
+
+// stride of matrix
+@group(1) @binding(7)
+var <uniform> matrix_stride_out: vec2<u32>;
+
+// other
+@group(1) @binding(8)
+var <uniform> stride_between_matrix: u32; // = length of matrix
+
+@group(1) @binding(9)
+var <uniform> stride_between_matrix_out: u32; // = length of output matrix
+
+
 // tile
 var <workgroup> tile_a: array<array<f32, 2>, 2>;
 var <workgroup> tile_b: array<array<f32, 2>, 2>;
@@ -38,8 +55,9 @@ fn main(
     @builtin(local_invocation_id) local_id: vec3<u32>,
     @builtin(workgroup_id) group_id:vec3<u32>
 ){
-    let stride_between_matrix = 6u; // = length of matrix
-    let k = 3u; // i, j, m, k * i, j, k, n
+    let m = matrix_shape_a.x;
+    let k = matrix_shape_a.y; // i, j, m, k * i, j, k, n
+    let n = matrix_shape_b.y;
     let total_group_loop = u32(ceil(f32(k) / 2.0));
 
     // range of matrix on Array
@@ -71,10 +89,20 @@ fn main(
         workgroupBarrier();
 
         for (var ii = 0u; ii < size; ii++){
+            var _k = ii + i * size;
+            if (_k >= k){break};
             acc += tile_a[local_id.x][ii] * tile_b[ii][local_id.y];
         }
 
         workgroupBarrier();
+    }
+
+    let x = local_id.x + size * group_id.x;
+    let y = local_id.y + size * group_id.y;
+    if (x < m && y < n){
+        let start_out = global_id.z * stride_between_matrix_out;
+        let indexing = pointer_out.x + indexing_pointer(start, x, y, matrix_stride_out);
+        heap[indexing] = acc;
     }
 }
 
