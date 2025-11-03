@@ -65,9 +65,9 @@ fn main(
     
     let size = 2u;
     var acc = 0.;
-    for (var i = 0u; i < k; i++){
+    for (var i = 0u; i < total_group_loop; i++){
         // cache A
-        let index_x_a = local_id.x + (group.x * size);
+        let index_x_a = local_id.x + (group_id.x * size);
         let index_y_a = local_id.y + (i * size);
         if (index_x_a < matrix_shape_a.x && index_y_a < matrix_shape_a.y){
             let index_a = pointer_a.x + indexing_pointer(start, index_x_a, index_y_a, matrix_stride_a);
@@ -78,7 +78,7 @@ fn main(
 
         // cache B
         let index_x_b = local_id.x + (i * size);
-        let index_y_b = local_id.y + (group.y * size);
+        let index_y_b = local_id.y + (group_id.y * size);
         if (index_x_b < matrix_shape_b.x && index_y_b < matrix_shape_b.y){
             let index_b = pointer_b.x + indexing_pointer(start, index_x_b, index_y_b, matrix_stride_b);
             tile_b[local_id.x][local_id.y] = heap[index_b];
@@ -90,7 +90,7 @@ fn main(
 
         for (var ii = 0u; ii < size; ii++){
             var _k = ii + i * size;
-            if (_k >= k){break};
+            if (_k >= k){break;}
             acc += tile_a[local_id.x][ii] * tile_b[ii][local_id.y];
         }
 
@@ -101,7 +101,7 @@ fn main(
     let y = local_id.y + size * group_id.y;
     if (x < m && y < n){
         let start_out = global_id.z * stride_between_matrix_out;
-        let indexing = pointer_out.x + indexing_pointer(start, x, y, matrix_stride_out);
+        let indexing = pointer_out.x + indexing_pointer(start_out, x, y, matrix_stride_out);
         heap[indexing] = acc;
     }
 }
