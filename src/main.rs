@@ -11,7 +11,7 @@ fn main() {
     let array_b = module.array_from_vector(&data, &[2, 2, 2, 3]).unwrap();
     println!("{}", array_b);
 
-    module.matmul_nd(&array_a, &array_b).unwrap();
+    let out = module.matmul_nd(&array_a, &array_b).unwrap();
 
-    // println!("{:?}", module.get_heap());
+    println!("{}", out);
 }

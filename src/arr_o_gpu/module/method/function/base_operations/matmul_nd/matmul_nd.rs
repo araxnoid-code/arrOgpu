@@ -1,21 +1,19 @@
 use std::sync::Arc;
 
 use wgpu::{
-    BufferUsages,
     ComputePassDescriptor,
     ComputePipelineDescriptor,
     PipelineCompilationOptions,
     PipelineLayoutDescriptor,
     ShaderModuleDescriptor,
     ShaderSource,
-    util::{ BufferInitDescriptor, DeviceExt },
     wgt::{ CommandEncoderDescriptor, PollType },
 };
 
-use crate::{ ArrOgpuErr, ArrOgpuModule, GpuArray, get_stride_from_shape, matmul_nd_group_binding };
+use crate::{ ArrOgpuErr, ArrOgpuModule, GpuArray, matmul_nd_group_binding };
 
 impl ArrOgpuModule {
-    pub fn matmul_nd(&self, arr_a: &GpuArray, arr_b: &GpuArray) -> Result<(), ArrOgpuErr> {
+    pub fn matmul_nd(&self, arr_a: &GpuArray, arr_b: &GpuArray) -> Result<GpuArray, ArrOgpuErr> {
         let shape_a = arr_a.shape();
         let k_a = shape_a[shape_a.len() - 1];
         let shape_b = arr_b.shape();
@@ -113,8 +111,6 @@ impl ArrOgpuModule {
             space_type: allocate_out.0,
         };
 
-        println!("{}", arr);
-
-        Ok(())
+        Ok(arr)
     }
 }
