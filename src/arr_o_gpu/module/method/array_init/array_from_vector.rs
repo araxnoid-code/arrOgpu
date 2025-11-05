@@ -126,9 +126,7 @@ impl ArrOgpuModule {
 
         let shaders = wgpu.device.create_shader_module(ShaderModuleDescriptor {
             label: Some("create shaders module 'array_init.wgsl'"),
-            source: ShaderSource::Wgsl(
-                include_str!("./../../../shader/shaders/array_init.wgsl").into()
-            ),
+            source: ShaderSource::Wgsl(include_str!("./array_init.wgsl").into()),
         });
         let pipeline = wgpu.device.create_compute_pipeline(
             &(ComputePipelineDescriptor {

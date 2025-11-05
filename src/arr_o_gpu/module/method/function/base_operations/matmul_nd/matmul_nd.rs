@@ -15,10 +15,24 @@ use crate::{ ArrOgpuErr, ArrOgpuModule, GpuArray, matmul_nd_group_binding };
 impl ArrOgpuModule {
     pub fn matmul_nd(&self, arr_a: &GpuArray, arr_b: &GpuArray) -> Result<GpuArray, ArrOgpuErr> {
         let shape_a = arr_a.shape();
-        let k_a = shape_a[shape_a.len() - 1];
         let shape_b = arr_b.shape();
-        let k_b = shape_b[shape_b.len() - 2];
 
+        if shape_a.len() != shape_b.len() || shape_a.len() <= 1 || shape_b.len() <= 1 {
+            let err = format!(
+                "Array matmul nd Error, Array A {:?} can't matmul with Array B {:?}",
+                shape_a,
+                shape_b
+            );
+
+            return Err(ArrOgpuErr::MatmulND(err));
+        }
+        // else if shape_a.len() == 2 && shape_b.len() == 2 {
+        //     let arr = self.matmul_2d(arr_a, arr_b);
+        //     return arr;
+        // }
+
+        let k_a = shape_a[shape_a.len() - 1];
+        let k_b = shape_b[shape_b.len() - 2];
         if
             shape_a.len() != shape_b.len() ||
             &shape_a[0..shape_a.len() - 2] != &shape_b[0..shape_a.len() - 2] ||
@@ -93,8 +107,8 @@ impl ArrOgpuModule {
             let shape_of_matrix_a = &arr_a.shape[arr_a.shape.len() - 2..];
             let shape_of_matrix_b = &arr_b.shape[arr_b.shape.len() - 2..];
 
-            let x = ((shape_of_matrix_a[0] as f32) / 2.0).ceil() as u32;
-            let y = ((shape_of_matrix_b[1] as f32) / 2.0).ceil() as u32;
+            let x = ((shape_of_matrix_a[0] as f32) / 16.0).ceil() as u32;
+            let y = ((shape_of_matrix_b[1] as f32) / 16.0).ceil() as u32;
             let z = arr_a.shape[..arr_a.shape.len() - 2].iter().product::<u32>();
             bcp.dispatch_workgroups(x, y, z);
         }

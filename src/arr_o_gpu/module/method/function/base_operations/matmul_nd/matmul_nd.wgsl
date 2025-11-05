@@ -39,17 +39,20 @@ var <uniform> matrix_stride_out: vec2<u32>;
 
 // other
 @group(1) @binding(8)
-var <uniform> stride_between_matrix: u32; // = length of matrix
+var <uniform> stride_between_matrix_a: u32; // = length of matrix a
 
 @group(1) @binding(9)
+var <uniform> stride_between_matrix_b: u32; // = length of matrix b
+
+@group(1) @binding(10)
 var <uniform> stride_between_matrix_out: u32; // = length of output matrix
 
 
 // tile
-var <workgroup> tile_a: array<array<f32, 2>, 2>;
-var <workgroup> tile_b: array<array<f32, 2>, 2>;
+var <workgroup> tile_a: array<array<f32, 16>, 16>;
+var <workgroup> tile_b: array<array<f32, 16>, 16>;
 
-@compute @workgroup_size(2, 2, 1)
+@compute @workgroup_size(16, 16, 1)
 fn main(
     @builtin(global_invocation_id) global_id:vec3<u32>,
     @builtin(local_invocation_id) local_id: vec3<u32>,
@@ -58,19 +61,20 @@ fn main(
     let m = matrix_shape_a.x;
     let k = matrix_shape_a.y; // i, j, m, k * i, j, k, n
     let n = matrix_shape_b.y;
-    let total_group_loop = u32(ceil(f32(k) / 2.0));
+    let total_group_loop = u32(ceil(f32(k) / 16.0));
 
     // range of matrix on Array
-    let start = global_id.z * stride_between_matrix;
+    let start_a = global_id.z * stride_between_matrix_a;
+    let start_b = global_id.z * stride_between_matrix_b;
     
-    let size = 2u;
+    let size = 16u;
     var acc = 0.;
     for (var i = 0u; i < total_group_loop; i++){
         // cache A
         let index_x_a = local_id.x + (group_id.x * size);
         let index_y_a = local_id.y + (i * size);
         if (index_x_a < matrix_shape_a.x && index_y_a < matrix_shape_a.y){
-            let index_a = pointer_a.x + indexing_pointer(start, index_x_a, index_y_a, matrix_stride_a);
+            let index_a = pointer_a.x + indexing_pointer(start_a, index_x_a, index_y_a, matrix_stride_a);
             tile_a[local_id.x][local_id.y] = heap[index_a];
         } else {
             tile_a[local_id.x][local_id.y] = 0.;
@@ -80,7 +84,7 @@ fn main(
         let index_x_b = local_id.x + (i * size);
         let index_y_b = local_id.y + (group_id.y * size);
         if (index_x_b < matrix_shape_b.x && index_y_b < matrix_shape_b.y){
-            let index_b = pointer_b.x + indexing_pointer(start, index_x_b, index_y_b, matrix_stride_b);
+            let index_b = pointer_b.x + indexing_pointer(start_b, index_x_b, index_y_b, matrix_stride_b);
             tile_b[local_id.x][local_id.y] = heap[index_b];
         } else {
             tile_b[local_id.x][local_id.y] = 0.;

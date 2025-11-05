@@ -130,9 +130,7 @@ impl ArrOgpuModule {
         // pipeline
         let shader = wgpu_init.device.create_shader_module(ShaderModuleDescriptor {
             label: Some("Create Shaders For Sub"),
-            source: wgpu::ShaderSource::Wgsl(
-                include_str!("./../../../../shader/shaders/sub.wgsl").into()
-            ),
+            source: wgpu::ShaderSource::Wgsl(include_str!("./sub.wgsl").into()),
         });
         let binding_of_heap = &self.binding_compounds.read().unwrap()[0];
         let pipeline_layout = wgpu_init.device.create_pipeline_layout(

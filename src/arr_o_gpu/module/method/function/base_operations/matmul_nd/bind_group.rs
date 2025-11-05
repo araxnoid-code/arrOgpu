@@ -115,12 +115,22 @@ pub(crate) fn matmul_nd_group_binding(
     );
 
     // other
-    // stride_between_matrix
-    let stride_between_matrix = arr_a.stride[arr_a.stride.len() - 3];
-    let buffer_stride_between_matrix = device.create_buffer_init(
+    // stride_between_matrix_a
+    let stride_between_matrix_a = arr_a.stride[arr_a.stride.len() - 3];
+    let buffer_stride_between_matrix_a = device.create_buffer_init(
         &(BufferInitDescriptor {
             label: Some("Create stride between matrix Buffer Layout For Matmul ND"),
-            contents: bytemuck::bytes_of(&stride_between_matrix),
+            contents: bytemuck::bytes_of(&stride_between_matrix_a),
+            usage: BufferUsages::UNIFORM,
+        })
+    );
+
+    // stride_between_matrix_b
+    let stride_between_matrix_b = arr_b.stride[arr_a.stride.len() - 3];
+    let buffer_stride_between_matrix_b = device.create_buffer_init(
+        &(BufferInitDescriptor {
+            label: Some("Create stride between matrix Buffer Layout For Matmul ND"),
+            contents: bytemuck::bytes_of(&stride_between_matrix_b),
             usage: BufferUsages::UNIFORM,
         })
     );
@@ -185,14 +195,19 @@ pub(crate) fn matmul_nd_group_binding(
                     resource: buffer_matrix_stride_out.as_entire_binding(),
                 },
                 // other
-                // stride_between_matrix
+                // stride_between_matrix_a
                 BindGroupEntry {
                     binding: 8,
-                    resource: buffer_stride_between_matrix.as_entire_binding(),
+                    resource: buffer_stride_between_matrix_a.as_entire_binding(),
+                },
+                // stride_between_matrix_b
+                BindGroupEntry {
+                    binding: 9,
+                    resource: buffer_stride_between_matrix_b.as_entire_binding(),
                 },
                 // stride_between_matrix_out
                 BindGroupEntry {
-                    binding: 9,
+                    binding: 10,
                     resource: buffer_stride_between_matrix_out.as_entire_binding(),
                 },
             ],
@@ -314,6 +329,16 @@ fn bind_group_layout(device: &Device) -> wgpu::BindGroupLayout {
                 },
                 BindGroupLayoutEntry {
                     binding: 9,
+                    count: None,
+                    visibility: ShaderStages::COMPUTE,
+                    ty: BindingType::Buffer {
+                        ty: BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                },
+                BindGroupLayoutEntry {
+                    binding: 10,
                     count: None,
                     visibility: ShaderStages::COMPUTE,
                     ty: BindingType::Buffer {
