@@ -26,10 +26,6 @@ impl ArrOgpuModule {
 
             return Err(ArrOgpuErr::MatmulND(err));
         }
-        // else if shape_a.len() == 2 && shape_b.len() == 2 {
-        //     let arr = self.matmul_2d(arr_a, arr_b);
-        //     return arr;
-        // }
 
         let k_a = shape_a[shape_a.len() - 1];
         let k_b = shape_b[shape_b.len() - 2];

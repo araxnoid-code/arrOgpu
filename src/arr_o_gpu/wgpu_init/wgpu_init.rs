@@ -46,8 +46,8 @@ impl WgpuInit {
                     memory_hints: MemoryHints::Performance,
                     required_features: Features::empty(),
                     required_limits: Limits {
-                        max_buffer_size: 1073741824,
-                        max_storage_buffer_binding_size: 1073741824,
+                        // max_buffer_size: 1073741824,
+                        // max_storage_buffer_binding_size: 1073741824,
                         ..Default::default()
                     },
                     trace: wgpu::Trace::Off,
