@@ -14,10 +14,10 @@ var<uniform> stride_output: u32;
 @group(1) @binding(3)
 var<uniform> extend_count: u32;
 
-@group(2) @binding(0)
+@group(1) @binding(4)
 var<uniform> arr_pointer: vec2<u32>;
 
-@group(2) @binding(1)
+@group(1) @binding(5)
 var<uniform> out_pointer: vec2<u32>;
 
 @compute @workgroup_size(16, 16, 1) // (global_loop, stride_target, 1)
