@@ -5,13 +5,26 @@ use arr_o_gpu::ArrOgpuModule;
 fn main() {
     let module = ArrOgpuModule::default();
 
-    let array = module
-        .array_from_vector(&[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0], &[2, 1, 4])
-        .unwrap();
-    println!("{}", array);
+    let data = (0..16384).map(|x| x as f32).collect::<Vec<f32>>();
+    let array = module.array_from_vector(&data, &[32, 512, 1]).unwrap();
+    // println!("{}", array);
 
-    let arr = module.broadcasting(&array, &[2, 2, 4]).unwrap();
-    println!("{}", arr);
+    let tik = std::time::SystemTime
+        ::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
 
-    println!("{:?}", module.get_heap())
+    let arr = module.broadcasting(&array, &[32, 512, 32]).unwrap();
+
+    let tok = std::time::SystemTime
+        ::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
+
+    println!("{}", tok - tik)
+    // println!("{}", arr);
+
+    // println!("{:?}", module.get_heap())
 }

@@ -60,7 +60,7 @@ pub(crate) fn broadcast_bind_group(
     let output_len = broadcast.iter().product::<u32>();
     let output_allocate = allocator.pointer_input(output_len);
     let output_pointer = [output_allocate.1, output_allocate.2];
-    let output_stride = get_stride_from_shape(&output_pointer);
+    let output_stride = get_stride_from_shape(&broadcast);
     let output_stride_target = output_stride[broadcast_target] * extend_count;
 
     let output_stride_target_buffer = device.create_buffer_init(

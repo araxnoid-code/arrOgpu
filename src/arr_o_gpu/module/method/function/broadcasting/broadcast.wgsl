@@ -29,11 +29,12 @@ fn main(
         let end = start + stride_target;
 
         if global_id.y < stride_target{
-            for(var i = 0u; i < extend_count; i++){
-                let heap_element_index = start + global_id.y;
-                let heap_place_index = ((global_id.y + stride_target * i) + stride_output * global_id.x) + out_pointer.x;
+            let heap_element_index = start + global_id.y;
 
-                heap[heap_place_index] = heap[heap_element_index];
+            let value = heap[heap_element_index];
+            for(var i = 0u; i < extend_count; i++){
+                let heap_place_index = ((global_id.y + stride_target * i) + stride_output * global_id.x) + out_pointer.x;
+                heap[heap_place_index] = value;
             }
         }
         
