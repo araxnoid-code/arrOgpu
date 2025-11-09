@@ -202,7 +202,7 @@ pub(crate) fn broadcast_bind_group(
         })
     );
 
-    (bind_group_layout, bind_group, thread_limit, stride_target, output_allocate)
+    (bind_group_layout, bind_group, thread_limit, output_stride_target, output_allocate)
 }
 
 // @group(1) @binding(0)

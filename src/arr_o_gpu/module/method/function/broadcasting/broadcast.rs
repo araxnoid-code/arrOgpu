@@ -70,7 +70,7 @@ impl ArrOgpuModule {
         let allocator = self.allocator_write();
         // binding
         let heap_binding = &self.binding_compounds.read().unwrap()[0];
-        let (bind_group_layout, bind_group, thread_limit, stride_target, output_allocate) =
+        let (bind_group_layout, bind_group, thread_limit, stride_out, output_allocate) =
             broadcast_bind_group(
                 &wgpu_init.device,
                 arr,
@@ -128,8 +128,8 @@ impl ArrOgpuModule {
             bcp.set_bind_group(1, Some(&bind_group), &[]);
 
             // dispatch workgroup
-            let x = ((thread_limit as f32) / 16.0).ceil() as u32;
-            let y = ((stride_target as f32) / 16.0).ceil() as u32;
+            let x = ((thread_limit as f32) / 1.0).ceil() as u32;
+            let y = ((stride_out as f32) / 16.0).ceil() as u32;
             bcp.dispatch_workgroups(x, y, 1);
         }
         wgpu_init.queue.submit(Some(encoder.finish()));

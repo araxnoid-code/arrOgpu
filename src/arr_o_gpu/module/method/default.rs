@@ -21,9 +21,9 @@ impl Default for ArrOgpuModule {
     fn default() -> Self {
         // create heap
         // let maximum = 5097152u32;
-        let maximum = 750_000u32;
+        // let maximum = 750_000u32;
         // let maximum = 268435456u32;
-        // let maximum = 100u32;
+        let maximum = 100u32;
 
         //
         let wgpu = WgpuInit::init();

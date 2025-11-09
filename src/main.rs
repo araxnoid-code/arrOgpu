@@ -5,26 +5,35 @@ use arr_o_gpu::ArrOgpuModule;
 fn main() {
     let module = ArrOgpuModule::default();
 
-    let data = (0..16384).map(|x| x as f32).collect::<Vec<f32>>();
-    let array = module.array_from_vector(&data, &[32, 512, 1]).unwrap();
-    // println!("{}", array);
+    // let data = (0..16384).map(|x| x as f32).collect::<Vec<f32>>();
+    // let array = module.array_from_vector(&data, &[32, 512, 1]).unwrap();
+    // // println!("{}", array);
 
-    let tik = std::time::SystemTime
-        ::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_millis();
+    // let tik = std::time::SystemTime
+    //     ::now()
+    //     .duration_since(SystemTime::UNIX_EPOCH)
+    //     .unwrap()
+    //     .as_millis();
 
-    let arr = module.broadcasting(&array, &[32, 512, 32]).unwrap();
+    // let arr = module.broadcasting(&array, &[32, 512, 32]).unwrap();
 
-    let tok = std::time::SystemTime
-        ::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_millis();
+    // let tok = std::time::SystemTime
+    //     ::now()
+    //     .duration_since(SystemTime::UNIX_EPOCH)
+    //     .unwrap()
+    //     .as_millis();
 
-    println!("{}", tok - tik)
-    // println!("{}", arr);
+    // println!("{}", tok - tik)
 
-    // println!("{:?}", module.get_heap())
+    // // // // // //
+
+    let data = (0..6).map(|x| x as f32).collect::<Vec<f32>>();
+
+    let array = module.array_from_vector(&data, &[3, 1, 2]).unwrap();
+    println!("{}", array);
+
+    let arr = module.broadcasting(&array, &[3, 4, 2]).unwrap();
+    println!("{}", arr);
+
+    println!("{:?}", module.get_heap());
 }
