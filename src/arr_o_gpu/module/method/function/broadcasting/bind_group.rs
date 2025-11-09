@@ -204,21 +204,3 @@ pub(crate) fn broadcast_bind_group(
 
     (bind_group_layout, bind_group, thread_limit, output_stride_target, output_allocate)
 }
-
-// @group(1) @binding(0)
-// var<uniform> thread_limit: u32;
-
-// @group(1) @binding(1)
-// var<uniform> stride_target: u32;
-
-// @group(1) @binding(2)
-// var<uniform> stride_output: u32;
-
-// @group(1) @binding(3)
-// var<uniform> extend_count: u32;
-
-// @group(1) @binding(4)
-// var<uniform> arr_pointer: vec2<u32>;
-
-// @group(1) @binding(5)
-// var<uniform> out_pointer: vec2<u32>;
