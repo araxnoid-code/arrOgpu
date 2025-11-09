@@ -27,12 +27,12 @@ fn main() {
 
     // // // // // //
 
-    let data = (0..6).map(|x| x as f32).collect::<Vec<f32>>();
+    let data = (0..20).map(|x| x as f32).collect::<Vec<f32>>();
 
-    let array = module.array_from_vector(&data, &[3, 1, 2]).unwrap();
+    let array = module.array_from_vector(&data, &[1, 4, 5]).unwrap();
     println!("{}", array);
 
-    let arr = module.broadcasting(&array, &[3, 4, 2]).unwrap();
+    let arr = module.broadcasting(&array, &[4, 4, 5]).unwrap();
     println!("{}", arr);
 
     println!("{:?}", module.get_heap());

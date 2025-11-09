@@ -128,7 +128,7 @@ impl ArrOgpuModule {
             bcp.set_bind_group(1, Some(&bind_group), &[]);
 
             // dispatch workgroup
-            let x = ((thread_limit as f32) / 1.0).ceil() as u32;
+            let x = ((thread_limit as f32) / 16.0).ceil() as u32;
             let y = ((stride_out as f32) / 16.0).ceil() as u32;
             bcp.dispatch_workgroups(x, y, 1);
         }

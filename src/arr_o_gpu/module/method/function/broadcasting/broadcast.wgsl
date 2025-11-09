@@ -30,11 +30,16 @@ fn main(
 ){
     if global_id.x < thread_limit{
         let start = arr_pointer.x + stride_target * global_id.x;
-        let end = start + stride_target;
+
+        let cache_row_size = 16u;
+        let cache_colm_size = 16u;
+
+        let row = local_id.x * cache_row_size;
+        let cache_index = row + local_id.y;
 
         if local_id.y < stride_target{
-            let index_heap = start + local_id.y;
-            cache[local_id.y] = heap[index_heap];
+            let heap_index = start + local_id.y;
+            cache[cache_index] = heap[heap_index];
         }
 
         workgroupBarrier();
@@ -42,7 +47,7 @@ fn main(
         if global_id.y < stride_output{
             let index_element = global_id.y - u32(floor(f32(global_id.y) / f32(stride_target))) * stride_target;
             let index_heap = global_id.y + out_pointer.x + stride_output * global_id.x;
-            heap[index_heap] = cache[index_element];
+            heap[index_heap] = cache[row + index_element];
         }
     }
 }
