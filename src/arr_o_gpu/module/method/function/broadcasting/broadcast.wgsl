@@ -32,7 +32,7 @@ fn main(
         let start = arr_pointer.x + stride_target * global_id.x;
 
         let cache_row_size = 16u;
-        let cache_colm_size = 16u;
+        // let cache_colm_size = 16u;
 
         let row = local_id.x * cache_row_size;
         let cache_index = row + local_id.y;
@@ -44,10 +44,10 @@ fn main(
 
         workgroupBarrier();
 
-        if global_id.y < stride_output{
-            let index_element = global_id.y - u32(floor(f32(global_id.y) / f32(stride_target))) * stride_target;
-            let index_heap = global_id.y + out_pointer.x + stride_output * global_id.x;
-            heap[index_heap] = cache[row + index_element];
-        }
+        // if global_id.y < stride_output{
+        //     let index_element = global_id.y - u32(floor(f32(global_id.y) / f32(stride_target))) * stride_target;
+        //     let index_heap = global_id.y + out_pointer.x + stride_output * global_id.x;
+        //     heap[index_heap] = cache[row + index_element];
+        // }
     }
 }
