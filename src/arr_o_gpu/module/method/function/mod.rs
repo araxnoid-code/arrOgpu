@@ -6,3 +6,6 @@ pub use indexing::*;
 
 mod broadcasting;
 pub use broadcasting::*;
+
+mod slicing;
+pub use slicing::*;

@@ -11,5 +11,6 @@ pub enum ArrOgpuErr {
     Mul(String),
     Div(String),
     Broadcast(String),
+    Slicing(String),
     Poll(PollError),
 }
