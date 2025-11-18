@@ -14,7 +14,7 @@ var<uniform> _loops: array<f32>;
 
 // stride
 @group(1) @binding(3)
-var<uniform> stride_list: array<u32>;
+var<uniform> array_stride: array<u32>;
 
 // array pointer
 var<uniform> array_pointer: vec2<u32>;
@@ -30,8 +30,8 @@ fn main(@builtin(global_invocation_id) global_id:vec3<u32>){
     let slice_len = length(&slicing_list_start);
 
     for var i = 0u; i < slice_len; i++{
-        let range_start = slicing_list_start[i] * stride_list[i];
-        let range_end =  slicing_list_end[i] * stride_list[i];
+        let range_start = slicing_list_start[i] * array_stride[i];
+        let range_end =  slicing_list_end[i] * array_stride[i];
         let len = range_end - range_start;
 
         if i == slice_len{
@@ -51,7 +51,7 @@ fn main(@builtin(global_invocation_id) global_id:vec3<u32>){
             let _index = floor(_i / _loop) - _range * floor(_i/(_loop * _range));
 
             let index = u32(_index) +  slicing_list_start[i];
-            start += stride_list[i] * index;
+            start += array_stride[i] * index;
         }
 
         let start_pointer = array_pointer.0;

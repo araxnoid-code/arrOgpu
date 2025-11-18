@@ -1,7 +1,7 @@
-use crate::{ ArrOgpuErr, ArrOgpuModule, GpuArray, SliceRange };
+use crate::{ ArrOgpuErr, ArrOgpuModule, GpuArray, SliceRange, get_stride_from_shape };
 
 impl ArrOgpuModule {
-    pub fn slicing(&self, array: &GpuArray, slice: &mut [SliceRange]) -> Result<(), ArrOgpuErr> {
+    pub fn slicing(&self, array: &GpuArray, slice: &[SliceRange]) -> Result<(), ArrOgpuErr> {
         if array.shape().len() < slice.len() {
             let err = format!(
                 "Array Slicing Error, Array {:?} can't Slice By {:?} cause out of range",
@@ -12,34 +12,43 @@ impl ArrOgpuModule {
             return Err(ArrOgpuErr::Slicing(err));
         }
 
-        // check
-        let mut error = None;
-        for (i, range) in slice.iter_mut().enumerate() {
-            let start = range.start.unwrap_or(0);
-            let end = range.end.unwrap_or(array.shape()[i] as usize);
+        // check & get
+        let mut allocator = self.allocator.write().unwrap();
 
-            println!("{}..{}", start, end);
+        let mut output_shape = vec![];
+        let output_allocate = allocator.pointer_input(output_shape.iter().product());
+        let output_pointer = (output_allocate.1, output_allocate.2);
+        let mut start_slice = vec![];
+        let mut end_slice = vec![];
+        let array_stride = array.stride();
+        let output_stride = get_stride_from_shape(&output_shape);
 
-            if start >= end || end > (array.shape()[i] as usize) {
-                error = Some(range.clone());
-                break;
-            }
+        for (i, _) in array.shape().iter().enumerate() {
+            if let Some(range) = slice.get(i) {
+                let start = range.start.unwrap_or(0);
+                let end = range.end.unwrap_or(array.shape()[i] as usize);
 
-            if let None = range.start {
-                range.start = Some(start);
-            }
+                if start >= end || end > (array.shape()[i] as usize) {
+                    let err = format!(
+                        "Array Slicing Error, Error detected for {:?} in slice {:?}",
+                        range,
+                        slice
+                    );
+                    return Err(ArrOgpuErr::Slicing(err));
+                }
 
-            if let None = range.end {
-                range.end = Some(end);
+                start_slice.push(start);
+                end_slice.push(end);
+                output_shape.push((end - start) as u32);
+            } else {
+                output_shape.push(array.shape()[i] as u32);
             }
         }
-        if let Some(range) = error {
-            let err = format!(
-                "Array Slicing Error, Error detected for {:?} in slice {:?}",
-                range,
-                slice
-            );
-            return Err(ArrOgpuErr::Slicing(err));
+
+        let mut _loop = vec![];
+        for i in 0..output_shape.len() - 1 {
+            let iter = output_shape[i + 1..output_shape.len() - 1].iter().product::<u32>();
+            _loop.push(iter);
         }
 
         Ok(())
