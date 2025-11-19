@@ -26,7 +26,7 @@ fn main() {
 ### 🚧 Announcement
 - arrOgpu only supports numbers of type f32.
 - In this version, arrOgpu is still in the development stage, therefore the maximum storage allowed is 400000 bytes or 100000 numbers of type f32.
-- in version 0.0.1 there are still a few features and the possibility of bugs will occur, in the future it will continue to be developed.
+- in this version there are still a few features and the possibility of bugs will occur, in the future it will continue to be developed.
 
 ## Method
 ### Create An Array
