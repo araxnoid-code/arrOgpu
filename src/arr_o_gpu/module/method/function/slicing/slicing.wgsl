@@ -28,7 +28,7 @@ var<uniform> output_pointer: vec2<u32>;
 @group(1) @binding(6)
 var<uniform> total_unit: u32;
 
-@compute @workgroup_size(16,1,1)
+@compute @workgroup_size(16,16,1)
 fn main(@builtin(global_invocation_id) global_id:vec3<u32>){
     if global_id.x < total_unit{
         var start = 0u;
@@ -52,19 +52,17 @@ fn main(@builtin(global_invocation_id) global_id:vec3<u32>){
                 // loop: stack 
                 let range = slicing_list_end[i] - slicing_list_start[i];
 
-                // let _range = f32(range);
                 let _loop = _loops[i];
-                // let _i = f32(global_id.x); 
                 let _index = (global_id.x / _loop) % range;
 
-                let index = u32(_index) +  slicing_list_start[i];
+                let index = _index +  slicing_list_start[i];
                 start += array_stride[i] * index;
             }
         }
 
-        let start_pointer = array_pointer.x;
-        for (var i = 0u; i < iter; i++){
-            let idx = start_pointer + start + i;
+        let i = global_id.y;
+        if i < iter{
+            let idx = array_pointer.x + start + i;
             let pointer_index = output_pointer.x + i + iter * global_id.x;
             heap[pointer_index] = heap[idx];
         }

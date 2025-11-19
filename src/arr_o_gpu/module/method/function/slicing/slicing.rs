@@ -19,7 +19,7 @@ use crate::{
 
 impl ArrOgpuModule {
     pub fn slicing(&self, array: &GpuArray, slice: &[SliceRange]) -> Result<GpuArray, ArrOgpuErr> {
-        if array.shape().len() < slice.len() {
+        if array.shape().len() < slice.len() || slice.len() == 0 {
             let err = format!(
                 "Array Slicing Error, Array {:?} can't Slice By {:?} cause out of range",
                 array.shape(),
@@ -77,7 +77,6 @@ impl ArrOgpuModule {
         if _loop.len() == 0 {
             _loop = vec![1];
         }
-        println!("{:?}", _loop);
 
         let (bind_group_layout, bind_group) = bind_group_slicing(
             &wgpu_init,
@@ -141,8 +140,16 @@ impl ArrOgpuModule {
             bcp.set_bind_group(0, Some(&bind_group_heap.binding_groups), &[]);
             // group 1
             bcp.set_bind_group(1, Some(&bind_group), &[]);
+
+            let last_start = start_slice.last().unwrap();
+            let last_end = end_slice.last().unwrap();
+            let start = last_start * array_stride[slice.len() - 1];
+            let end = last_end * array_stride[slice.len() - 1];
+            let len = end - start;
+
             let x = ((total_unit as f32) / 16.0).ceil() as u32;
-            bcp.dispatch_workgroups(x, 1, 1);
+            let y = ((len as f32) / 16.0).ceil() as u32;
+            bcp.dispatch_workgroups(x, y, 1);
         }
         wgpu_init.queue.submit(Some(encoder.finish()));
 

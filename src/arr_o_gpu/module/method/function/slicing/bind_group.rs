@@ -226,29 +226,3 @@ fn bind_group_layout(wgpu_init: &RwLockReadGuard<'_, WgpuInit>) -> wgpu::BindGro
 
     binding_layout
 }
-
-// // heap
-// @group(0) @binding(0)
-// var<storage, read_write> heap: array<f32>;
-
-// // slicing list
-// @group(1) @binding(0)
-// var<uniform> slicing_list_start: array<u32>;
-// @group(1) @binding(1)
-// var<uniform> slicing_list_end: array<u32>;
-
-// // loop
-// @group(1) @binding(2)
-// var<uniform> _loops: array<f32>;
-
-// // stride
-// @group(1) @binding(3)
-// var<uniform> array_stride: array<u32>;
-
-// // array pointer
-// @group(1) @binding(4)
-// var<uniform> array_pointer: vec2<u32>;
-
-// // output pointer
-// @group(1) @binding(5)
-// var<uniform> output_pointer: vec2<u32>;
