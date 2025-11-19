@@ -22,14 +22,15 @@ pub(crate) fn bind_group_slicing(
     _loop: &Vec<u32>,
     array_stride: &Vec<u32>,
     array_pointer: &[u32],
-    output_pointer: &[u32]
+    output_pointer: &[u32],
+    total_unit: u32
 ) -> (BindGroupLayout, wgpu::BindGroup) {
     //  Buffer
     // // start_slice
     let start_slice_buffer = wgpu_init.device.create_buffer_init(
         &(BufferInitDescriptor {
             label: Some("Create Start Slicing  Layout For BroadCast"),
-            usage: BufferUsages::UNIFORM,
+            usage: BufferUsages::STORAGE,
             contents: bytemuck::cast_slice(start_slice),
         })
     );
@@ -38,7 +39,7 @@ pub(crate) fn bind_group_slicing(
     let end_slice_buffer = wgpu_init.device.create_buffer_init(
         &(BufferInitDescriptor {
             label: Some("Create End Slicing  Layout For BroadCast"),
-            usage: BufferUsages::UNIFORM,
+            usage: BufferUsages::STORAGE,
             contents: bytemuck::cast_slice(end_slice),
         })
     );
@@ -47,7 +48,7 @@ pub(crate) fn bind_group_slicing(
     let _loop_buffer = wgpu_init.device.create_buffer_init(
         &(BufferInitDescriptor {
             label: Some("Create loop Layout For BroadCast"),
-            usage: BufferUsages::UNIFORM,
+            usage: BufferUsages::STORAGE,
             contents: bytemuck::cast_slice(_loop),
         })
     );
@@ -57,7 +58,7 @@ pub(crate) fn bind_group_slicing(
     let array_stride_buffer = wgpu_init.device.create_buffer_init(
         &(BufferInitDescriptor {
             label: Some("Create Array Stride  Layout For BroadCast"),
-            usage: BufferUsages::UNIFORM,
+            usage: BufferUsages::STORAGE,
             contents: bytemuck::cast_slice(array_stride),
         })
     );
@@ -78,6 +79,15 @@ pub(crate) fn bind_group_slicing(
             label: Some("Create Output Pointer Layout For BroadCast"),
             usage: BufferUsages::UNIFORM,
             contents: bytemuck::cast_slice(output_pointer),
+        })
+    );
+
+    // total_unit
+    let total_unit_buffer = wgpu_init.device.create_buffer_init(
+        &(BufferInitDescriptor {
+            label: Some("Create Total Unit Layout For BroadCast"),
+            contents: bytemuck::bytes_of(&total_unit),
+            usage: BufferUsages::UNIFORM,
         })
     );
 
@@ -114,6 +124,10 @@ pub(crate) fn bind_group_slicing(
                     binding: 5,
                     resource: output_pointer_buffer.as_entire_binding(),
                 },
+                BindGroupEntry {
+                    binding: 6,
+                    resource: total_unit_buffer.as_entire_binding(),
+                },
             ],
         })
     );
@@ -133,7 +147,7 @@ fn bind_group_layout(wgpu_init: &RwLockReadGuard<'_, WgpuInit>) -> wgpu::BindGro
                     count: None,
                     visibility: ShaderStages::COMPUTE,
                     ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
+                        ty: BufferBindingType::Storage { read_only: true },
                         has_dynamic_offset: false,
                         min_binding_size: None,
                     },
@@ -144,7 +158,7 @@ fn bind_group_layout(wgpu_init: &RwLockReadGuard<'_, WgpuInit>) -> wgpu::BindGro
                     count: None,
                     visibility: ShaderStages::COMPUTE,
                     ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
+                        ty: BufferBindingType::Storage { read_only: true },
                         has_dynamic_offset: false,
                         min_binding_size: None,
                     },
@@ -156,7 +170,7 @@ fn bind_group_layout(wgpu_init: &RwLockReadGuard<'_, WgpuInit>) -> wgpu::BindGro
                     count: None,
                     visibility: ShaderStages::COMPUTE,
                     ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
+                        ty: BufferBindingType::Storage { read_only: true },
                         has_dynamic_offset: false,
                         min_binding_size: None,
                     },
@@ -168,7 +182,7 @@ fn bind_group_layout(wgpu_init: &RwLockReadGuard<'_, WgpuInit>) -> wgpu::BindGro
                     count: None,
                     visibility: ShaderStages::COMPUTE,
                     ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
+                        ty: BufferBindingType::Storage { read_only: true },
                         has_dynamic_offset: false,
                         min_binding_size: None,
                     },
@@ -187,6 +201,17 @@ fn bind_group_layout(wgpu_init: &RwLockReadGuard<'_, WgpuInit>) -> wgpu::BindGro
                 // output
                 BindGroupLayoutEntry {
                     binding: 5,
+                    count: None,
+                    visibility: ShaderStages::COMPUTE,
+                    ty: BindingType::Buffer {
+                        ty: BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                },
+                // total unit
+                BindGroupLayoutEntry {
+                    binding: 6,
                     count: None,
                     visibility: ShaderStages::COMPUTE,
                     ty: BindingType::Buffer {
