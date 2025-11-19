@@ -1,13 +1,13 @@
 <div align="center">
     <img width="250px" src="./image/arrOgpu_logo.png"></img>
     <h1>arrOgpu</h1>
-    <p>under development ⚙️</p>
+    <b><p>Array Operations On Gpu</p></b>
+    <p>⚙️ under development ⚙️</p>
+    <p>version 0.0.0.5.7</p>
 </div>
 
-Matrix Operations On GPU
-
 ## Base On WGPU
-This library uses [`WGPU`](https://wgpu.rs/) to perform matrix operations
+This library uses [`WGPU`](https://wgpu.rs/) to perform array operations
 
 ## 📦️ Installation
 ```toml
@@ -143,5 +143,149 @@ fn main() {
 }
 ```
 
+### Matmul ND
+```rs
+use arr_o_gpu::ArrOgpuModule;
+
+fn main() {
+    let module = ArrOgpuModule::default();
+
+    let arr_a = module
+        .array_from_vector(&[1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0], &[2, 2, 2])
+        .unwrap();
+    println!("{}", arr_a);
+
+    // [
+    //  [
+    //   [1.0, 2.0]
+    //   [3.0, 4.0]
+    //  ]
+    //  [
+    //   [1.0, 2.0]
+    //   [3.0, 4.0]
+    //  ]
+    // ]
+
+    let arr_b = module
+        .array_from_vector(&[7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0], &[2, 2, 2])
+        .unwrap();
+    println!("{}", arr_b);
+    // [
+    //  [
+    //   [7.0, 8.0]
+    //   [9.0, 10.0]
+    //  ]
+    //  [
+    //   [11.0, 12.0]
+    //   [13.0, 14.0]
+    //  ]
+    // ]
+
+    let matmul = module.matmul_nd(&arr_a, &arr_b).unwrap();
+    println!("{}", matmul);
+    // [
+    //  [
+    //   [25.0, 28.0]
+    //   [57.0, 64.0]
+    //  ]
+    //  [
+    //   [37.0, 40.0]
+    //   [85.0, 92.0]
+    //  ]
+    // ]
+}
+```
+
+### Broadcasting
+```rs
+use arr_o_gpu::ArrOgpuModule;
+
+fn main() {
+    let module = ArrOgpuModule::default();
+
+    let arr_a = module.array_from_vector(&[1.0, 2.0, 3.0, 4.0], &[2, 1, 2]).unwrap();
+    println!("{}", arr_a);
+    // [
+    //  [
+    //   [1.0, 2.0]
+    //  ]
+    //  [
+    //   [3.0, 4.0]
+    //  ]
+    // ]
+
+    let broadcasting = module.broadcasting(&arr_a, &[2, 3, 2]).unwrap();
+    println!("{}", broadcasting);
+    // [
+    //  [
+    //   [1.0, 2.0]
+    //   [1.0, 2.0]
+    //   [1.0, 2.0]
+    //  ]
+    //  [
+    //   [3.0, 4.0]
+    //   [3.0, 4.0]
+    //   [3.0, 4.0]
+    //  ]
+    // ]
+}
+
+```
+
+### Slicing
+```rust
+use arr_o_gpu::{ ArrOgpuModule, r };
+
+fn main() {
+    let module = ArrOgpuModule::default();
+
+    let arr_a = module
+        .array_from_vector(
+            &[
+                0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0,
+                16.0, 17.0,
+            ],
+            &[2, 3, 3]
+        )
+        .unwrap();
+    println!("{}", arr_a);
+    // [
+    //  [
+    //   [0.0, 1.0, 2.0]
+    //   [3.0, 4.0, 5.0]
+    //   [6.0, 7.0, 8.0]
+    //  ]
+    //  [
+    //   [9.0, 10.0, 11.0]
+    //   [12.0, 13.0, 14.0]
+    //   [15.0, 16.0, 17.0]
+    //  ]
+    // ]
+
+    let slicing_a = module.slicing(&arr_a, &[r(1..2)]).unwrap();
+    println!("{}", slicing_a);
+    // [
+    //  [
+    //   [9.0, 10.0, 11.0]
+    //   [12.0, 13.0, 14.0]
+    //   [15.0, 16.0, 17.0]
+    //  ]
+    // ]
+
+    let slicing_b = module.slicing(&arr_a, &[r(..), r(1..), r(..2)]).unwrap();
+    println!("{}", slicing_b);
+    // [
+    //  [
+    //   [3.0, 4.0]
+    //   [6.0, 7.0]
+    //  ]
+    //  [
+    //   [12.0, 13.0]
+    //   [15.0, 16.0]
+    //  ]
+    // ]
+}
+
+```
 
 
