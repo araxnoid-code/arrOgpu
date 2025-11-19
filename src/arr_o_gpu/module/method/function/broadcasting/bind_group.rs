@@ -92,7 +92,7 @@ pub(crate) fn broadcast_bind_group(
 
     let bind_group_layout = device.create_bind_group_layout(
         &(BindGroupLayoutDescriptor {
-            label: Some(""),
+            label: Some("Create Binding Group Layout Of Output For Broadcasting"),
             entries: &[
                 // thread_limit
                 BindGroupLayoutEntry {
@@ -165,7 +165,7 @@ pub(crate) fn broadcast_bind_group(
     );
     let bind_group = device.create_bind_group(
         &(BindGroupDescriptor {
-            label: Some("()"),
+            label: Some("Create Binding Group Of Output For Broadcasting"),
             layout: &bind_group_layout,
             entries: &[
                 // thread_limit

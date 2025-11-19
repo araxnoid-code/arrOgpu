@@ -5,8 +5,8 @@ use std::{
 
 #[derive(Clone)]
 pub struct SliceRange {
-    pub start: Option<usize>,
-    pub end: Option<usize>,
+    pub start: Option<u32>,
+    pub end: Option<u32>,
 }
 
 impl Debug for SliceRange {
@@ -33,66 +33,66 @@ pub fn r<T: SlicingRangeTrait>(range: T) -> SliceRange {
 }
 
 pub trait SlicingRangeTrait {
-    fn start(&self) -> Option<usize>;
-    fn end(&self) -> Option<usize>;
+    fn start(&self) -> Option<u32>;
+    fn end(&self) -> Option<u32>;
 }
 
-impl SlicingRangeTrait for Range<usize> {
-    fn start(&self) -> Option<usize> {
+impl SlicingRangeTrait for Range<u32> {
+    fn start(&self) -> Option<u32> {
         Some(self.start)
     }
 
-    fn end(&self) -> Option<usize> {
+    fn end(&self) -> Option<u32> {
         Some(self.end)
     }
 }
 
 impl SlicingRangeTrait for RangeFull {
-    fn start(&self) -> Option<usize> {
+    fn start(&self) -> Option<u32> {
         None
     }
 
-    fn end(&self) -> Option<usize> {
+    fn end(&self) -> Option<u32> {
         None
     }
 }
 
-impl SlicingRangeTrait for RangeFrom<usize> {
-    fn start(&self) -> Option<usize> {
+impl SlicingRangeTrait for RangeFrom<u32> {
+    fn start(&self) -> Option<u32> {
         Some(self.start)
     }
 
-    fn end(&self) -> Option<usize> {
+    fn end(&self) -> Option<u32> {
         None
     }
 }
 
-impl SlicingRangeTrait for RangeTo<usize> {
-    fn start(&self) -> Option<usize> {
+impl SlicingRangeTrait for RangeTo<u32> {
+    fn start(&self) -> Option<u32> {
         None
     }
 
-    fn end(&self) -> Option<usize> {
+    fn end(&self) -> Option<u32> {
         Some(self.end)
     }
 }
 
-impl SlicingRangeTrait for RangeInclusive<usize> {
-    fn start(&self) -> Option<usize> {
+impl SlicingRangeTrait for RangeInclusive<u32> {
+    fn start(&self) -> Option<u32> {
         Some(*self.start())
     }
 
-    fn end(&self) -> Option<usize> {
+    fn end(&self) -> Option<u32> {
         Some(*self.end())
     }
 }
 
-impl SlicingRangeTrait for RangeToInclusive<usize> {
-    fn start(&self) -> Option<usize> {
+impl SlicingRangeTrait for RangeToInclusive<u32> {
+    fn start(&self) -> Option<u32> {
         None
     }
 
-    fn end(&self) -> Option<usize> {
+    fn end(&self) -> Option<u32> {
         Some(self.end)
     }
 }

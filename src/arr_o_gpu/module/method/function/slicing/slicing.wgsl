@@ -17,9 +17,11 @@ var<uniform> _loops: array<f32>;
 var<uniform> array_stride: array<u32>;
 
 // array pointer
+@group(1) @binding(4)
 var<uniform> array_pointer: vec2<u32>;
 
 // output pointer
+@group(1) @binding(5)
 var<uniform> output_pointer: vec2<u32>;
 
 @compute @workgroup_size(16);
