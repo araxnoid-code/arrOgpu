@@ -1,29 +1,15 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::UNIX_EPOCH};
 
 use wgpu::{
-    util::{ BufferInitDescriptor, DeviceExt },
-    wgt::{ BufferDescriptor, CommandEncoderDescriptor, PollType },
-    BindGroupDescriptor,
-    BindGroupEntry,
-    BindGroupLayout,
-    BindGroupLayoutDescriptor,
-    BindGroupLayoutEntry,
-    BindingResource,
-    BindingType,
-    BufferBindingType,
-    BufferUsages,
-    ComputePassDescriptor,
-    ComputePipelineDescriptor,
-    Device,
-    MapMode,
-    PipelineCompilationOptions,
-    PipelineLayoutDescriptor,
-    ShaderModuleDescriptor,
-    ShaderSource,
-    ShaderStages,
+    BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor,
+    BindGroupLayoutEntry, BindingResource, BindingType, BufferBindingType, BufferUsages,
+    ComputePassDescriptor, ComputePipelineDescriptor, Device, MapMode, PipelineCompilationOptions,
+    PipelineLayoutDescriptor, ShaderModuleDescriptor, ShaderSource, ShaderStages,
+    util::{BufferInitDescriptor, DeviceExt},
+    wgt::{BufferDescriptor, CommandEncoderDescriptor, PollType},
 };
 
-use crate::{ get_stride_from_shape, ArrOgpuErr, ArrOgpuModule, GpuArray };
+use crate::{ArrOgpuErr, ArrOgpuModule, GpuArray, get_stride_from_shape};
 
 impl ArrOgpuModule {
     pub fn matmul_2d(&self, arr_a: &GpuArray, arr_b: &GpuArray) -> Result<GpuArray, ArrOgpuErr> {
@@ -59,7 +45,7 @@ impl ArrOgpuModule {
                 label: Some("Create Pointer A Buffer Layout For Matmul 2D"),
                 usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
                 contents: bytemuck::cast_slice(&arr_a.pointer_to_arr()),
-            })
+            }),
         );
 
         // shape
@@ -68,7 +54,7 @@ impl ArrOgpuModule {
                 label: Some("Create Pointer A Buffer Layout For Matmul 2D"),
                 usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
                 contents: bytemuck::cast_slice(&arr_a.shape),
-            })
+            }),
         );
 
         // stride
@@ -77,7 +63,7 @@ impl ArrOgpuModule {
                 label: Some("Create Pointer A Buffer Layout For Matmul 2D"),
                 usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
                 contents: bytemuck::cast_slice(&arr_a.stride),
-            })
+            }),
         );
 
         // Array B
@@ -87,7 +73,7 @@ impl ArrOgpuModule {
                 label: Some("Create Pointer A Buffer Layout For Matmul 2D"),
                 usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
                 contents: bytemuck::cast_slice(&arr_b.pointer_to_arr()),
-            })
+            }),
         );
 
         // shape
@@ -96,7 +82,7 @@ impl ArrOgpuModule {
                 label: Some("Create Pointer A Buffer Layout For Matmul 2D"),
                 usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
                 contents: bytemuck::cast_slice(&arr_b.shape),
-            })
+            }),
         );
 
         // stride
@@ -105,7 +91,7 @@ impl ArrOgpuModule {
                 label: Some("Create Pointer A Buffer Layout For Matmul 2D"),
                 usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
                 contents: bytemuck::cast_slice(&arr_b.stride),
-            })
+            }),
         );
 
         // output
@@ -123,16 +109,15 @@ impl ArrOgpuModule {
         // );
 
         // pointer
-        let (type_output_pointer, output_pointer_start, output_pointer_end) = self
-            .allocator_write()
-            .pointer_input(len);
+        let (type_output_pointer, output_pointer_start, output_pointer_end) =
+            self.allocator_write().pointer_input(len);
         let output_pointer_list = [output_pointer_start, output_pointer_end];
         let output_pointer_buffer = wgpu_init.device.create_buffer_init(
             &(BufferInitDescriptor {
                 label: Some("Create Buffer Output Pointer For Matmul 2D"),
                 contents: bytemuck::cast_slice(&output_pointer_list),
                 usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
-            })
+            }),
         );
 
         // stride
@@ -143,7 +128,7 @@ impl ArrOgpuModule {
                 label: Some("Create Stride Output Buffer Layout For Matmul 2D"),
                 usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
                 contents: bytemuck::cast_slice(&stride_out),
-            })
+            }),
         );
 
         // copy
@@ -194,7 +179,7 @@ impl ArrOgpuModule {
                         resource: stride_b.as_entire_binding(),
                     },
                 ],
-            })
+            }),
         );
 
         let binding_of_output = wgpu_init.device.create_bind_group(
@@ -211,13 +196,15 @@ impl ArrOgpuModule {
                         resource: stride_out.as_entire_binding(),
                     },
                 ],
-            })
+            }),
         );
 
-        let shader = wgpu_init.device.create_shader_module(ShaderModuleDescriptor {
-            label: Some("Create Shaders For Matmul 2D"),
-            source: ShaderSource::Wgsl(include_str!("./matmul_2d.wgsl").into()),
-        });
+        let shader = wgpu_init
+            .device
+            .create_shader_module(ShaderModuleDescriptor {
+                label: Some("Create Shaders For Matmul 2D"),
+                source: ShaderSource::Wgsl(include_str!("./matmul_2d.wgsl").into()),
+            });
 
         let pipeline_layout = wgpu_init.device.create_pipeline_layout(
             &(PipelineLayoutDescriptor {
@@ -228,7 +215,7 @@ impl ArrOgpuModule {
                     &binding_layout,
                     &binding_layout_of_output,
                 ],
-            })
+            }),
         );
 
         let pipeline = wgpu_init.device.create_compute_pipeline(
@@ -239,13 +226,13 @@ impl ArrOgpuModule {
                 entry_point: Some("main"),
                 layout: Some(&pipeline_layout),
                 module: &shader,
-            })
+            }),
         );
 
         let mut encoder = wgpu_init.device.create_command_encoder(
             &(CommandEncoderDescriptor {
                 label: Some("Create Encoder For Matmul 2D"),
-            })
+            }),
         );
 
         {
@@ -253,7 +240,7 @@ impl ArrOgpuModule {
                 &(ComputePassDescriptor {
                     label: Some("Create Compute Pass For Matmul 2D"),
                     timestamp_writes: None,
-                })
+                }),
             );
 
             bcp.set_pipeline(&pipeline);
@@ -368,7 +355,7 @@ fn build_binding_layout(device: &Device) -> wgpu::BindGroupLayout {
                     },
                 },
             ],
-        })
+        }),
     );
     binding_layout
 }
@@ -401,7 +388,7 @@ fn build_binding_of_output_layout(device: &Device) -> BindGroupLayout {
                     },
                 },
             ],
-        })
+        }),
     );
     binding_layout
 }

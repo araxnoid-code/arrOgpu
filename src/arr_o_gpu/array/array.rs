@@ -1,6 +1,6 @@
-use std::sync::{ Arc, RwLock };
+use std::sync::{Arc, RwLock};
 
-use crate::{ ArrOgpuModule, SpaceType };
+use crate::{ArrOgpuModule, SpaceType};
 
 pub struct GpuArray {
     pub(crate) module: Arc<ArrOgpuModule>,

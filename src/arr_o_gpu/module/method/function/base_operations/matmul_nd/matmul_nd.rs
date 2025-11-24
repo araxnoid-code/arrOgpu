@@ -1,16 +1,12 @@
 use std::sync::Arc;
 
 use wgpu::{
-    ComputePassDescriptor,
-    ComputePipelineDescriptor,
-    PipelineCompilationOptions,
-    PipelineLayoutDescriptor,
-    ShaderModuleDescriptor,
-    ShaderSource,
-    wgt::{ CommandEncoderDescriptor, PollType },
+    ComputePassDescriptor, ComputePipelineDescriptor, PipelineCompilationOptions,
+    PipelineLayoutDescriptor, ShaderModuleDescriptor, ShaderSource,
+    wgt::{CommandEncoderDescriptor, PollType},
 };
 
-use crate::{ ArrOgpuErr, ArrOgpuModule, GpuArray, matmul_nd_group_binding };
+use crate::{ArrOgpuErr, ArrOgpuModule, GpuArray, matmul_nd_group_binding};
 
 impl ArrOgpuModule {
     pub fn matmul_nd(&self, arr_a: &GpuArray, arr_b: &GpuArray) -> Result<GpuArray, ArrOgpuErr> {
@@ -20,8 +16,7 @@ impl ArrOgpuModule {
         if shape_a.len() != shape_b.len() || shape_a.len() <= 1 || shape_b.len() <= 1 {
             let err = format!(
                 "Array matmul nd Error, Array A {:?} can't matmul with Array B {:?}",
-                shape_a,
-                shape_b
+                shape_a, shape_b
             );
 
             return Err(ArrOgpuErr::MatmulND(err));
@@ -29,18 +24,20 @@ impl ArrOgpuModule {
 
         let k_a = shape_a[shape_a.len() - 1];
         let k_b = shape_b[shape_b.len() - 2];
-        if
-            shape_a.len() != shape_b.len() ||
-            &shape_a[0..shape_a.len() - 2] != &shape_b[0..shape_a.len() - 2] ||
-            k_a != k_b
+        if shape_a.len() != shape_b.len()
+            || &shape_a[0..shape_a.len() - 2] != &shape_b[0..shape_a.len() - 2]
+            || k_a != k_b
         {
             let err = format!(
                 "Array matmul nd Error, Array A {:?} can't matmul with Array B {:?}",
-                shape_a,
-                shape_b
+                shape_a, shape_b
             );
 
             return Err(ArrOgpuErr::MatmulND(err));
+        }
+
+        if shape_a.len() == 2 && shape_b.len() == 2 {
+            return self.matmul_2d(arr_a, arr_b);
         }
 
         let wgpu_init = self.wgpu_init.read().unwrap();
@@ -60,13 +57,15 @@ impl ArrOgpuModule {
                     &bind_group_layout,
                 ],
                 push_constant_ranges: &[],
-            })
+            }),
         );
 
-        let shader = wgpu_init.device.create_shader_module(ShaderModuleDescriptor {
-            label: Some("Create Shaders For Matmul ND"),
-            source: ShaderSource::Wgsl(include_str!("./matmul_nd.wgsl").into()),
-        });
+        let shader = wgpu_init
+            .device
+            .create_shader_module(ShaderModuleDescriptor {
+                label: Some("Create Shaders For Matmul ND"),
+                source: ShaderSource::Wgsl(include_str!("./matmul_nd.wgsl").into()),
+            });
 
         let pipeline = wgpu_init.device.create_compute_pipeline(
             &(ComputePipelineDescriptor {
@@ -76,13 +75,13 @@ impl ArrOgpuModule {
                 entry_point: Some("main"),
                 layout: Some(&pipeline_layout),
                 module: &shader,
-            })
+            }),
         );
 
         let mut encoder = wgpu_init.device.create_command_encoder(
             &(CommandEncoderDescriptor {
                 label: Some("Create Encoder For Matmul ND"),
-            })
+            }),
         );
 
         {
@@ -90,7 +89,7 @@ impl ArrOgpuModule {
                 &(ComputePassDescriptor {
                     label: Some("Create Compute Pass For Matmul ND"),
                     timestamp_writes: None,
-                })
+                }),
             );
 
             bcp.set_pipeline(&pipeline);
