@@ -1,83 +1,132 @@
+use core::f32;
 use std::{
-    ops::{Range, RangeTo},
+    cell::RefCell,
+    ops::{Index, Range, RangeTo},
+    rc::Rc,
     sync::Arc,
+    usize,
 };
 
 use crate::{ArrOgpuModule, GpuArray};
 
 pub trait RangeArangeParams {
-    fn range(self) -> Range<usize>;
+    fn range(self) -> Range<u32>;
 }
 
-impl RangeArangeParams for Range<usize> {
-    fn range(self) -> Range<usize> {
+impl RangeArangeParams for Range<u32> {
+    fn range(self) -> Range<u32> {
         self
     }
 }
 
-impl RangeArangeParams for RangeTo<usize> {
-    fn range(self) -> Range<usize> {
+impl RangeArangeParams for RangeTo<u32> {
+    fn range(self) -> Range<u32> {
         0..self.end
     }
 }
 
 pub struct ArangeArray {
-    vector: Vec<f32>,
-    shape: Option<Vec<u32>>,
-    index: usize,
-    module: Arc<ArrOgpuModule>,
+    range: (Range<u32>, ArangeShape),
 }
 
 impl ArangeArray {
-    pub fn arange<T>(range: T, module: Arc<ArrOgpuModule>) -> ArangeArray
+    pub fn arange<T>(range: T) -> ArangeArray
     where
         T: RangeArangeParams + IntoIterator,
-        T::Item: Into<usize>,
     {
-        let vector = range
-            .into_iter()
-            .map(|v| v.into() as f32)
-            .collect::<Vec<f32>>();
+        // let _range = range.range();
+        let _range = range.range();
+        let len = vec![_range.end - _range.start];
+        let shape = ArangeShape {
+            shape: Rc::new(RefCell::new(len)),
+        };
 
         Self {
-            vector,
-            shape: None,
-            index: 0,
-            module,
+            range: (_range, shape),
         }
     }
+}
 
-    pub fn shape(&mut self, shape: &[u32]) {
-        self.shape = Some(shape.to_vec());
-    }
+#[allow(non_snake_case)]
+pub trait ArangeIteratorTrait: Iterator {
+    fn to_GpuArray(self, module: &ArrOgpuModule) -> Result<GpuArray, crate::ArrOgpuErr>;
+    fn shape(self, shape: &[u32]) -> Self;
+}
 
-    #[allow(non_snake_case)]
-    pub fn to_GpuArray(self) -> Result<GpuArray, crate::ArrOgpuErr> {
-        let shape = self.shape.clone();
-        let module = self.module.clone();
-        let vector = self.collect::<Vec<f32>>();
-        let shape = shape.unwrap_or(vec![vector.len() as u32]);
+impl<T: Iterator> ArangeIteratorTrait for T
+where
+    T::Item: ArangeIteratorItem,
+{
+    fn to_GpuArray(self, module: &ArrOgpuModule) -> Result<GpuArray, crate::ArrOgpuErr> {
+        let mut vector = vec![];
+        let mut shape = vec![];
+        for i in self {
+            vector.push(i.item());
+            if shape.is_empty() {
+                let data = i.shape().borrow().clone();
+                shape = data;
+            }
+        }
+
+        println!("{:?}", vector);
         module.array_from_vector(&vector, &shape)
     }
+
+    fn shape(mut self, shape: &[u32]) -> Self {
+        let mut peekable = self.by_ref().peekable();
+        peekable.peek();
+
+        self
+    }
 }
 
-pub trait ArrangeIteratorTrait: Iterator {
-    fn to_GpuArray(self) -> Result<GpuArray, crate::ArrOgpuErr>;
+pub trait ArangeIteratorItem {
+    fn item(&self) -> f32;
+
+    fn shape(&self) -> Rc<RefCell<Vec<u32>>>;
+
+    fn update_shape(&mut self, new_shape: &[u32]);
 }
 
-// impl<T: Iterator> ArrangeIteratorTrait for T {
-//     fn to_GpuArray(self) -> Result<GpuArray, crate::ArrOgpuErr> {}
-// }
+impl ArangeIteratorItem for (f32, ArangeShape) {
+    fn item(&self) -> f32 {
+        self.0
+    }
+
+    fn shape(&self) -> Rc<RefCell<Vec<u32>>> {
+        self.1.shape.clone()
+    }
+
+    fn update_shape(&mut self, new_shape: &[u32]) {
+        // *self.1.shape.borrow_mut() = new_shape.to_vec();
+    }
+}
 
 impl Iterator for ArangeArray {
-    type Item = f32;
+    type Item = (f32, ArangeShape);
     fn next(&mut self) -> Option<Self::Item> {
-        if self.index < self.vector.len() {
-            let item = Some(self.vector[self.index]);
-            self.index += 1;
-            item
+        if let Some(v) = self.range.0.next() {
+            Some((v as f32, self.range.1.clone()))
         } else {
             None
         }
     }
 }
+
+#[derive(Clone)]
+pub struct ArangeShape {
+    pub(crate) shape: Rc<RefCell<Vec<u32>>>,
+}
+
+// impl ArangeShape {
+// pub(crate) fn update_shape(&mut self, new_shape: &[u32]) {
+//     *self.shape.borrow_mut() = new_shape.to_vec();
+// }
+// }
+
+// impl Index<usize> for ArangeShape {
+//     type Output = u32;
+//     fn index(&self, index: usize) -> &Self::Output {
+//         &self.shape[index]
+//     }
+// }
