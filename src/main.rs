@@ -4,25 +4,42 @@ use arr_o_gpu::ArrOgpuModule;
 use ndarray::{Array, ArrayD, Slice, *};
 
 fn main() {
-    let data = (0..4096)
+    let data = (0..2097152)
         .into_iter()
         .map(|v| v as f32)
         .collect::<Vec<f32>>();
-    let array_a = Array2::from_shape_vec([32, 128], data.clone()).unwrap();
-    let array_b = Array2::from_shape_vec([128, 32], data.clone()).unwrap();
+    // let array_a = Array2::from_shape_vec([1024, 2048], data.clone()).unwrap();
+    // let array_b = Array2::from_shape_vec([2048, 1024], data.clone()).unwrap();
 
-    let to_vec_numpy = array_a.dot(&array_b).flatten().to_vec();
+    // let tick = std::time::SystemTime::now()
+    //     .duration_since(UNIX_EPOCH)
+    //     .unwrap()
+    //     .as_millis();
+    // let to_vec_numpy = array_a.dot(&array_b).flatten().to_vec();
+    // let tock = std::time::SystemTime::now()
+    //     .duration_since(UNIX_EPOCH)
+    //     .unwrap()
+    //     .as_millis();
 
-    println!("==============");
+    // println!("{:?}", tock - tick)
+
+    // println!("==============");
 
     let module = ArrOgpuModule::default();
 
-    let array_a = module.array_from_vector(&data, &[32, 128]).unwrap();
-    // println!("{}", array_a);
-    let array_b = module.array_from_vector(&data, &[128, 32]).unwrap();
-    // println!("{}", array_b);
+    let array_a = module.array_from_vector(&data, &[1024, 2048]).unwrap();
 
+    let array_b = module.array_from_vector(&data, &[2048, 1024]).unwrap();
+
+    let tick = std::time::SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
     let to_vec_my = module.matmul_nd(&array_a, &array_b).unwrap().get_heap();
+    let tock = std::time::SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
 
-    println!("{:?}", to_vec_my == to_vec_numpy)
+    println!("{:?}", tock - tick)
 }
