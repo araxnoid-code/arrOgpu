@@ -1,7 +1,6 @@
 use std::usize;
 
 // FLATTEN
-// inlcuded vec<T> and [T; N]
 pub trait FlatteTrait {
     fn flatten(&self) -> (Vec<f32>, Vec<u32>);
 
@@ -29,15 +28,13 @@ where
 
         self.flatten_rec(&mut output, &mut shape, dim);
 
-        shape.reverse();
         (output, shape)
     }
 
     fn flatten_rec(&self, output: &mut Vec<f32>, shape: &mut Vec<u32>, dim: usize) {
-        if let Some(i) = shape.get_mut(dim) {
-            *i += 1;
-        } else {
-            shape.push(1);
+        if let None = shape.get_mut(dim) {
+            let len = self.len();
+            shape.push(len as u32);
         }
 
         for item in self {
@@ -57,15 +54,13 @@ where
 
         self.flatten_rec(&mut output, &mut shape, dim);
 
-        shape.reverse();
         (output, shape)
     }
 
     fn flatten_rec(&self, output: &mut Vec<f32>, shape: &mut Vec<u32>, dim: usize) {
-        if let Some(i) = shape.get_mut(dim) {
-            *i += 1;
-        } else {
-            shape.push(1);
+        if let None = shape.get_mut(dim) {
+            let len = self.len();
+            shape.push(len as u32);
         }
 
         for item in *self {
@@ -85,15 +80,13 @@ where
 
         self.flatten_rec(&mut output, &mut shape, dim);
 
-        shape.reverse();
         (output, shape)
     }
 
     fn flatten_rec(&self, output: &mut Vec<f32>, shape: &mut Vec<u32>, dim: usize) {
-        if let Some(i) = shape.get_mut(dim) {
-            *i += 1;
-        } else {
-            shape.push(1);
+        if let None = shape.get_mut(dim) {
+            let len = self.len();
+            shape.push(len as u32);
         }
 
         for item in self {
@@ -113,15 +106,13 @@ where
 
         self.flatten_rec(&mut output, &mut shape, dim);
 
-        shape.reverse();
         (output, shape)
     }
 
     fn flatten_rec(&self, output: &mut Vec<f32>, shape: &mut Vec<u32>, dim: usize) {
-        if let Some(i) = shape.get_mut(dim) {
-            *i += 1;
-        } else {
-            shape.push(1);
+        if let None = shape.get_mut(dim) {
+            let len = self.len();
+            shape.push(len as u32);
         }
 
         for item in *self {
@@ -141,15 +132,13 @@ where
 
         self.flatten_rec(&mut output, &mut shape, dim);
 
-        shape.reverse();
         (output, shape)
     }
 
     fn flatten_rec(&self, output: &mut Vec<f32>, shape: &mut Vec<u32>, dim: usize) {
-        if let Some(i) = shape.get_mut(dim) {
-            *i += 1;
-        } else {
-            shape.push(1);
+        if let None = shape.get_mut(dim) {
+            let len = self.len();
+            shape.push(len as u32);
         }
 
         for item in self {
@@ -169,15 +158,13 @@ where
 
         self.flatten_rec(&mut output, &mut shape, dim);
 
-        shape.reverse();
         (output, shape)
     }
 
     fn flatten_rec(&self, output: &mut Vec<f32>, shape: &mut Vec<u32>, dim: usize) {
-        if let Some(i) = shape.get_mut(dim) {
-            *i += 1;
-        } else {
-            shape.push(1);
+        if let None = shape.get_mut(dim) {
+            let len = self.len();
+            shape.push(len as u32);
         }
 
         for item in *self {
