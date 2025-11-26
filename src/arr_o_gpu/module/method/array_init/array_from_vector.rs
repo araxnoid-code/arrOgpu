@@ -18,10 +18,10 @@ impl ArrOgpuModule {
     // array init
     pub fn array_from_vector(
         &self,
-        vector: Vec<f32>,
+        vector: &Vec<f32>,
         shape: &[u32],
     ) -> Result<GpuArray, ArrOgpuErr> {
-        let flatten = vector.flatten();
+        let (flatten, _) = vector.flatten();
 
         let len = flatten.len();
         let shape_len = shape.iter().product::<u32>();
