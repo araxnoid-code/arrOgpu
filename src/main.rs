@@ -1,7 +1,10 @@
-use std::time::UNIX_EPOCH;
+use std::{
+    ops::{Range, RangeFull},
+    sync::mpsc,
+    time::UNIX_EPOCH,
+};
 
-use arr_o_gpu::ArrOgpuModule;
-use ndarray::{Array, ArrayD, Slice, *};
+use arr_o_gpu::{ArangeArray, ArrOgpuModule, FlatteTrait};
 
 fn main() {
     let data = (0..2097152)
