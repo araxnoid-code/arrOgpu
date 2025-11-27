@@ -11,7 +11,11 @@ use wgpu::{
 use crate::{ArrOgpuErr, ArrOgpuModule, GpuArray, WgpuInit};
 
 impl ArrOgpuModule {
-    pub fn dot_product(&self, array_a: &GpuArray, array_b: &GpuArray) -> Result<(), ArrOgpuErr> {
+    pub fn dot_product(
+        &self,
+        array_a: &GpuArray,
+        array_b: &GpuArray,
+    ) -> Result<GpuArray, ArrOgpuErr> {
         let shape_a = array_a.shape();
         let shape_b = array_b.shape();
 
@@ -104,9 +108,7 @@ impl ArrOgpuModule {
             stride: vec![1],
         };
 
-        println!("{}", arr);
-
-        Ok(())
+        Ok(arr)
     }
 }
 

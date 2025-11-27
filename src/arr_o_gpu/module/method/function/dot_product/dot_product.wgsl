@@ -23,16 +23,16 @@ var<uniform> pointer_output: vec2<u32>;
 
 // workgroup
 // // cache to store result of paralel tree
-var<workgroup> cache_tree: array<f32, 256>;
+var<workgroup> cache_tree: array<f32, 4>;
 // // cache to store result multiple operation
-// var<workgroup> cache_mul: array<f32, 256>
+// var<workgroup> cache_mul: array<f32, 4>
 
 // Description
 // --
-@compute @workgroup_size(256)
+@compute @workgroup_size(4)
 fn main(@builtin(global_invocation_id) global_id:vec3<u32>){
     // ceil(a/b) = (a + b - 1)/b
-    let iter = (k + 256u - 1u) / 256u;
+    let iter = (k + 4u - 1u) / 4u;
 
     // iteration
     // iterate to get the entire array from start to finish
@@ -40,7 +40,7 @@ fn main(@builtin(global_invocation_id) global_id:vec3<u32>){
     for (var i = 0u; i < iter; i++){
 
         // multiple
-        var jump = 256u * i;
+        var jump = 4u * i;
         if (jump + global_id.x < k){
             var a_idx = pointer_a.x + global_id.x + jump;
             var b_idx = pointer_b.x + global_id.x + jump;
@@ -49,7 +49,8 @@ fn main(@builtin(global_invocation_id) global_id:vec3<u32>){
         }
         workgroupBarrier();
 
-        var chace_length = k - 256 * i;
+        var chace_length = get_first_cache_length(k, i);
+        // heap[298 + i] = f32(chace_length);
         var total_unit = (chace_length + 2 - 1) / 2;
         while true {
             if global_id.x < total_unit{
@@ -80,4 +81,12 @@ fn main(@builtin(global_invocation_id) global_id:vec3<u32>){
     }
 
     heap[pointer_output.x] = acc;
+}
+
+fn get_first_cache_length(k:u32, i:u32)-> u32{
+    if (4u * i + 4u < k){
+        return 4u;
+    } else {
+        return k - 4u * i;
+    }
 }

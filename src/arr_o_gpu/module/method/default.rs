@@ -21,6 +21,7 @@ impl Default for ArrOgpuModule {
         // let maximum = 268435456u32;
         // let maximum = 100_000u32;
         let maximum = 6217728u32;
+        // let maximum = 300u32;
 
         //
         let wgpu = WgpuInit::init();
