@@ -2,21 +2,23 @@
 @group(0) @binding(0)
 var<storage, read_write> heap: array<f32>;
 
-// array a
-// // pointer
-var<uniform> pointer_a: vec2<u32>;
-
-// array b
-// // pointer
-var<uniform> pointer_b: vec2<u32>;
-
 // k (length of array)
 @group(1) @binding(0)
 var<uniform> k: u32;
 
-// output
+// array a
 // // pointer
 @group(1) @binding(1)
+var<uniform> pointer_a: vec2<u32>;
+
+// array b
+// // pointer
+@group(1) @binding(2)
+var<uniform> pointer_b: vec2<u32>;
+
+// output
+// // pointer
+@group(1) @binding(3)
 var<uniform> pointer_output: vec2<u32>;
 
 // workgroup
