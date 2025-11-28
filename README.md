@@ -3,7 +3,7 @@
     <h1>arrOgpu</h1>
     <b><p>Array Operations On Gpu</p></b>
     <p>⚙️ under development ⚙️</p>
-    <p>version 0.0.0.5.7</p>
+    <p>version 0.0.1</p>
 </div>
 
 ## Base On WGPU
