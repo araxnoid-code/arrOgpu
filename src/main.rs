@@ -8,7 +8,7 @@ use arr_o_gpu::{ArangeArray, ArrOgpuModule, FlatteTrait};
 use ndarray::Array1;
 
 fn main() {
-    let len = 8;
+    let len = 452;
     let data = (0..len).into_iter().map(|v| v as f32).collect::<Vec<f32>>();
     let array_a = Array1::from_shape_vec([len], data.clone()).unwrap();
     let array_b = Array1::from_shape_vec([len], data.clone()).unwrap();
