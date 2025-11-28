@@ -5,6 +5,5 @@ use std::{
 };
 
 use arr_o_gpu::{ArangeArray, ArrOgpuModule, FlatteTrait};
-use ndarray::Array1;
 
 fn main() {}
