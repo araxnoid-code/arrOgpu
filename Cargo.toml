@@ -9,6 +9,7 @@ path = "src/lib.rs"
 
 [dependencies]
 bytemuck = "1.23.2"
+ndarray = "0.17.1"
 pollster = "=0.2.4"
 wgpu = "26.0.1"
 
