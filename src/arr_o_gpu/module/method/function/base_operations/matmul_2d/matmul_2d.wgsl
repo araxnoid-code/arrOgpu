@@ -91,12 +91,15 @@ fn main(
         // sync thread
         workgroupBarrier();
 
+        // the limits of arrays a and b
+        let array_a_k = group_x * size + local_id.x;
+        let array_b_k = group_y * size + local_id.y;
         // matrix operation between tile_a and tile_b
         for (var t_k = 0u; t_k < size; t_k++) {
             let global_k = i * size + t_k;
 
-            // over 
-            if (global_k >= k) { break; }
+            // indexing over 
+            if (global_k >= k || array_a_k >= m || array_b_k >= n) { break; }
 
             // accumulate
             acc += tile_a[local_id.x][t_k] * tile_b[t_k][local_id.y];
