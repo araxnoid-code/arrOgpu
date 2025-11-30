@@ -127,7 +127,7 @@ pub(crate) fn broadcast_bind_group(
                         min_binding_size: None,
                     },
                 },
-                // extend_count
+                // arr_pointer
                 BindGroupLayoutEntry {
                     binding: 3,
                     count: None,
@@ -138,20 +138,9 @@ pub(crate) fn broadcast_bind_group(
                         min_binding_size: None,
                     },
                 },
-                // arr_pointer
-                BindGroupLayoutEntry {
-                    binding: 4,
-                    count: None,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                },
                 // out_pointer
                 BindGroupLayoutEntry {
-                    binding: 5,
+                    binding: 4,
                     count: None,
                     visibility: ShaderStages::COMPUTE,
                     ty: BindingType::Buffer {
@@ -183,19 +172,14 @@ pub(crate) fn broadcast_bind_group(
                     binding: 2,
                     resource: output_stride_target_buffer.as_entire_binding(),
                 },
-                // extend_count
-                BindGroupEntry {
-                    binding: 3,
-                    resource: extend_count_buffer.as_entire_binding(),
-                },
                 // arr_pointer
                 BindGroupEntry {
-                    binding: 4,
+                    binding: 3,
                     resource: arr_pointer_buffer.as_entire_binding(),
                 },
                 // out_pointer
                 BindGroupEntry {
-                    binding: 5,
+                    binding: 4,
                     resource: out_pointer_buffer.as_entire_binding(),
                 },
             ],
