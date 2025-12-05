@@ -37,11 +37,11 @@ fn main(@builtin(global_invocation_id) global_id:vec3<u32>){
         let slice_len = arrayLength(&slicing_list_start);
 
         for (var i = 0u; i < slice_len; i++){
-            let range_start = slicing_list_start[i] * array_stride[i];
-            let range_end =  slicing_list_end[i] * array_stride[i];
-            let len = range_end - range_start;
-
             if i + 1u == slice_len{
+                let range_start = slicing_list_start[i] * array_stride[i];
+                let range_end =  slicing_list_end[i] * array_stride[i];
+                let len = range_end - range_start;
+
                 start += range_start;
                 end += start + len;
                 iter = len;
