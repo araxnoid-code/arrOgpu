@@ -81,7 +81,7 @@ impl ArrOgpuModule {
         Ok(array)
     }
 
-    pub fn indexing_view<'a>(
+    pub fn index_view<'a>(
         &'a self,
         arr: &'a GpuArray,
         index: &[u32]
