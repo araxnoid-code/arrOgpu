@@ -180,9 +180,9 @@ impl ArrOgpuModule {
         wgpu_init.device.poll(PollType::Wait).unwrap();
 
         let arr = GpuArray {
-            length: len,
+            length: len as usize,
             module: Arc::new(self.clone()),
-            pointer: (allocate.1 as usize, allocate.2 as usize),
+            pointer: (allocate.1, allocate.2),
             shape: arr_a.shape.clone(),
             space_type: pointer_type,
             stride: get_stride_from_shape(&arr_a.shape),

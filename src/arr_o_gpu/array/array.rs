@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use crate::{ArrOgpuModule, SpaceType};
+use crate::{ ArrOgpuModule, SpaceType };
 
 pub struct GpuArray {
     pub(crate) module: Arc<ArrOgpuModule>,
-    pub(crate) pointer: (usize, usize),
+    pub(crate) pointer: (u32, u32),
     pub(crate) length: usize,
     pub(crate) shape: Vec<u32>,
     pub(crate) stride: Vec<u32>,
@@ -18,7 +18,7 @@ impl GpuArray {
         &*self.module
     }
 
-    pub fn pointer(&self) -> (usize, usize) {
+    pub fn pointer(&self) -> (u32, u32) {
         self.pointer
     }
 

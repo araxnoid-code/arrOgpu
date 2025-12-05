@@ -143,7 +143,7 @@ impl ArrOgpuModule {
             module: Arc::new(self.clone()),
             shape: out_shape,
             stride,
-            pointer: (output_allocate.1 as usize, output_allocate.2 as usize),
+            pointer: (output_allocate.1, output_allocate.2),
             space_type: output_allocate.0,
         };
         Ok(arr)

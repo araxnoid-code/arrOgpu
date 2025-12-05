@@ -1,20 +1,29 @@
-use std::sync::{Arc, RwLockReadGuard};
+use std::sync::{ Arc, RwLockReadGuard };
 
 use wgpu::{
-    BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor, BindGroupLayoutEntry,
-    BufferBindingType, BufferUsages, ComputePassDescriptor, ComputePipelineDescriptor,
-    PipelineCompilationOptions, PipelineLayoutDescriptor, ShaderModuleDescriptor, ShaderStages,
-    util::{BufferInitDescriptor, DeviceExt},
+    BindGroupDescriptor,
+    BindGroupEntry,
+    BindGroupLayoutDescriptor,
+    BindGroupLayoutEntry,
+    BufferBindingType,
+    BufferUsages,
+    ComputePassDescriptor,
+    ComputePipelineDescriptor,
+    PipelineCompilationOptions,
+    PipelineLayoutDescriptor,
+    ShaderModuleDescriptor,
+    ShaderStages,
+    util::{ BufferInitDescriptor, DeviceExt },
     wgt::CommandEncoderDescriptor,
 };
 
-use crate::{ArrOgpuErr, ArrOgpuModule, GpuArray, WgpuInit};
+use crate::{ ArrOgpuErr, ArrOgpuModule, GpuArray, WgpuInit };
 
 impl ArrOgpuModule {
     pub fn dot_product(
         &self,
         array_a: &GpuArray,
-        array_b: &GpuArray,
+        array_b: &GpuArray
     ) -> Result<GpuArray, ArrOgpuErr> {
         let shape_a = array_a.shape();
         let shape_b = array_b.shape();
@@ -25,7 +34,8 @@ impl ArrOgpuModule {
         if shape_a.len() != 1 || shape_b.len() != 1 || length_a != length_b {
             let err = format!(
                 "Array Dot Product Error, Array with shape {:?} and With Shape {:?} Can't Be Operated",
-                shape_a, shape_b
+                shape_a,
+                shape_b
             );
             return Err(ArrOgpuErr::DotProduct(err));
         }
@@ -41,13 +51,17 @@ impl ArrOgpuModule {
 
         // bind_group
         let heap_bind_group = &self.binding_compounds.read().unwrap()[0];
-        let (bing_group, bind_group_layout) =
-            bind_group_dot_product(&wgpu_init, length, &pointer_a, &pointer_b, &pointer_output);
+        let (bing_group, bind_group_layout) = bind_group_dot_product(
+            &wgpu_init,
+            length,
+            &pointer_a,
+            &pointer_b,
+            &pointer_output
+        );
 
         // pipeline and shader
-        let pipeline_layout = wgpu_init
-            .device
-            .create_pipeline_layout(&PipelineLayoutDescriptor {
+        let pipeline_layout = wgpu_init.device.create_pipeline_layout(
+            &(PipelineLayoutDescriptor {
                 label: Some("Create Pipeline Layout For Dot Product"),
                 push_constant_ranges: &[],
                 bind_group_layouts: &[
@@ -55,37 +69,38 @@ impl ArrOgpuModule {
                     &heap_bind_group.binding_group_layouts,
                     &bind_group_layout,
                 ],
-            });
+            })
+        );
 
-        let shader = wgpu_init
-            .device
-            .create_shader_module(ShaderModuleDescriptor {
-                label: Some("Create Shaders For Dot Product"),
-                source: wgpu::ShaderSource::Wgsl(include_str!("./dot_product.wgsl").into()),
-            });
+        let shader = wgpu_init.device.create_shader_module(ShaderModuleDescriptor {
+            label: Some("Create Shaders For Dot Product"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("./dot_product.wgsl").into()),
+        });
 
-        let pipeline = wgpu_init
-            .device
-            .create_compute_pipeline(&ComputePipelineDescriptor {
+        let pipeline = wgpu_init.device.create_compute_pipeline(
+            &(ComputePipelineDescriptor {
                 label: Some("Create Pipeline Layout For Dot Product"),
                 cache: None,
                 compilation_options: PipelineCompilationOptions::default(),
                 entry_point: Some("main"),
                 layout: Some(&pipeline_layout),
                 module: &shader,
-            });
+            })
+        );
 
-        let mut encoder = wgpu_init
-            .device
-            .create_command_encoder(&CommandEncoderDescriptor {
+        let mut encoder = wgpu_init.device.create_command_encoder(
+            &(CommandEncoderDescriptor {
                 label: Some("Create Encoder For Dot Product"),
-            });
+            })
+        );
 
         {
-            let mut bcp = encoder.begin_compute_pass(&ComputePassDescriptor {
-                label: Some("Create Compute Pass For Dot Product"),
-                timestamp_writes: None,
-            });
+            let mut bcp = encoder.begin_compute_pass(
+                &(ComputePassDescriptor {
+                    label: Some("Create Compute Pass For Dot Product"),
+                    timestamp_writes: None,
+                })
+            );
 
             bcp.set_pipeline(&pipeline);
 
@@ -102,7 +117,7 @@ impl ArrOgpuModule {
         let arr = GpuArray {
             length: length_a,
             module: Arc::new(self.clone()),
-            pointer: (output_allocate.1 as usize, output_allocate.2 as usize),
+            pointer: (output_allocate.1, output_allocate.2),
             shape: vec![1],
             space_type: output_allocate.0,
             stride: vec![1],
@@ -117,44 +132,51 @@ pub(crate) fn bind_group_dot_product(
     k: u32,
     pointer_a: &[u32],
     pointer_b: &[u32],
-    pointer_output: &[u32],
+    pointer_output: &[u32]
 ) -> (wgpu::BindGroup, wgpu::BindGroupLayout) {
     // Buffer
     // // k
-    let k_buffer = wgpu_init.device.create_buffer_init(&BufferInitDescriptor {
-        label: Some("Create k Buffer For Dot Product"),
-        contents: bytemuck::bytes_of(&k),
-        usage: BufferUsages::UNIFORM,
-    });
+    let k_buffer = wgpu_init.device.create_buffer_init(
+        &(BufferInitDescriptor {
+            label: Some("Create k Buffer For Dot Product"),
+            contents: bytemuck::bytes_of(&k),
+            usage: BufferUsages::UNIFORM,
+        })
+    );
 
     // array a
     // // pointer
-    let pointer_a_buffer = wgpu_init.device.create_buffer_init(&BufferInitDescriptor {
-        label: Some("Create Pointer A Buffer For Dot Product"),
-        contents: bytemuck::cast_slice(pointer_a),
-        usage: BufferUsages::UNIFORM,
-    });
+    let pointer_a_buffer = wgpu_init.device.create_buffer_init(
+        &(BufferInitDescriptor {
+            label: Some("Create Pointer A Buffer For Dot Product"),
+            contents: bytemuck::cast_slice(pointer_a),
+            usage: BufferUsages::UNIFORM,
+        })
+    );
 
     // array b
     // // pointer
-    let pointer_b_buffer = wgpu_init.device.create_buffer_init(&BufferInitDescriptor {
-        label: Some("Create Pointer B Buffer For Dot Product"),
-        contents: bytemuck::cast_slice(pointer_b),
-        usage: BufferUsages::UNIFORM,
-    });
+    let pointer_b_buffer = wgpu_init.device.create_buffer_init(
+        &(BufferInitDescriptor {
+            label: Some("Create Pointer B Buffer For Dot Product"),
+            contents: bytemuck::cast_slice(pointer_b),
+            usage: BufferUsages::UNIFORM,
+        })
+    );
 
     // output
     // // pointer
-    let pointer_output_buffer = wgpu_init.device.create_buffer_init(&BufferInitDescriptor {
-        label: Some("Create Pointer Output Buffer For Dot Product"),
-        contents: bytemuck::cast_slice(pointer_output),
-        usage: BufferUsages::UNIFORM,
-    });
+    let pointer_output_buffer = wgpu_init.device.create_buffer_init(
+        &(BufferInitDescriptor {
+            label: Some("Create Pointer Output Buffer For Dot Product"),
+            contents: bytemuck::cast_slice(pointer_output),
+            usage: BufferUsages::UNIFORM,
+        })
+    );
 
     // bind group layout
-    let bind_group_layout = wgpu_init
-        .device
-        .create_bind_group_layout(&BindGroupLayoutDescriptor {
+    let bind_group_layout = wgpu_init.device.create_bind_group_layout(
+        &(BindGroupLayoutDescriptor {
             label: Some("Create Binding Group Layout Of Output For Dot Product"),
             entries: &[
                 // k (length)
@@ -205,30 +227,33 @@ pub(crate) fn bind_group_dot_product(
                     visibility: ShaderStages::COMPUTE,
                 },
             ],
-        });
+        })
+    );
 
-    let bind_group = wgpu_init.device.create_bind_group(&BindGroupDescriptor {
-        label: Some("Create Binding Group Layout Of Output For Dot Product"),
-        layout: &bind_group_layout,
-        entries: &[
-            BindGroupEntry {
-                binding: 0,
-                resource: k_buffer.as_entire_binding(),
-            },
-            BindGroupEntry {
-                binding: 1,
-                resource: pointer_a_buffer.as_entire_binding(),
-            },
-            BindGroupEntry {
-                binding: 2,
-                resource: pointer_b_buffer.as_entire_binding(),
-            },
-            BindGroupEntry {
-                binding: 3,
-                resource: pointer_output_buffer.as_entire_binding(),
-            },
-        ],
-    });
+    let bind_group = wgpu_init.device.create_bind_group(
+        &(BindGroupDescriptor {
+            label: Some("Create Binding Group Layout Of Output For Dot Product"),
+            layout: &bind_group_layout,
+            entries: &[
+                BindGroupEntry {
+                    binding: 0,
+                    resource: k_buffer.as_entire_binding(),
+                },
+                BindGroupEntry {
+                    binding: 1,
+                    resource: pointer_a_buffer.as_entire_binding(),
+                },
+                BindGroupEntry {
+                    binding: 2,
+                    resource: pointer_b_buffer.as_entire_binding(),
+                },
+                BindGroupEntry {
+                    binding: 3,
+                    resource: pointer_output_buffer.as_entire_binding(),
+                },
+            ],
+        })
+    );
 
     (bind_group, bind_group_layout)
 }

@@ -1,15 +1,22 @@
-use std::{
-    sync::{Arc, RwLock},
-    vec,
-};
+use std::{ sync::{ Arc, RwLock }, vec };
 
 use wgpu::{
-    BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor, BindGroupLayoutEntry,
-    BindingType, BufferBindingType, BufferUsages, ComputePassDescriptor, ComputePipelineDescriptor,
-    PipelineCompilationOptions, PipelineLayoutDescriptor, ShaderModuleDescriptor, ShaderSource,
+    BindGroupDescriptor,
+    BindGroupEntry,
+    BindGroupLayoutDescriptor,
+    BindGroupLayoutEntry,
+    BindingType,
+    BufferBindingType,
+    BufferUsages,
+    ComputePassDescriptor,
+    ComputePipelineDescriptor,
+    PipelineCompilationOptions,
+    PipelineLayoutDescriptor,
+    ShaderModuleDescriptor,
+    ShaderSource,
     ShaderStages,
-    util::{BufferInitDescriptor, DeviceExt},
-    wgt::{CommandEncoderDescriptor, PollType},
+    util::{ BufferInitDescriptor, DeviceExt },
+    wgt::{ CommandEncoderDescriptor, PollType },
 };
 
 use crate::*;
@@ -19,7 +26,7 @@ impl ArrOgpuModule {
     pub fn array_from_vector(
         &self,
         vector: &Vec<f32>,
-        shape: &[u32],
+        shape: &[u32]
     ) -> Result<GpuArray, ArrOgpuErr> {
         let (flatten, _) = vector.flatten();
 
@@ -27,9 +34,11 @@ impl ArrOgpuModule {
         let shape_len = shape.iter().product::<u32>();
 
         if (len as u32) != shape_len {
-            return Err(ArrOgpuErr::Init(
-                "Array Initialization Error, len of vector and len of shape not same".to_string(),
-            ));
+            return Err(
+                ArrOgpuErr::Init(
+                    "Array Initialization Error, len of vector and len of shape not same".to_string()
+                )
+            );
         }
 
         let wgpu = &self.wgpu_init.read().unwrap();
@@ -38,23 +47,24 @@ impl ArrOgpuModule {
                 label: Some(&format!("create array buffer with shape:{shape:?}")),
                 contents: bytemuck::cast_slice(&flatten),
                 usage: BufferUsages::STORAGE | BufferUsages::COPY_SRC,
-            }),
+            })
         );
 
         // allocator
-        let pointer = self.allocator.write().unwrap().pointer_input(len as u32);
+        let pointer = self.allocator
+            .write()
+            .unwrap()
+            .pointer_input(len as u32);
         let space_type = pointer.0;
         let pointer = [pointer.1, pointer.2];
 
         // pointer
         let pointer_buffer = wgpu.device.create_buffer_init(
             &(BufferInitDescriptor {
-                label: Some(&format!(
-                    "create buffer pointer array with pointing:{pointer:?}"
-                )),
+                label: Some(&format!("create buffer pointer array with pointing:{pointer:?}")),
                 usage: BufferUsages::UNIFORM | BufferUsages::COPY_SRC,
                 contents: bytemuck::cast_slice(&pointer),
-            }),
+            })
         );
 
         // group 1
@@ -85,7 +95,7 @@ impl ArrOgpuModule {
                         },
                     },
                 ],
-            }),
+            })
         );
 
         // group 1
@@ -103,7 +113,7 @@ impl ArrOgpuModule {
                         resource: pointer_buffer.as_entire_binding(),
                     },
                 ],
-            }),
+            })
         );
 
         let pipeline_layout = wgpu.device.create_pipeline_layout(
@@ -114,7 +124,7 @@ impl ArrOgpuModule {
                     &binding_layout,
                 ],
                 push_constant_ranges: &[],
-            }),
+            })
         );
 
         let shaders = wgpu.device.create_shader_module(ShaderModuleDescriptor {
@@ -129,13 +139,13 @@ impl ArrOgpuModule {
                 entry_point: Some("array_init"),
                 layout: Some(&pipeline_layout),
                 module: &shaders,
-            }),
+            })
         );
 
         let mut encoder = wgpu.device.create_command_encoder(
             &(CommandEncoderDescriptor {
                 label: Some("encoder for array_init"),
-            }),
+            })
         );
 
         {
@@ -143,17 +153,13 @@ impl ArrOgpuModule {
                 &(ComputePassDescriptor {
                     label: Some("create init compute pass descriptor for array_init"),
                     timestamp_writes: None,
-                }),
+                })
             );
 
             bcp.set_pipeline(&pipeline);
 
             // heap
-            bcp.set_bind_group(
-                0,
-                &self.binding_compounds.read().unwrap()[0].binding_groups,
-                &[],
-            );
+            bcp.set_bind_group(0, &self.binding_compounds.read().unwrap()[0].binding_groups, &[]);
 
             bcp.set_bind_group(1, &binding, &[]);
             let x = ((len as f32) / 256.0).ceil() as u32;
@@ -164,12 +170,12 @@ impl ArrOgpuModule {
 
         wgpu.device.poll(PollType::Wait).unwrap();
 
-        let pointer = (pointer[0] as usize, pointer[1] as usize);
+        let pointer = (pointer[0], pointer[1]);
 
         Ok(GpuArray {
             module: Arc::new(self.clone()),
             pointer,
-            length: pointer.1 - pointer.0,
+            length: (pointer.1 - pointer.0) as usize,
             shape: shape.to_vec(),
             stride: get_stride_from_shape(shape),
             space_type: space_type,

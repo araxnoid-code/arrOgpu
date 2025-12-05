@@ -12,7 +12,8 @@ fn main() {
 
     let module = ArrOgpuModule::default();
 
-    let mut array_a = module.array_from_vector(&data, &[2, 3, 3, 3]).unwrap();
+    let array_a = module.array_from_vector(&data, &[2, 3, 3, 3]).unwrap();
 
-    let array_view_a = module.array_view_from_array(&array_a);
+    let index = module.indexing_view(&array_a, &[0]).unwrap();
+    // let array_view_a = module.array_view_from_array(&array_a);
 }

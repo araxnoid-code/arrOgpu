@@ -1,6 +1,6 @@
 use wgpu::{ wgt::{ BufferDescriptor, CommandEncoderDescriptor, PollType }, BufferUsages };
 
-use crate::{ ArrOgpuErr, ArrOgpuModule, GpuArray };
+use crate::{ ArrOgpuErr, ArrOgpuModule, GpuArray, GpuArrayView };
 
 impl ArrOgpuModule {
     pub fn index(&self, arr: &GpuArray, index: &[u32]) -> Result<GpuArray, ArrOgpuErr> {
@@ -79,5 +79,56 @@ impl ArrOgpuModule {
         let array = self.array_from_vector(&data, &new_shape).unwrap();
 
         Ok(array)
+    }
+
+    pub fn indexing_view<'a>(
+        &'a self,
+        arr: &'a GpuArray,
+        index: &[u32]
+    ) -> Result<GpuArrayView<'a>, ArrOgpuErr> {
+        let dim = arr.dim();
+        // check dim
+        if index.len() > dim {
+            let err = format!(
+                "Indexing Out Of Dimension Error, Indexing {:?} but dim of array is {}",
+                index,
+                dim
+            );
+            return Err(ArrOgpuErr::Indexing(err));
+        }
+        // check overflow
+        let stride = &arr.stride;
+        let shape = &arr.shape;
+        let mut start = 0;
+        for i in 0..index.len() {
+            if index[i] >= shape[i] {
+                let err = format!(
+                    "Indexing Out Of Range Error, Indexing {:?} but shape of array is {:?}",
+                    index,
+                    shape
+                );
+                return Err(ArrOgpuErr::Indexing(err));
+            } else {
+                let idx = index[i];
+                start += idx * stride[i];
+            }
+        }
+
+        let end = start + stride[index.len() - 1];
+        let len = end - start;
+        let new_shape = if index.len() == shape.len() {
+            vec![1]
+        } else {
+            shape[index.len()..].to_vec()
+        };
+
+        let arr_view = GpuArrayView {
+            array: arr,
+            pointer: (start, end),
+            shape: new_shape,
+            len,
+        };
+
+        Ok(arr_view)
     }
 }
