@@ -1,6 +1,8 @@
-use std::{ ops::{ Range, RangeFull }, sync::mpsc, time::UNIX_EPOCH };
+use arr_o_gpu::ArrOgpuModule;
 
-use arr_o_gpu::{ ArangeArray, ArrOgpuModule, FlatteTrait, GpuArray, r };
-use ndarray::{ Array1, Array2 };
+fn main() {
+    let module = ArrOgpuModule::default();
 
-fn main() {}
+    let array = module.array_from_vector(&[0.0, 1.0, 2.0, 3.0], &[2, 2]).unwrap();
+    let indexing = module.index_view(&array, &[0]).unwrap();
+}

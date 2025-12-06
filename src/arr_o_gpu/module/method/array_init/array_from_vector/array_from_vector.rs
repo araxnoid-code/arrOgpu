@@ -23,11 +23,7 @@ use crate::*;
 
 impl ArrOgpuModule {
     // array init
-    pub fn array_from_vector(
-        &self,
-        vector: &Vec<f32>,
-        shape: &[u32]
-    ) -> Result<GpuArray, ArrOgpuErr> {
+    pub fn array_from_vector(&self, vector: &[f32], shape: &[u32]) -> Result<GpuArray, ArrOgpuErr> {
         let (flatten, _) = vector.flatten();
 
         let len = flatten.len();
