@@ -15,6 +15,6 @@ fn main() {
     let array_a = module.array_from_vector(&data, &[2, 3]).unwrap();
     println!("{}", array_a);
 
-    let index = module.index_view(&array_a, &[1]).unwrap();
-    println!("{:?}", index.offset_list())
+    let index = array_a.view().collect();
+    println!("{:?}", module.get_heap())
 }
