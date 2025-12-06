@@ -70,7 +70,7 @@ fn main() {
 #### index_view()
 still `bug`
 
-indexing on an array that will return an GpuArrayView
+indexing on an array that will return a GpuArrayView
 ```rust
 use arr_o_gpu::ArrOgpuModule;
 
