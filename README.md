@@ -63,7 +63,7 @@ fn main() {
     // or
     let array_view = array.view();
 
-    let another_array = array_view.collect();
+    let new_array = array_view.collect();
 }
 ```
 
