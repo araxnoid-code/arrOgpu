@@ -34,7 +34,7 @@ fn main() {
 - Slicing(wgsl file)
 
 ### feature
-- GpuArrayView
+#### GpuArrayView
 view mode for array
 ```rust
 use arr_o_gpu::ArrOgpuModule;
@@ -65,7 +65,7 @@ fn main() {
 }
 ```
 
-- index_view()
+#### index_view()
 still `bug`
 
 indexing on an array that will return an GpuArrayView
