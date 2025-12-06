@@ -26,6 +26,8 @@ fn main() {
 - in this version there are still a few features and the possibility of bugs will occur, in the future it will continue to be developed.
 
 ## What New?
+### fix bug
+- vector parameters data type bug in array_from_vector method
 
 ### Optimaze Code
 - 2d matmul(wgsl file)
