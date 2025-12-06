@@ -99,6 +99,7 @@ impl ArrOgpuModule {
         // check overflow
         let stride = &arr.stride;
         let shape = &arr.shape;
+        let mut offset_list = vec![0; shape.len()];
         let mut start = 0;
         for i in 0..index.len() {
             if index[i] >= shape[i] {
@@ -111,11 +112,11 @@ impl ArrOgpuModule {
             } else {
                 let idx = index[i];
                 start += idx * stride[i];
+                offset_list[i] = idx * stride[i];
             }
         }
 
-        let end = start + stride[index.len() - 1];
-        let len = end - start;
+        // let end = start + stride[index.len() - 1];
         let new_shape = if index.len() == shape.len() {
             vec![1]
         } else {
@@ -124,9 +125,10 @@ impl ArrOgpuModule {
 
         let arr_view = GpuArrayView {
             array: arr,
-            pointer: (start, end),
+            pointer: arr.pointer,
             shape: new_shape,
-            len,
+            offset: start,
+            offset_list,
         };
 
         Ok(arr_view)

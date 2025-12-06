@@ -9,3 +9,6 @@ pub use display::*;
 
 mod indexing;
 pub use indexing::*;
+
+mod view;
+pub use view::*;

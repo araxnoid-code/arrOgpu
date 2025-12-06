@@ -3,7 +3,8 @@ use wgpu::{ BufferUsages, wgt::{ BufferDescriptor, CommandEncoderDescriptor } };
 use crate::GpuArrayView;
 
 impl<'a> GpuArrayView<'a> {
-    pub fn get_heap(&self) {
+    // unsafe
+    pub(crate) fn get_heap(&self) {
         let module = self.array.module();
         let wgpu = module.wgpu_init.read().unwrap();
         let heap_buffer = module.heap_buffer();
