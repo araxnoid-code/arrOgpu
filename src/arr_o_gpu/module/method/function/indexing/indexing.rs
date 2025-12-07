@@ -116,7 +116,6 @@ impl ArrOgpuModule {
             }
         }
 
-        // let end = start + stride[index.len() - 1];
         let new_shape = if index.len() == shape.len() {
             vec![1]
         } else {

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use wgpu::{
     ComputePassDescriptor,
     ComputePipelineDescriptor,
@@ -7,10 +9,10 @@ use wgpu::{
     wgt::{ CommandEncoderDescriptor, PollType },
 };
 
-use crate::{ GpuArrayView, bind_group_collect };
+use crate::{ GpuArray, GpuArrayView, bind_group_collect, get_stride_from_shape };
 
 impl<'a> GpuArrayView<'a> {
-    pub fn collect(&self) {
+    pub fn collect(self) -> GpuArray {
         let mut allocator = self.array.module.allocator.write().unwrap();
         let wgpu = self.array.module.wgpu_init.read().unwrap();
 
@@ -104,5 +106,16 @@ impl<'a> GpuArrayView<'a> {
 
         wgpu.queue.submit(Some(encoder.finish()));
         wgpu.device.poll(PollType::Wait).unwrap();
+
+        let array = GpuArray {
+            module: self.array.module.clone(),
+            length: len as usize,
+            pointer: (allocate.1, allocate.2),
+            space_type: allocate.0,
+            stride: get_stride_from_shape(&shape),
+            shape: self.shape,
+        };
+
+        array
     }
 }
