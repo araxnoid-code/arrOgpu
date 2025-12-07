@@ -1,8 +1,8 @@
 use wgpu::{ BufferUsages, wgt::{ BufferDescriptor, CommandEncoderDescriptor } };
 
-use crate::GpuArrayView;
+use crate::{ ArrayView, GpuArrayView };
 
-impl<'a> GpuArrayView<'a> {
+impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
     // unsafe
     pub(crate) fn get_heap(&self) {
         let module = self.array.module();

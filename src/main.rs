@@ -8,8 +8,10 @@ fn main() {
         .unwrap();
     print!("{}", array);
 
-    let array_view = module.index_view(&array, &[2, 1, 2]).unwrap().collect();
-    println!("\n{}", array_view);
+    let array_view = module.index_view(&array, &[2]).unwrap();
+    let array_view = module.index_view(&array_view, &[0]).unwrap();
+    let array_view = module.index_view(&array_view, &[2]).unwrap().collect();
 
-    // println!("{:?}", module.get_heap());
+    println!("\n{}", array_view);
+    println!("{:?}", module.get_heap())
 }

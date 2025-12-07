@@ -1,7 +1,7 @@
 use crate::{ GpuArray, GpuArrayView };
 
 impl GpuArray {
-    pub fn view(&self) -> GpuArrayView<'_> {
+    pub fn view(&self) -> GpuArrayView<'_, GpuArray> {
         let shape = self.shape.clone();
         GpuArrayView {
             array: self,

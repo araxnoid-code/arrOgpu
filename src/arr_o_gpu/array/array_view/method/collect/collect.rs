@@ -9,12 +9,12 @@ use wgpu::{
     wgt::{ CommandEncoderDescriptor, PollType },
 };
 
-use crate::{ GpuArray, GpuArrayView, bind_group_collect, get_stride_from_shape };
+use crate::{ ArrayView, GpuArray, GpuArrayView, bind_group_collect, get_stride_from_shape };
 
-impl<'a> GpuArrayView<'a> {
+impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
     pub fn collect(self) -> GpuArray {
-        let mut allocator = self.array.module.allocator.write().unwrap();
-        let wgpu = self.array.module.wgpu_init.read().unwrap();
+        let mut allocator = self.array.module().allocator.write().unwrap();
+        let wgpu = self.array.module().wgpu_init.read().unwrap();
 
         // array
         // // pointer
@@ -38,7 +38,7 @@ impl<'a> GpuArrayView<'a> {
         let pointer_out = [allocate.1, allocate.2];
 
         // bind group
-        let heap_binding = &self.array.module.binding_compounds.read().unwrap()[0];
+        let heap_binding = &self.array.module().binding_compounds.read().unwrap()[0];
         let (bind_group_layout, bind_group) = bind_group_collect(
             &wgpu,
             &pointer,
@@ -108,7 +108,7 @@ impl<'a> GpuArrayView<'a> {
         wgpu.device.poll(PollType::Wait).unwrap();
 
         let array = GpuArray {
-            module: self.array.module.clone(),
+            module: self.array.module().clone(),
             length: len as usize,
             pointer: (allocate.1, allocate.2),
             space_type: allocate.0,

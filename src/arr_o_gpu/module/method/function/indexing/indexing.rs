@@ -1,12 +1,12 @@
 use wgpu::{ wgt::{ BufferDescriptor, CommandEncoderDescriptor, PollType }, BufferUsages };
 
-use crate::{ ArrOgpuErr, ArrOgpuModule, GpuArray, GpuArrayView };
+use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArray, GpuArrayView };
 
 impl ArrOgpuModule {
     pub fn index(&self, arr: &GpuArray, index: &[u32]) -> Result<GpuArray, ArrOgpuErr> {
         let dim = arr.dim();
         // check dim
-        if index.len() > dim {
+        if index.len() > dim || index.is_empty() {
             let err = format!(
                 "Indexing Out Of Dimension Error, Indexing {:?} but dim of array is {}",
                 index,
@@ -81,14 +81,16 @@ impl ArrOgpuModule {
         Ok(array)
     }
 
-    pub fn index_view<'a>(
+    pub fn index_view<'a, A>(
         &'a self,
-        arr: &'a GpuArray,
+        arr: &'a A,
         index: &[u32]
-    ) -> Result<GpuArrayView<'a>, ArrOgpuErr> {
+    ) -> Result<GpuArrayView<'a, A>, ArrOgpuErr>
+        where A: ArrayView
+    {
         let dim = arr.dim();
         // check dim
-        if index.len() > dim {
+        if index.len() > dim || index.is_empty() {
             let err = format!(
                 "Indexing Out Of Dimension Error, Indexing {:?} but dim of array is {}",
                 index,
@@ -97,10 +99,10 @@ impl ArrOgpuModule {
             return Err(ArrOgpuErr::Indexing(err));
         }
         // check overflow
-        let stride = &arr.stride;
-        let shape = &arr.shape;
+        let stride = arr.stride();
+        let shape = arr.shape();
         let mut offset_list = vec![0; shape.len()];
-        let mut start = 0;
+        let mut start = arr.offset();
         for i in 0..index.len() {
             if index[i] >= shape[i] {
                 let err = format!(
@@ -122,14 +124,14 @@ impl ArrOgpuModule {
             shape[index.len()..].to_vec()
         };
 
-        let mut stride = arr.stride[index.len()..].to_vec();
+        let mut stride = arr.stride()[index.len()..].to_vec();
         if stride.is_empty() {
             stride.push(1);
         }
 
         let arr_view = GpuArrayView {
             array: arr,
-            pointer: arr.pointer,
+            pointer: arr.pointer(),
             shape: new_shape,
             stride: stride,
             offset: start,
