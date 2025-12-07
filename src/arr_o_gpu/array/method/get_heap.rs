@@ -17,7 +17,7 @@ impl GpuArray {
 
         let copy_buffer = wgpu_init.device.create_buffer(
             &(BufferDescriptor {
-                label: Some("Create Encoder For get_heap"),
+                label: Some("create buffer copy for get_heap_pointer"),
                 mapped_at_creation: false,
                 usage: BufferUsages::MAP_READ | BufferUsages::COPY_DST,
                 size,

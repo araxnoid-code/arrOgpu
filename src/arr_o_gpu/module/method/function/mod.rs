@@ -12,3 +12,6 @@ pub use slicing::*;
 
 mod dot_product;
 pub use dot_product::*;
+
+mod reshape;
+pub use reshape::*;

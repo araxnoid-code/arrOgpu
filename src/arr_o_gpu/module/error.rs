@@ -14,5 +14,6 @@ pub enum ArrOgpuErr {
     Broadcast(String),
     Slicing(String),
     DotProduct(String),
+    Reshape(String),
     Poll(PollError),
 }

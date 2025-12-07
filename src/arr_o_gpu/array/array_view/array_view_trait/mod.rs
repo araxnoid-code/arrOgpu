@@ -14,6 +14,8 @@ pub trait ArrayView {
     fn pointer(&self) -> (u32, u32);
 
     fn offset(&self) -> u32;
+
+    fn len(&self) -> u32;
 }
 
 impl ArrayView for GpuArray {
@@ -44,6 +46,10 @@ impl ArrayView for GpuArray {
     fn offset(&self) -> u32 {
         0
     }
+
+    fn len(&self) -> u32 {
+        self.length as u32
+    }
 }
 
 impl<'a, A> ArrayView for GpuArrayView<'a, A> where A: ArrayView {
@@ -73,5 +79,9 @@ impl<'a, A> ArrayView for GpuArrayView<'a, A> where A: ArrayView {
 
     fn offset(&self) -> u32 {
         self.offset
+    }
+
+    fn len(&self) -> u32 {
+        self.shape.iter().product::<u32>()
     }
 }

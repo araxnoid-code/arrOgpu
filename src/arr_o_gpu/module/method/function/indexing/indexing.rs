@@ -82,7 +82,7 @@ impl ArrOgpuModule {
     }
 
     pub fn index_view<'a, A>(
-        &'a self,
+        &self,
         arr: &'a A,
         index: &[u32]
     ) -> Result<GpuArrayView<'a, A>, ArrOgpuErr>

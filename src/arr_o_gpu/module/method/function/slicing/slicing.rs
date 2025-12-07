@@ -170,9 +170,9 @@ impl ArrOgpuModule {
     }
 
     pub fn slicing_view<'a, A>(
-        &'a self,
+        &self,
         array: &'a A,
-        slice: &'a [SliceRange]
+        slice: &[SliceRange]
     ) -> Result<GpuArrayView<'a, A>, ArrOgpuErr>
         where A: ArrayView
     {
@@ -209,8 +209,6 @@ impl ArrOgpuModule {
                 output_shape.push(array.shape()[i] as u32);
             }
         }
-
-        println!("{:?}", output_shape);
 
         let array_view = GpuArrayView {
             array: array,
