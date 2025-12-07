@@ -11,21 +11,25 @@ var<uniform> pointer: vec2<u32>;
 @group(1) @binding(1)
 var<storage, read> shape: array<u32>;
 
-// // stride
+// // iters
 @group(1) @binding(2)
+var<storage, read> iters: array<u32>;
+
+// // stride
+@group(1) @binding(3)
 var<storage, read> stride: array<u32>;
 
 // // offset
-@group(1) @binding(3)
+@group(1) @binding(4)
 var<uniform> offset: u32;
 
 // // product
-@group(1) @binding(4)
+@group(1) @binding(5)
 var<uniform> len: u32;
 
 // output
 // // pointer
-@group(1) @binding(5)
+@group(1) @binding(6)
 var<uniform> pointer_out: vec2<u32>;
 
 @compute @workgroup_size(256, 1, 1)
@@ -34,10 +38,9 @@ fn main(@builtin(global_invocation_id) global_id:vec3<u32>){
         let shape_len = arrayLength(&shape);
         var idx = offset;
         for(var i = 0u; i < shape_len; i++){
-            let permute = ( global_id.x / stride[i] ) % shape[i];
+            let permute = ( global_id.x / iters[i] ) % shape[i];
             idx += permute * stride[i];
         }
-        heap[490 + global_id.x] = f32(idx);
 
         let array_index = idx + pointer.x;
         let output_index = global_id.x + pointer_out.x;

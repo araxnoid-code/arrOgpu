@@ -26,6 +26,9 @@ impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
         // // stride
         let stride = &self.stride;
 
+        // // iters
+        let iters = get_stride_from_shape(&shape);
+
         // // offset
         let offset = self.offset;
 
