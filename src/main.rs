@@ -6,8 +6,9 @@ fn main() {
     let array = ArangeArray::arange(0..24)
         .to_GpuArray_with_shape(&[3, 2, 4], &module)
         .unwrap();
+    print!("{}", array);
 
     let array_view = module.index_view(&array, &[0]).unwrap().collect();
 
-    // println!("{:?}", module.get_heap());
+    println!("{:?}", module.get_heap());
 }

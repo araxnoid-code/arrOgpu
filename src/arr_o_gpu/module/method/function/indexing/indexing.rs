@@ -122,6 +122,10 @@ impl ArrOgpuModule {
             shape[index.len()..].to_vec()
         };
 
+        let new_shape = vec![1, 2, 4];
+
+        println!("{:?}", new_shape);
+
         let arr_view = GpuArrayView {
             array: arr,
             pointer: arr.pointer,
