@@ -23,11 +23,11 @@ impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
         // // shape
         let shape = &self.shape;
 
-        // // stride
-        let stride = &self.stride;
-
         // // iters
         let iters = get_stride_from_shape(&shape);
+
+        // // stride
+        let stride = &self.stride;
 
         // // offset
         let offset = self.offset;
@@ -46,6 +46,7 @@ impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
             &wgpu,
             &pointer,
             shape,
+            &iters,
             stride,
             &offset,
             &len,
