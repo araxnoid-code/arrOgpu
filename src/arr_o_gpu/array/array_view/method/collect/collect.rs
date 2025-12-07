@@ -21,13 +21,6 @@ impl<'a> GpuArrayView<'a> {
         // // shape
         let shape = &self.shape;
 
-        // // iters
-        let iters = shape
-            .iter()
-            .enumerate()
-            .map(|(i, _)| shape[i + 1..].iter().product::<u32>())
-            .collect::<Vec<u32>>();
-
         // // stride
         let stride = self.array.stride();
 
@@ -48,7 +41,6 @@ impl<'a> GpuArrayView<'a> {
             &wgpu,
             &pointer,
             shape,
-            &iters,
             stride,
             &offset,
             &len,

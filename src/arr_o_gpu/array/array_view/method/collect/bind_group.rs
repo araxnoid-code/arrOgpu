@@ -18,7 +18,6 @@ pub(crate) fn bind_group_collect(
     wgpu: &RwLockReadGuard<'_, WgpuInit>,
     pointer: &[u32],
     shape: &[u32],
-    iters: &[u32],
     stride: &[u32],
     offset: &u32,
     product: &u32,
@@ -40,15 +39,6 @@ pub(crate) fn bind_group_collect(
             label: Some("Create Shape Buffer Layout For Collect View"),
             usage: BufferUsages::STORAGE,
             contents: bytemuck::cast_slice(shape),
-        })
-    );
-
-    // // iters
-    let iters_buffer = wgpu.device.create_buffer_init(
-        &(BufferInitDescriptor {
-            label: Some("Create Iters Buffer Layout For Collect View"),
-            usage: BufferUsages::STORAGE,
-            contents: bytemuck::cast_slice(iters),
         })
     );
 
@@ -116,7 +106,7 @@ pub(crate) fn bind_group_collect(
                     },
                     visibility: ShaderStages::COMPUTE,
                 },
-                // // iters
+                // // stride
                 BindGroupLayoutEntry {
                     binding: 2,
                     count: None,
@@ -127,20 +117,9 @@ pub(crate) fn bind_group_collect(
                     },
                     visibility: ShaderStages::COMPUTE,
                 },
-                // // stride
-                BindGroupLayoutEntry {
-                    binding: 3,
-                    count: None,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    visibility: ShaderStages::COMPUTE,
-                },
                 // // offset
                 BindGroupLayoutEntry {
-                    binding: 4,
+                    binding: 3,
                     count: None,
                     ty: BindingType::Buffer {
                         ty: BufferBindingType::Uniform,
@@ -151,7 +130,7 @@ pub(crate) fn bind_group_collect(
                 },
                 // // product
                 BindGroupLayoutEntry {
-                    binding: 5,
+                    binding: 4,
                     count: None,
                     ty: BindingType::Buffer {
                         ty: BufferBindingType::Uniform,
@@ -162,7 +141,7 @@ pub(crate) fn bind_group_collect(
                 },
                 // // pointer_out
                 BindGroupLayoutEntry {
-                    binding: 6,
+                    binding: 5,
                     count: None,
                     ty: BindingType::Buffer {
                         ty: BufferBindingType::Uniform,
@@ -191,29 +170,24 @@ pub(crate) fn bind_group_collect(
                     binding: 1,
                     resource: shape_buffer.as_entire_binding(),
                 },
-                // // iters
-                BindGroupEntry {
-                    binding: 2,
-                    resource: iters_buffer.as_entire_binding(),
-                },
                 // // stride
                 BindGroupEntry {
-                    binding: 3,
+                    binding: 2,
                     resource: stride_buffer.as_entire_binding(),
                 },
                 // // offset
                 BindGroupEntry {
-                    binding: 4,
+                    binding: 3,
                     resource: offset_buffer.as_entire_binding(),
                 },
                 // // product
                 BindGroupEntry {
-                    binding: 5,
+                    binding: 4,
                     resource: len_buffer.as_entire_binding(),
                 },
                 // // pointer_out
                 BindGroupEntry {
-                    binding: 6,
+                    binding: 5,
                     resource: pointer_out_buffer.as_entire_binding(),
                 },
             ],
