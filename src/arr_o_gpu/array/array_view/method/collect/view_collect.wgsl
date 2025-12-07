@@ -37,6 +37,7 @@ fn main(@builtin(global_invocation_id) global_id:vec3<u32>){
             let permute = ( global_id.x / stride[i] ) % shape[i];
             idx += permute * stride[i];
         }
+        heap[490 + global_id.x] = f32(idx);
 
         let array_index = idx + pointer.x;
         let output_index = global_id.x + pointer_out.x;

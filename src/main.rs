@@ -1,4 +1,4 @@
-use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule };
+use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule, r };
 
 fn main() {
     let module = ArrOgpuModule::default();
@@ -8,10 +8,12 @@ fn main() {
         .unwrap();
     print!("{}", array);
 
-    let array_view = module.index_view(&array, &[2]).unwrap();
-    let array_view = module.index_view(&array_view, &[0]).unwrap();
-    let array_view = module.index_view(&array_view, &[2]).unwrap().collect();
+    let arr = module
+        .slicing_view(&array, &[r(0..2), r(0..1)])
+        .unwrap()
+        .collect();
 
-    println!("\n{}", array_view);
-    println!("{:?}", module.get_heap())
+    println!("\n{}", arr);
+
+    println!("\n{:?}", module.get_heap())
 }
