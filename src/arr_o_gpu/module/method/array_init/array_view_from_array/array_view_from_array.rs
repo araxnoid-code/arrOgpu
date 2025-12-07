@@ -6,7 +6,7 @@ impl ArrOgpuModule {
         GpuArrayView {
             array,
             pointer: array.pointer(),
-            offset_list: vec![0; shape.len()],
+            stride: array.stride.clone(),
             shape,
             offset: 0,
         }

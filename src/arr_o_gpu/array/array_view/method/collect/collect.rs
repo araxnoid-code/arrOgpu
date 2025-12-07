@@ -24,7 +24,7 @@ impl<'a> GpuArrayView<'a> {
         let shape = &self.shape;
 
         // // stride
-        let stride = self.array.stride();
+        let stride = &self.stride;
 
         // // offset
         let offset = self.offset;

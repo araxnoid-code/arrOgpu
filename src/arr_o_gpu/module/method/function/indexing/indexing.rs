@@ -122,16 +122,17 @@ impl ArrOgpuModule {
             shape[index.len()..].to_vec()
         };
 
-        let new_shape = vec![1, 2, 4];
-
-        println!("{:?}", new_shape);
+        let mut stride = arr.stride[index.len()..].to_vec();
+        if stride.is_empty() {
+            stride.push(1);
+        }
 
         let arr_view = GpuArrayView {
             array: arr,
             pointer: arr.pointer,
             shape: new_shape,
+            stride: stride,
             offset: start,
-            offset_list,
         };
 
         Ok(arr_view)

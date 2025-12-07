@@ -6,7 +6,7 @@ impl GpuArray {
         GpuArrayView {
             array: self,
             pointer: self.pointer,
-            offset_list: vec![0; shape.len()],
+            stride: self.stride.clone(),
             shape,
             offset: 0,
         }

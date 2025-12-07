@@ -17,7 +17,7 @@ impl<'a> GpuArrayView<'a> {
         self.offset
     }
 
-    pub fn offset_list(&self) -> &Vec<u32> {
-        &self.offset_list
+    pub fn stride(&self) -> &Vec<u32> {
+        &self.stride
     }
 }
