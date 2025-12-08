@@ -16,6 +16,8 @@ pub trait ArrayView {
     fn offset(&self) -> u32;
 
     fn len(&self) -> u32;
+
+    fn is_contiguous(&self) -> bool;
 }
 
 impl ArrayView for GpuArray {
@@ -50,6 +52,10 @@ impl ArrayView for GpuArray {
     fn len(&self) -> u32 {
         self.length as u32
     }
+
+    fn is_contiguous(&self) -> bool {
+        true
+    }
 }
 
 impl<'a, A> ArrayView for GpuArrayView<'a, A> where A: ArrayView {
@@ -83,5 +89,9 @@ impl<'a, A> ArrayView for GpuArrayView<'a, A> where A: ArrayView {
 
     fn len(&self) -> u32 {
         self.shape.iter().product::<u32>()
+    }
+
+    fn is_contiguous(&self) -> bool {
+        self.pointer.1 - self.pointer.0 == self.shape.iter().product::<u32>()
     }
 }

@@ -10,7 +10,6 @@ impl ArrOgpuModule {
     {
         let length_of_new_shape = shape.iter().product::<u32>();
         let len_arr = array.len();
-        let pointer = array.pointer();
 
         if shape.is_empty() {
             let err = "Reshape Error, shape input is empty".to_string();
@@ -22,7 +21,7 @@ impl ArrOgpuModule {
                 len_arr
             );
             return Err(ArrOgpuErr::Reshape(err));
-        } else if array.offset() != 0 || pointer.1 - pointer.0 != length_of_new_shape {
+        } else if array.offset() != 0 || array.is_contiguous() {
             let err = format!("Reshape Error, Array No Contiguous");
             return Err(ArrOgpuErr::Reshape(err));
         }
