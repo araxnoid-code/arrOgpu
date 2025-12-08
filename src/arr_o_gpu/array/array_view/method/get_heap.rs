@@ -4,7 +4,7 @@ use crate::{ ArrayView, GpuArrayView };
 
 impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
     // unsafe
-    pub(crate) fn get_heap(&self) {
+    pub fn get_heap(&self) -> Vec<f32> {
         let module = self.array.module();
         let wgpu = module.wgpu_init.read().unwrap();
         let heap_buffer = module.heap_buffer();
@@ -41,9 +41,10 @@ impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
 
         let copy = copy_slice.get_mapped_range();
         let data: Vec<f32> = bytemuck::cast_slice(&copy).into();
-        println!("{:?}", data);
 
         drop(copy);
         copy_buffer.unmap();
+
+        data
     }
 }

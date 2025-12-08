@@ -21,7 +21,7 @@ impl ArrOgpuModule {
                 len_arr
             );
             return Err(ArrOgpuErr::Reshape(err));
-        } else if array.offset() != 0 || array.is_contiguous() {
+        } else if array.offset() != 0 || !array.is_contiguous() {
             let err = format!("Reshape Error, Array No Contiguous");
             return Err(ArrOgpuErr::Reshape(err));
         }

@@ -12,7 +12,7 @@ use wgpu::{
 use crate::{ ArrayView, GpuArray, GpuArrayView, bind_group_collect, get_stride_from_shape };
 
 impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
-    pub fn collect(self) -> GpuArray {
+    pub fn contiguous(self) -> GpuArray {
         let mut allocator = self.array.module().allocator.write().unwrap();
         let wgpu = self.array.module().wgpu_init.read().unwrap();
 
