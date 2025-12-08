@@ -15,3 +15,6 @@ pub use dot_product::*;
 
 mod reshape;
 pub use reshape::*;
+
+mod permute;
+pub use permute::*;

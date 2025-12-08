@@ -3,12 +3,12 @@ use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArrayView };
 impl ArrOgpuModule {
     pub fn index_view<'a, A>(
         &self,
-        arr: &'a A,
+        array: &'a A,
         index: &[u32]
     ) -> Result<GpuArrayView<'a, A>, ArrOgpuErr>
         where A: ArrayView
     {
-        let dim = arr.dim();
+        let dim = array.dim();
         // check dim
         if index.len() > dim || index.is_empty() {
             let err = format!(
@@ -19,10 +19,10 @@ impl ArrOgpuModule {
             return Err(ArrOgpuErr::Indexing(err));
         }
         // check overflow
-        let stride = arr.stride();
-        let shape = arr.shape();
+        let stride = array.stride();
+        let shape = array.shape();
         let mut offset_list = vec![0; shape.len()];
-        let mut start = arr.offset();
+        let mut start = array.offset();
         for i in 0..index.len() {
             if index[i] >= shape[i] {
                 let err = format!(
@@ -44,14 +44,14 @@ impl ArrOgpuModule {
             shape[index.len()..].to_vec()
         };
 
-        let mut stride = arr.stride()[index.len()..].to_vec();
+        let mut stride = array.stride()[index.len()..].to_vec();
         if stride.is_empty() {
             stride.push(1);
         }
 
         let arr_view = GpuArrayView {
-            array: arr,
-            pointer: arr.pointer(),
+            array,
+            pointer: array.pointer(),
             shape: new_shape,
             stride: stride,
             offset: start,
