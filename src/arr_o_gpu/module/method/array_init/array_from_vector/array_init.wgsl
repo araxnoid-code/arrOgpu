@@ -1,8 +1,8 @@
 @group(0) @binding(0)
 var <storage, read_write> heap: array<f32>;
 
-@group(1) @binding(0)
 // vector
+@group(1) @binding(0)
 var <storage, read> init_data: array<f32>;
 
 // pointer

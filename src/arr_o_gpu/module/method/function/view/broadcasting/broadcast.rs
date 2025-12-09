@@ -145,6 +145,7 @@ impl ArrOgpuModule {
             stride,
             pointer: (output_allocate.1, output_allocate.2),
             space_type: output_allocate.0,
+            binding: None,
         };
         Ok(arr)
     }

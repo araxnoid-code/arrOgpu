@@ -121,6 +121,7 @@ impl ArrOgpuModule {
             shape: vec![1],
             space_type: output_allocate.0,
             stride: vec![1],
+            binding: None,
         };
 
         Ok(arr)

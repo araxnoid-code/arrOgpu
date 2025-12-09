@@ -164,6 +164,7 @@ impl ArrOgpuModule {
             stride: output_stride,
             shape: output_shape,
             space_type: output_allocate.0,
+            binding: None,
         };
 
         Ok(arr)

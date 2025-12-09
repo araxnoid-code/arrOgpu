@@ -1,4 +1,4 @@
-use std::{ sync::Arc, time::UNIX_EPOCH };
+use std::sync::Arc;
 
 use wgpu::{
     BindGroupDescriptor,
@@ -6,21 +6,19 @@ use wgpu::{
     BindGroupLayout,
     BindGroupLayoutDescriptor,
     BindGroupLayoutEntry,
-    BindingResource,
     BindingType,
     BufferBindingType,
     BufferUsages,
     ComputePassDescriptor,
     ComputePipelineDescriptor,
     Device,
-    MapMode,
     PipelineCompilationOptions,
     PipelineLayoutDescriptor,
     ShaderModuleDescriptor,
     ShaderSource,
     ShaderStages,
     util::{ BufferInitDescriptor, DeviceExt },
-    wgt::{ BufferDescriptor, CommandEncoderDescriptor, PollType },
+    wgt::{ CommandEncoderDescriptor, PollType },
 };
 
 use crate::{ ArrOgpuErr, ArrOgpuModule, GpuArray, get_stride_from_shape };
@@ -288,6 +286,7 @@ impl ArrOgpuModule {
             pointer,
             space_type: type_output_pointer,
             stride,
+            binding: None,
         };
 
         Ok(array)

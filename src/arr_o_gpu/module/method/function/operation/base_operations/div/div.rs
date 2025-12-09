@@ -186,6 +186,7 @@ impl ArrOgpuModule {
             shape: arr_a.shape.clone(),
             space_type: pointer_type,
             stride: get_stride_from_shape(&arr_a.shape),
+            binding: None,
         };
 
         Ok(arr)

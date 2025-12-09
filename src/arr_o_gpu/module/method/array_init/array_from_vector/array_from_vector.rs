@@ -1,4 +1,4 @@
-use std::{ sync::{ Arc, RwLock }, vec };
+use std::{ sync::Arc };
 
 use wgpu::{
     BindGroupDescriptor,
@@ -168,13 +168,23 @@ impl ArrOgpuModule {
 
         let pointer = (pointer[0], pointer[1]);
 
+        let stride = get_stride_from_shape(shape);
+        let binding = self.array_data_binding(
+            &[pointer.0, pointer.1],
+            &shape,
+            &stride,
+            &stride,
+            &0
+        );
+
         Ok(GpuArray {
             module: Arc::new(self.clone()),
             pointer,
             length: (pointer.1 - pointer.0) as usize,
             shape: shape.to_vec(),
-            stride: get_stride_from_shape(shape),
+            stride,
             space_type: space_type,
+            binding: Some(binding),
         })
     }
 }

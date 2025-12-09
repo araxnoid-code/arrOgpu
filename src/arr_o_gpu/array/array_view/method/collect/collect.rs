@@ -118,6 +118,7 @@ impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
             space_type: allocate.0,
             stride: get_stride_from_shape(&shape),
             shape: self.shape,
+            binding: None,
         };
 
         array
