@@ -10,7 +10,12 @@ use wgpu::{
     wgt::{ CommandEncoderDescriptor, PollType },
 };
 
-use crate::{ ArrOgpuErr, ArrOgpuModule, GpuArray, matmul_nd_group_binding };
+use crate::{
+    ArrOgpuErr,
+    ArrOgpuModule,
+    GpuArray,
+    arr_o_gpu::module::method::function::operation::matmul::matmul_nd_group_binding,
+};
 
 impl ArrOgpuModule {
     pub fn matmul_nd(&self, arr_a: &GpuArray, arr_b: &GpuArray) -> Result<GpuArray, ArrOgpuErr> {

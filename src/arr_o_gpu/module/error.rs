@@ -2,8 +2,11 @@ use wgpu::PollError;
 
 #[derive(Debug)]
 pub enum ArrOgpuErr {
+    // Init
     Init(String),
     ArangeInit(String),
+
+    // Operation
     Matmul2D(String),
     MatmulND(String),
     Add(String),
@@ -11,7 +14,8 @@ pub enum ArrOgpuErr {
     Mul(String),
     Div(String),
     DotProduct(String),
-    // mutate
+    // View
+
     Indexing(String),
     Broadcast(String),
     Slicing(String),

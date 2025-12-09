@@ -1,25 +1,26 @@
-use std::sync::{Arc, RwLock};
+use std::sync::{ Arc, RwLock };
 
 use wgpu::{
-    BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor, BindGroupLayoutEntry,
-    BindingType, BufferBindingType, BufferUsages, Device, ShaderStages,
-    util::{BufferInitDescriptor, DeviceExt},
+    BindGroupDescriptor,
+    BindGroupEntry,
+    BindGroupLayoutDescriptor,
+    BindGroupLayoutEntry,
+    BindingType,
+    BufferBindingType,
+    BufferUsages,
+    Device,
+    ShaderStages,
+    util::{ BufferInitDescriptor, DeviceExt },
 };
 
-use crate::{Allocator, GpuArray, get_stride_from_shape};
+use crate::{ Allocator, GpuArray, get_stride_from_shape };
 
 pub(crate) fn matmul_nd_group_binding(
     device: &Device,
     allocator: &Arc<RwLock<Allocator>>,
     arr_a: &GpuArray,
-    arr_b: &GpuArray,
-) -> (
-    wgpu::BindGroupLayout,
-    wgpu::BindGroup,
-    Vec<u32>,
-    Vec<u32>,
-    (crate::SpaceType, u32, u32),
-) {
+    arr_b: &GpuArray
+) -> (wgpu::BindGroupLayout, wgpu::BindGroup, Vec<u32>, Vec<u32>, (crate::SpaceType, u32, u32)) {
     // A
     // Pointer A
     let pointer_a = arr_a.pointer_to_arr();
@@ -28,7 +29,7 @@ pub(crate) fn matmul_nd_group_binding(
             label: Some("Create Pointer A Buffer Layout For Matmul ND"),
             usage: BufferUsages::UNIFORM,
             contents: bytemuck::cast_slice(&pointer_a),
-        }),
+        })
     );
 
     // matrix stride of A
@@ -39,7 +40,7 @@ pub(crate) fn matmul_nd_group_binding(
             label: Some("Create Matrix Stride A Buffer Layout For Matmul ND"),
             contents: bytemuck::cast_slice(matrix_stride_a),
             usage: BufferUsages::UNIFORM,
-        }),
+        })
     );
 
     // shape of A
@@ -50,7 +51,7 @@ pub(crate) fn matmul_nd_group_binding(
             label: Some("Create Matrix Shape A Buffer Layout For Matmul ND"),
             contents: bytemuck::cast_slice(shape_of_matrix_a),
             usage: BufferUsages::UNIFORM,
-        }),
+        })
     );
 
     // B
@@ -61,7 +62,7 @@ pub(crate) fn matmul_nd_group_binding(
             label: Some("Create Pointer B Buffer Layout For Matmul ND"),
             usage: BufferUsages::UNIFORM,
             contents: bytemuck::cast_slice(&pointer_b),
-        }),
+        })
     );
 
     // matrix stride of B
@@ -72,7 +73,7 @@ pub(crate) fn matmul_nd_group_binding(
             label: Some("Create Matrix Stride B Buffer Layout For Matmul ND"),
             contents: bytemuck::cast_slice(matrix_stride_b),
             usage: BufferUsages::UNIFORM,
-        }),
+        })
     );
 
     // shape of B
@@ -83,7 +84,7 @@ pub(crate) fn matmul_nd_group_binding(
             label: Some("Create Matrix Shape B Buffer Layout For Matmul ND"),
             contents: bytemuck::cast_slice(shape_of_matrix_b),
             usage: BufferUsages::UNIFORM,
-        }),
+        })
     );
 
     // Output
@@ -98,7 +99,7 @@ pub(crate) fn matmul_nd_group_binding(
             label: Some("Create Pointer Output Buffer Layout For Matmul ND"),
             contents: bytemuck::cast_slice(&pointer_output),
             usage: BufferUsages::UNIFORM,
-        }),
+        })
     );
 
     // matrix stride of pointer
@@ -110,7 +111,7 @@ pub(crate) fn matmul_nd_group_binding(
             label: Some("Create Matrix Stride Output Buffer Layout For Matmul ND"),
             contents: bytemuck::cast_slice(matrix_stride_out),
             usage: BufferUsages::UNIFORM,
-        }),
+        })
     );
 
     // other
@@ -121,7 +122,7 @@ pub(crate) fn matmul_nd_group_binding(
             label: Some("Create stride between matrix Buffer Layout For Matmul ND"),
             contents: bytemuck::bytes_of(&stride_between_matrix_a),
             usage: BufferUsages::UNIFORM,
-        }),
+        })
     );
 
     // stride_between_matrix_b
@@ -131,7 +132,7 @@ pub(crate) fn matmul_nd_group_binding(
             label: Some("Create stride between matrix Buffer Layout For Matmul ND"),
             contents: bytemuck::bytes_of(&stride_between_matrix_b),
             usage: BufferUsages::UNIFORM,
-        }),
+        })
     );
 
     // stride_between_matrix_out
@@ -141,7 +142,7 @@ pub(crate) fn matmul_nd_group_binding(
             label: Some("Create stride between matrix Buffer Layout For Matmul ND"),
             contents: bytemuck::bytes_of(&stride_between_matrix_out),
             usage: BufferUsages::UNIFORM,
-        }),
+        })
     );
 
     let bind_group_layout = bind_group_layout(device);
@@ -210,16 +211,10 @@ pub(crate) fn matmul_nd_group_binding(
                     resource: buffer_stride_between_matrix_out.as_entire_binding(),
                 },
             ],
-        }),
+        })
     );
 
-    (
-        bind_group_layout,
-        bind_group,
-        output_shape,
-        stride_out,
-        allocate_out,
-    )
+    (bind_group_layout, bind_group, output_shape, stride_out, allocate_out)
 }
 
 fn bind_group_layout(device: &Device) -> wgpu::BindGroupLayout {
@@ -350,7 +345,7 @@ fn bind_group_layout(device: &Device) -> wgpu::BindGroupLayout {
                     },
                 },
             ],
-        }),
+        })
     );
 
     bind_group_layout
