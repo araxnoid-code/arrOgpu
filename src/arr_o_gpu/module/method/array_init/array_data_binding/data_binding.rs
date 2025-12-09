@@ -26,7 +26,7 @@ impl ArrOgpuModule {
         // pointer
         let pointer_buffer = wgpu.device.create_buffer_init(
             &(BufferInitDescriptor {
-                label: Some(""),
+                label: Some("Create Pointer Buffer For Array Data Binding"),
                 usage: BufferUsages::UNIFORM,
                 contents: bytemuck::cast_slice(pointer),
             })
@@ -35,7 +35,7 @@ impl ArrOgpuModule {
         // shape
         let shape_buffer = wgpu.device.create_buffer_init(
             &(BufferInitDescriptor {
-                label: Some(""),
+                label: Some("Create Shape Buffer For Array Data Binding"),
                 usage: BufferUsages::STORAGE,
                 contents: bytemuck::cast_slice(shape),
             })
@@ -44,7 +44,7 @@ impl ArrOgpuModule {
         // iters
         let iters_buffer = wgpu.device.create_buffer_init(
             &(BufferInitDescriptor {
-                label: Some(""),
+                label: Some("Create Iters Buffer For Array Data Binding"),
                 usage: BufferUsages::STORAGE,
                 contents: bytemuck::cast_slice(iters),
             })
@@ -53,7 +53,7 @@ impl ArrOgpuModule {
         // stride
         let stride_buffer = wgpu.device.create_buffer_init(
             &(BufferInitDescriptor {
-                label: Some(""),
+                label: Some("Create Stride Buffer For Array Data Binding"),
                 usage: BufferUsages::STORAGE,
                 contents: bytemuck::cast_slice(stride),
             })
@@ -61,7 +61,7 @@ impl ArrOgpuModule {
 
         let offset_buffer = wgpu.device.create_buffer_init(
             &(BufferInitDescriptor {
-                label: Some(""),
+                label: Some("Create Offset Buffer For Array Data Binding"),
                 usage: BufferUsages::UNIFORM,
                 contents: bytemuck::bytes_of(offset),
             })
@@ -136,7 +136,7 @@ impl ArrOgpuModule {
 
         let bind_group = wgpu.device.create_bind_group(
             &(BindGroupDescriptor {
-                label: Some(""),
+                label: Some("Create Bind Group For Meta Data Of Array"),
                 layout: &bind_group_layout,
                 entries: &[
                     // pointer
