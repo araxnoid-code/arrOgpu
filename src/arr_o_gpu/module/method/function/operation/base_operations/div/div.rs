@@ -27,7 +27,7 @@ impl ArrOgpuModule {
 
         if arr_a.shape != arr_b.shape {
             let err = format!(
-                "Array Div Error, Shape Of A is {:?} but adding with Shape Of B is {:?}",
+                "Array Div Error, Shape Of A is {:?} but Divided with Shape Of B is {:?}",
                 arr_a.shape,
                 arr_b.shape
             );
