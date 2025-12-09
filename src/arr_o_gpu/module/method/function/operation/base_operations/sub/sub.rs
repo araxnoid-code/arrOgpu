@@ -178,14 +178,23 @@ impl ArrOgpuModule {
         wgpu_init.queue.submit(Some(encoder.finish()));
         wgpu_init.device.poll(PollType::Wait).unwrap();
 
+        let stride = get_stride_from_shape(&arr_a.shape);
+        let binding = self.array_data_binding(
+            &[allocate.1, allocate.2],
+            &arr_a.shape,
+            &stride,
+            &stride,
+            &0
+        );
+
         let arr = GpuArray {
             length: len as usize,
             module: Arc::new(self.clone()),
             pointer: (allocate.1, allocate.2),
             shape: arr_a.shape.clone(),
             space_type: pointer_type,
-            stride: get_stride_from_shape(&arr_a.shape),
-            binding: None,
+            stride,
+            binding,
         };
 
         Ok(arr)

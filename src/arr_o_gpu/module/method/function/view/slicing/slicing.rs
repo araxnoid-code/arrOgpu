@@ -157,6 +157,14 @@ impl ArrOgpuModule {
 
         wgpu_init.device.poll(PollType::Wait).unwrap();
 
+        let binding = self.array_data_binding(
+            &[output_allocate.1, output_allocate.2],
+            &output_shape,
+            &output_stride,
+            &output_stride,
+            &0
+        );
+
         let arr = GpuArray {
             length: output_shape.iter().product::<u32>() as usize,
             module: Arc::new(self.clone()),
@@ -164,7 +172,7 @@ impl ArrOgpuModule {
             stride: output_stride,
             shape: output_shape,
             space_type: output_allocate.0,
-            binding: None,
+            binding,
         };
 
         Ok(arr)

@@ -279,14 +279,24 @@ impl ArrOgpuModule {
 
         let len = out_shape.iter().product::<u32>() as usize;
         let stride = get_stride_from_shape(&out_shape);
+
+        let shape = out_shape.to_vec();
+        let binding = self.array_data_binding(
+            &[pointer.0, pointer.1],
+            &shape,
+            &stride,
+            &stride,
+            &0
+        );
+
         let array = GpuArray {
             module: Arc::new(self.clone()),
-            shape: out_shape.to_vec(),
+            shape,
             length: len,
             pointer,
             space_type: type_output_pointer,
             stride,
-            binding: None,
+            binding,
         };
 
         Ok(array)

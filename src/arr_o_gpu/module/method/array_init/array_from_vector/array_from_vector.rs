@@ -184,7 +184,7 @@ impl ArrOgpuModule {
             shape: shape.to_vec(),
             stride,
             space_type: space_type,
-            binding: Some(binding),
+            binding: binding,
         })
     }
 }

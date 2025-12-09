@@ -137,6 +137,15 @@ impl ArrOgpuModule {
 
         let out_shape = broadcast.to_vec();
         let stride = get_stride_from_shape(&out_shape);
+
+        let binding = self.array_data_binding(
+            &[output_allocate.1, output_allocate.2],
+            &out_shape,
+            &stride,
+            &stride,
+            &0
+        );
+
         let len = out_shape.iter().product::<u32>() as usize;
         let arr = GpuArray {
             length: len,
@@ -145,7 +154,7 @@ impl ArrOgpuModule {
             stride,
             pointer: (output_allocate.1, output_allocate.2),
             space_type: output_allocate.0,
-            binding: None,
+            binding: binding,
         };
         Ok(arr)
     }

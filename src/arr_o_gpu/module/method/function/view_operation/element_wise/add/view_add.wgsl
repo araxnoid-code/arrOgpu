@@ -68,7 +68,7 @@ var<uniform> offset_o: u32;
 
 @compute @workgroup_size(256, 1, 1)
 fn main(@builtin(global_invocation_id) global_id:vec3<u32>){
-    let length = pointer_a.y - pointer.x;
+    let length = pointer_a.y - pointer_a.x;
     if (global_id.x < length){
         let idx_a = indexing_array_a(global_id.x) + pointer_a.x;
         let idx_b = indexing_array_b(global_id.x) + pointer_b.x;
@@ -81,10 +81,10 @@ fn main(@builtin(global_invocation_id) global_id:vec3<u32>){
 
 fn indexing_array_a(i:u32) -> u32{
     let len = arrayLength(&shape_a);
-    let index = offset_a;
+    var index = offset_a;
     for (var dim = 0u; dim < len; dim+=1){
         let iter = iters_a[dim];
-        let permute = (i / iter) % dim;
+        let permute = (i / iter) % shape_a[dim];
         index += permute * stride_a[dim];
     }
     return index;
@@ -92,10 +92,10 @@ fn indexing_array_a(i:u32) -> u32{
 
 fn indexing_array_b(i:u32) -> u32{
     let len = arrayLength(&shape_b);
-    let index = offset_b;
+    var index = offset_b;
     for (var dim = 0u; dim < len; dim+=1){
         let iter = iters_b[dim];
-        let permute = (i / iter) % dim;
+        let permute = (i / iter) % shape_b[dim];
         index += permute * stride_b[dim];
     }
     return index;

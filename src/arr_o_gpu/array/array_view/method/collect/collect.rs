@@ -111,14 +111,19 @@ impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
         wgpu.queue.submit(Some(encoder.finish()));
         wgpu.device.poll(PollType::Wait).unwrap();
 
+        let stride = get_stride_from_shape(&shape);
+        let binding = self
+            .module()
+            .array_data_binding(&[allocate.1, allocate.2], &self.shape, &stride, &stride, &0);
+
         let array = GpuArray {
             module: self.array.module().clone(),
             length: len as usize,
             pointer: (allocate.1, allocate.2),
             space_type: allocate.0,
-            stride: get_stride_from_shape(&shape),
+            stride,
             shape: self.shape,
-            binding: None,
+            binding,
         };
 
         array

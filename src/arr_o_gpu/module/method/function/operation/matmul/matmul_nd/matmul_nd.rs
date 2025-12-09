@@ -121,6 +121,14 @@ impl ArrOgpuModule {
         wgpu_init.queue.submit(Some(encoder.finish()));
         wgpu_init.device.poll(PollType::Wait).unwrap();
 
+        let binding = self.array_data_binding(
+            &[allocate_out.1, allocate_out.2],
+            &output_shape,
+            &stride_out,
+            &stride_out,
+            &0
+        );
+
         let arr = GpuArray {
             module: Arc::new(self.clone()),
             pointer: (allocate_out.1, allocate_out.2),
@@ -128,7 +136,7 @@ impl ArrOgpuModule {
             stride: stride_out,
             shape: output_shape,
             space_type: allocate_out.0,
-            binding: None,
+            binding,
         };
 
         Ok(arr)

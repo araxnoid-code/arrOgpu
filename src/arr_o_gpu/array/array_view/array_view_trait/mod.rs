@@ -1,3 +1,5 @@
+use wgpu::{ BindGroup, BindGroupLayout };
+
 use crate::{ GpuArray, GpuArrayView };
 
 pub trait ArrayView {
@@ -18,6 +20,8 @@ pub trait ArrayView {
     fn len(&self) -> u32;
 
     fn is_contiguous(&self) -> bool;
+
+    fn binding(&self) -> Option<&(BindGroupLayout, BindGroup)>;
 }
 
 impl ArrayView for GpuArray {
@@ -56,6 +60,10 @@ impl ArrayView for GpuArray {
     fn is_contiguous(&self) -> bool {
         true
     }
+
+    fn binding(&self) -> Option<&(BindGroupLayout, BindGroup)> {
+        Some(&self.binding)
+    }
 }
 
 impl<'a, A> ArrayView for GpuArrayView<'a, A> where A: ArrayView {
@@ -93,5 +101,9 @@ impl<'a, A> ArrayView for GpuArrayView<'a, A> where A: ArrayView {
 
     fn is_contiguous(&self) -> bool {
         self.pointer.1 - self.pointer.0 == self.shape.iter().product::<u32>()
+    }
+
+    fn binding(&self) -> Option<&(BindGroupLayout, BindGroup)> {
+        None
     }
 }
