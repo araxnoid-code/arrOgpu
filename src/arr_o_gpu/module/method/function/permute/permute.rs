@@ -26,18 +26,21 @@ impl ArrOgpuModule {
             .iter()
             .map(|&dim| {
                 if (dim as usize) < array_shape.len() {
-                    if let None = repeat.1 {
+                    if let Some(r) = repeat.1 {
+                        if r == dim {
+                            repeat = (true, None);
+                        }
+                        repeat.1 = Some(dim);
+                    } else if !repeat.0 {
                         repeat = (false, Some(dim));
-                        (array_shape[dim as usize], array_stride[dim as usize])
-                    } else {
-                        repeat = (true, None);
-                        (0, 0)
                     }
+                    (array_shape[dim as usize], array_stride[dim as usize])
                 } else {
                     over = true;
                     (0, 0)
                 }
             })
+
             .collect::<(Vec<u32>, Vec<u32>)>();
 
         if over {
@@ -47,7 +50,7 @@ impl ArrOgpuModule {
                 array_shape
             );
             return Err(ArrOgpuErr::Permute(arr));
-        } else if let Some(_) = repeat.1 {
+        } else if repeat.0 {
             let arr = format!("Permute Error, Repeat Index Detected On {:?}", permute);
             return Err(ArrOgpuErr::Permute(arr));
         }
@@ -55,7 +58,7 @@ impl ArrOgpuModule {
         let array_view = GpuArrayView {
             array: array,
             offset: array.offset(),
-            pointer: array.pointer().clone(),
+            pointer: array.pointer(),
             shape: out_shape.0,
             stride: out_shape.1,
         };
