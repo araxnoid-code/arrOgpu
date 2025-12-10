@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use wgpu::{
     ComputePassDescriptor,
     ComputePipelineDescriptor,
@@ -9,28 +7,18 @@ use wgpu::{
     wgt::{ CommandEncoderDescriptor, PollType },
 };
 
-use crate::{ ArrayView, GpuArray, GpuArrayView, bind_group_collect, get_stride_from_shape };
+use crate::{ ArrayView, GpuArray, GpuArrayView, get_stride_from_shape };
 
 impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
     pub fn contiguous(self) -> GpuArray {
         let mut allocator = self.array.module().allocator.write().unwrap();
         let wgpu = self.array.module().wgpu_init.read().unwrap();
 
-        // array
-        // // pointer
-        let pointer = self.array.pointer_to_arr();
-
         // // shape
         let shape = &self.shape;
 
         // // iters
         let iters = get_stride_from_shape(&shape);
-
-        // // stride
-        let stride = &self.stride;
-
-        // // offset
-        let offset = self.offset;
 
         // // product
         let len = shape.iter().product::<u32>();
@@ -42,16 +30,10 @@ impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
 
         // bind group
         let heap_binding = &self.array.module().binding_compounds.read().unwrap()[0];
-        let (bind_group_layout, bind_group) = bind_group_collect(
-            &wgpu,
-            &pointer,
-            shape,
-            &iters,
-            stride,
-            &offset,
-            &len,
-            &pointer_out
-        );
+        let array_bind_group = self.binding();
+        let output_bind_group = self
+            .module()
+            .array_data_binding(&pointer_out, &self.shape, &iters, &iters, &0);
 
         // pipeline
         let pipeline_layout = wgpu.device.create_pipeline_layout(
@@ -61,7 +43,10 @@ impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
                     // heap
                     &heap_binding.binding_group_layouts,
                     // array
-                    &bind_group_layout,
+                    // &bind_group_layout,
+                    &array_bind_group.0,
+                    // output
+                    &output_bind_group.0,
                 ],
                 push_constant_ranges: &[],
             })
@@ -69,7 +54,7 @@ impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
 
         let shader = wgpu.device.create_shader_module(ShaderModuleDescriptor {
             label: Some("Create Shaders For Collect View"),
-            source: ShaderSource::Wgsl(include_str!("./view_collect.wgsl").into()),
+            source: ShaderSource::Wgsl(include_str!("./view_contiguous.wgsl").into()),
         });
 
         let pipeline = wgpu.device.create_compute_pipeline(
@@ -102,7 +87,9 @@ impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
             // heap
             bcp.set_bind_group(0, Some(&heap_binding.binding_groups), &[]);
             // array
-            bcp.set_bind_group(1, Some(&bind_group), &[]);
+            bcp.set_bind_group(1, Some(&array_bind_group.1), &[]);
+            // output
+            bcp.set_bind_group(2, Some(&output_bind_group.1), &[]);
 
             let x = (len + 256 - 1) / 256;
             bcp.dispatch_workgroups(x, 1, 1);

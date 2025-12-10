@@ -9,18 +9,29 @@ impl ArrOgpuModule {
         where A: ArrayView
     {
         let arr_shape = array.shape();
+        if broadcast.len() < arr_shape.len() {
+            let err = format!(
+                "Array Broadcasting Error, Array {:?} can't Broadcast To {:?}",
+                arr_shape,
+                broadcast
+            );
+
+            return Err(ArrOgpuErr::Broadcast(err));
+        }
+
         // expend shape
         let diff_range = broadcast.len() - arr_shape.len();
-        let extend_arr_shape = if diff_range != 0 {
+        let (extend_arr_shape, mut out_stride) = if diff_range != 0 {
             let mut extend = vec![1;diff_range];
             extend.extend_from_slice(arr_shape);
-            extend
+
+            let mut stride_extend = vec![0;diff_range];
+            stride_extend.extend_from_slice(array.stride());
+            (extend, stride_extend)
         } else {
-            arr_shape.clone()
+            (arr_shape.clone(), array.stride().clone())
         };
 
-        let out_shape = broadcast.to_vec();
-        let mut out_stride = get_stride_from_shape(&extend_arr_shape);
         for i in (0..broadcast.len()).rev() {
             let arr_dim = extend_arr_shape[i];
             let broadcast_dim = broadcast[i];
@@ -40,6 +51,7 @@ impl ArrOgpuModule {
             }
         }
 
+        let out_shape = broadcast.to_vec();
         let binding = self.array_data_binding(
             &array.pointer_to_arr(),
             &out_shape,
