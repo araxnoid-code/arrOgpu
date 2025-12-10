@@ -3,22 +3,21 @@ use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule, r };
 fn main() {
     let module = ArrOgpuModule::default();
 
-    let arr = ArangeArray::arange(0..30)
-        .to_GpuArray_with_shape(&[2, 5, 3], &module)
+    let arr_a = ArangeArray::arange(0..15)
+        .to_GpuArray_with_shape(&[5, 3], &module)
         .unwrap();
-    println!("{}", arr);
+    println!("{}", arr_a);
 
-    let arr = module.index_view(&arr, &[1]).unwrap();
-    let arr = module.permute(&arr, &[1, 0]).unwrap();
-    let arr = module.slicing_view(&arr, &[r(1..3), r(2..)]).unwrap();
-    let arr = module.broadcast_view(&arr, &[3, 2, 3]).unwrap();
-    let arr = module.slicing_view(&arr, &[r(1..3), r(1..2)]).unwrap();
-    let arr = module.permute(&arr, &[2, 1, 0]).unwrap();
-    let arr = module.broadcast_view(&arr, &[3, 3]).unwrap().contiguous();
-    println!("{}", arr);
-    let arr = module.reshape(&arr, &[3, 6]).unwrap();
+    let slicing_a = module.slicing_view(&arr_a, &[r(1..3)]).unwrap();
+    let slicing_a = module.permute(&slicing_a, &[1, 0]).unwrap();
+    let slicing_b = module.slicing_view(&arr_a, &[r(3..5)]).unwrap();
+    let slicing_b = module.permute(&slicing_b, &[1, 0]).unwrap();
 
-    println!("{}", arr.contiguous())
+    let sub = module.mul_view(&slicing_a, &slicing_b).unwrap();
+    println!("{}", sub);
+
+    println!("{}", slicing_a.contiguous());
+    println!("{}", slicing_b.contiguous());
 
     // let arr_b = ArangeArray::arange(0..15)
     //     .to_GpuArray_with_shape(&[5, 3], &module)
