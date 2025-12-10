@@ -21,7 +21,7 @@ pub trait ArrayView {
 
     fn is_contiguous(&self) -> bool;
 
-    fn binding(&self) -> Option<&(BindGroupLayout, BindGroup)>;
+    fn binding(&self) -> &(BindGroupLayout, BindGroup);
 }
 
 impl ArrayView for GpuArray {
@@ -61,8 +61,8 @@ impl ArrayView for GpuArray {
         true
     }
 
-    fn binding(&self) -> Option<&(BindGroupLayout, BindGroup)> {
-        Some(&self.binding)
+    fn binding(&self) -> &(BindGroupLayout, BindGroup) {
+        &self.binding
     }
 }
 
@@ -103,7 +103,7 @@ impl<'a, A> ArrayView for GpuArrayView<'a, A> where A: ArrayView {
         self.pointer.1 - self.pointer.0 == self.shape.iter().product::<u32>()
     }
 
-    fn binding(&self) -> Option<&(BindGroupLayout, BindGroup)> {
-        None
+    fn binding(&self) -> &(BindGroupLayout, BindGroup) {
+        &self.binding
     }
 }

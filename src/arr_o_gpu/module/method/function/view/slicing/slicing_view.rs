@@ -1,4 +1,11 @@
-use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArrayView, SliceRange };
+use crate::{
+    ArrOgpuErr,
+    ArrOgpuModule,
+    ArrayView,
+    GpuArrayView,
+    SliceRange,
+    get_stride_from_shape,
+};
 
 impl ArrOgpuModule {
     pub fn slicing_view<'a, A>(
@@ -42,12 +49,21 @@ impl ArrOgpuModule {
             }
         }
 
+        let binding = self.array_data_binding(
+            &array.pointer_to_arr(),
+            &output_shape,
+            &get_stride_from_shape(&output_shape),
+            array.stride(),
+            &offset
+        );
+
         let array_view = GpuArrayView {
             array: array,
             offset,
             pointer: array.pointer(),
             shape: output_shape,
             stride: array.stride().clone(),
+            binding,
         };
 
         Ok(array_view)

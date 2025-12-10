@@ -40,8 +40,8 @@ impl ArrOgpuModule {
         let wgpu = self.wgpu_init.read().unwrap();
 
         let heap_binding = &self.binding_compounds.read().unwrap()[0];
-        let array_a_binding = array_a.binding().unwrap();
-        let array_b_binding = array_b.binding().unwrap();
+        let array_a_binding = array_a.binding();
+        let array_b_binding = array_b.binding();
         let pipeline_layout = wgpu.device.create_pipeline_layout(
             &(PipelineLayoutDescriptor {
                 label: Some("Create Pipeline Layout For Sub"),

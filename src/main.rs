@@ -13,7 +13,7 @@ fn main() {
         .unwrap();
     println!("{}", arr_b);
 
-    let arr = module.sub_view(&arr_a, &arr_b).unwrap();
+    let arr = module.add_view(&arr_a, &arr_b).unwrap();
     println!("{}", arr);
 
     // println!("{:?}", module.get_heap());

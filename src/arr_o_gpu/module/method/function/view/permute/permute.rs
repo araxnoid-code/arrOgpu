@@ -1,4 +1,4 @@
-use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArrayView };
+use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArrayView, get_stride_from_shape };
 
 impl ArrOgpuModule {
     pub fn permute<'a, A>(
@@ -55,12 +55,21 @@ impl ArrOgpuModule {
             return Err(ArrOgpuErr::Permute(arr));
         }
 
+        let binding = self.array_data_binding(
+            &array.pointer_to_arr(),
+            &out_shape.0,
+            &get_stride_from_shape(&out_shape.0),
+            &out_shape.1,
+            &array.offset()
+        );
+
         let array_view = GpuArrayView {
             array: array,
             offset: array.offset(),
             pointer: array.pointer(),
             shape: out_shape.0,
             stride: out_shape.1,
+            binding,
         };
 
         Ok(array_view)

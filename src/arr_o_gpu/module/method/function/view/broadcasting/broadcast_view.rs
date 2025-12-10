@@ -40,12 +40,21 @@ impl ArrOgpuModule {
             }
         }
 
+        let binding = self.array_data_binding(
+            &array.pointer_to_arr(),
+            &out_shape,
+            &get_stride_from_shape(&out_shape),
+            &out_stride,
+            &array.offset()
+        );
+
         let array_view = GpuArrayView {
             array,
             offset: array.offset(),
             pointer: array.pointer(),
             shape: out_shape,
             stride: out_stride,
+            binding,
         };
 
         Ok(array_view)

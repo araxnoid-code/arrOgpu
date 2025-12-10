@@ -27,12 +27,22 @@ impl ArrOgpuModule {
         }
 
         let shape = shape.to_vec();
+        let stride = get_stride_from_shape(&shape);
+        let binding = self.array_data_binding(
+            &array.pointer_to_arr(),
+            &shape,
+            &stride,
+            &stride,
+            &array.offset()
+        );
+
         let array_view = GpuArrayView {
             array: array,
             offset: array.offset(),
             pointer: array.pointer(),
-            stride: get_stride_from_shape(&shape),
+            stride,
             shape,
+            binding,
         };
 
         Ok(array_view)

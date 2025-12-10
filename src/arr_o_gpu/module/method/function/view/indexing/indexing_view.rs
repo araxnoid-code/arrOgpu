@@ -1,4 +1,4 @@
-use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArrayView };
+use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArrayView, get_stride_from_shape };
 
 impl ArrOgpuModule {
     pub fn index_view<'a, A>(
@@ -49,12 +49,21 @@ impl ArrOgpuModule {
             stride.push(1);
         }
 
+        let binding = self.array_data_binding(
+            &array.pointer_to_arr(),
+            &new_shape,
+            &get_stride_from_shape(&new_shape),
+            &stride,
+            &start
+        );
+
         let arr_view = GpuArrayView {
             array,
             pointer: array.pointer(),
             shape: new_shape,
-            stride: stride,
+            stride,
             offset: start,
+            binding,
         };
 
         Ok(arr_view)

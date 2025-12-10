@@ -1,8 +1,5 @@
 mod get_heap;
 pub use get_heap::*;
 
-mod collect;
-pub use collect::*;
-
-// mod indexing;
-// pub use indexing::*;
+mod contiguous;
+pub use contiguous::*;
