@@ -13,8 +13,8 @@ use wgpu::{
 use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArray, get_stride_from_shape };
 
 impl ArrOgpuModule {
-    pub fn sub_view<'a, A>(&self, array_a: &A, array_b: &A) -> Result<GpuArray, ArrOgpuErr>
-        where A: ArrayView
+    pub fn sub_view<'a, A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
+        where A: ArrayView, B: ArrayView
     {
         if array_a.shape() != array_b.shape() {
             let err = format!(

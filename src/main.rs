@@ -1,3 +1,5 @@
+use std::fmt::{ Debug, Display };
+
 use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule, r };
 
 fn main() {
