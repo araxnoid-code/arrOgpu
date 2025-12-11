@@ -48,7 +48,6 @@ var<uniform> offset_out: u32;
 @compute @workgroup_size(256, 1, 1)
 fn main(@builtin(global_invocation_id) global_id:vec3<u32>){
     let len = pointer_out.y - pointer_out.x;
-    heap[20] = f32(1000000000000);
     if (global_id.x < len){
         let shape_len = arrayLength(&shape);
         var idx = offset + pointer.x;
