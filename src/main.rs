@@ -15,18 +15,13 @@ fn main() {
         .unwrap();
     // println!("{}", arr_a);
 
-    // let matmul_2d_old = module.matmul_2d(&arr_a, &arr_b).unwrap();
-    // println!("{}", matmul_2d_old);
+    let matmul_2d_old = module.matmul_2d(&arr_a, &arr_b).unwrap();
+    println!("{}", matmul_2d_old);
 
     println!("=======");
 
     let matmul = module.matmul_2d_view(&arr_a, &arr_b).unwrap();
     println!("{}", matmul);
 
-    let a = ndarray::Array2::from_shape_vec([25, 50], arr_a.get_heap()).unwrap();
-    let b = ndarray::Array2::from_shape_vec([50, 10], arr_b.get_heap()).unwrap();
-    let c = a.dot(&b);
-    println!("{}", c);
-
-    println!("{}", matmul.get_heap() == c.flatten().to_vec());
+    println!("{}", matmul.get_heap() == matmul_2d_old.get_heap());
 }
