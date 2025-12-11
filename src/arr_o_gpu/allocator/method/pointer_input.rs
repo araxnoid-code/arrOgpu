@@ -45,7 +45,7 @@ impl Allocator {
                     break;
                 }
 
-                if idx >= self.range_space.len() - 1 {
+                if self.range_space.len() >= idx + 1 {
                     // using last space
                     let id = Uuid::new_v4().as_u128();
                     pointer = (
