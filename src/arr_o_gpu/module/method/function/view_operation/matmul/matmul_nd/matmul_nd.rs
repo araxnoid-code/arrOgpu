@@ -1,61 +1,69 @@
 use std::sync::Arc;
 
 use wgpu::{
+    CommandEncoderDescriptor,
     ComputePassDescriptor,
     ComputePipelineDescriptor,
     PipelineCompilationOptions,
     PipelineLayoutDescriptor,
     ShaderModuleDescriptor,
     ShaderSource,
-    wgt::CommandEncoderDescriptor,
 };
 
 use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArray, get_stride_from_shape };
 
 impl ArrOgpuModule {
-    pub fn matmul_2d_view<'a, A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
+    pub fn matmul_nd_view<A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
         where A: ArrayView, B: ArrayView
     {
-        if array_a.dim() != 2 || array_b.dim() != 2 {
-            let err = format!(
-                "Array matmul 2d Error, dim of array A is {} and dim of array B is {}",
-                array_a.dim(),
-                array_b.dim()
-            );
-            return Err(ArrOgpuErr::Matmul2D(err));
-        }
-
         let shape_a = array_a.shape();
         let shape_b = array_b.shape();
 
-        let m_k = [shape_a[0], shape_a[1]];
-        let k_n = [shape_b[0], shape_b[1]];
-        if m_k[1] != k_n[0] {
+        if shape_a.len() != shape_b.len() || shape_a.len() <= 1 || shape_b.len() <= 1 {
             let err = format!(
-                "Array matmul 2d Error, Array A {:?} can't matmul with Array B {:?}",
+                "Array matmul nd Error, Array A {:?} can't matmul with Array B {:?}",
                 shape_a,
                 shape_b
             );
-            return Err(ArrOgpuErr::Matmul2D(err));
+
+            return Err(ArrOgpuErr::MatmulND(err));
         }
 
-        let wgpu = self.wgpu_init.read().unwrap();
-        let out_shape = [m_k[0], k_n[1]];
-        let stride = get_stride_from_shape(&out_shape);
-        let len = out_shape.iter().product::<u32>();
+        let k_a = shape_a[shape_a.len() - 1];
+        let k_b = shape_b[shape_b.len() - 2];
+        if
+            shape_a.len() != shape_b.len() ||
+            &shape_a[0..shape_a.len() - 2] != &shape_b[0..shape_a.len() - 2] ||
+            k_a != k_b
+        {
+            let err = format!(
+                "Array matmul nd Error, Array A {:?} can't matmul with Array B {:?}",
+                shape_a,
+                shape_b
+            );
+
+            return Err(ArrOgpuErr::MatmulND(err));
+        }
+
+        if shape_a.len() == 2 && shape_b.len() == 2 {
+            return self.matmul_2d_view(array_a, array_b);
+        }
+
+        let mut output_shape = shape_a.clone();
+        *output_shape.last_mut().unwrap() = *shape_b.last().unwrap();
+        let len = output_shape.iter().product::<u32>();
+        let stride = get_stride_from_shape(&output_shape);
         let allocate = self.allocator.write().unwrap().pointer_input(len);
 
+        let wgpu = self.wgpu_init.read().unwrap();
+
         // binding
-        // // heap
         let heap_binding = &self.binding_compounds.read().unwrap()[0];
-        // // array a
         let array_a_binding = array_a.binding();
-        // // array b
         let array_b_binding = array_b.binding();
-        // // out
         let out_binding = self.array_data_binding(
             &[allocate.1, allocate.2],
-            &out_shape,
+            &output_shape,
             &stride,
             &stride,
             &0
@@ -65,13 +73,13 @@ impl ArrOgpuModule {
         // // shader
         let shader = wgpu.device.create_shader_module(ShaderModuleDescriptor {
             label: Some("Create Shader For Matmul 2D"),
-            source: ShaderSource::Wgsl(include_str!("./matmul_2d.wgsl").into()),
+            source: ShaderSource::Wgsl(include_str!("./matmul_nd.wgsl").into()),
         });
 
         // // pipeline_layout
         let pipeline_layout = wgpu.device.create_pipeline_layout(
             &(PipelineLayoutDescriptor {
-                label: Some("Create Pipeline Layout For Matmul 2D"),
+                label: Some("Create Pipeline Layout For Matmul ND"),
                 bind_group_layouts: &[
                     // heap
                     &heap_binding.binding_group_layouts,
@@ -89,7 +97,7 @@ impl ArrOgpuModule {
         // // pipeline
         let pipeline = wgpu.device.create_compute_pipeline(
             &(ComputePipelineDescriptor {
-                label: Some("Create Pipeline For Matmul 2D"),
+                label: Some("Create Pipeline For Matmul ND"),
                 cache: None,
                 compilation_options: PipelineCompilationOptions::default(),
                 entry_point: Some("main"),
@@ -98,7 +106,6 @@ impl ArrOgpuModule {
             })
         );
 
-        // begin compute pass
         let mut encoder = wgpu.device.create_command_encoder(
             &(CommandEncoderDescriptor {
                 label: Some("Create Encoder For Matmul 2D"),
@@ -126,23 +133,19 @@ impl ArrOgpuModule {
             // // out
             bcp.set_bind_group(3, Some(&out_binding.1), &[]);
 
-            // dispatch
-            let x = (m_k[0] + 16 - 1) / 16;
-            let y = (k_n[1] + 16 - 1) / 16;
-            bcp.dispatch_workgroups(x, y, 1);
+            let x = (shape_a[shape_a.len() - 2] + 16 - 1) / 16;
+            let y = (shape_b[shape_b.len() - 1] + 16 - 1) / 16;
+            let z = output_shape[..output_shape.len() - 2].iter().product::<u32>();
+            bcp.dispatch_workgroups(x, y, z);
         }
-
-        // submit
         wgpu.queue.submit(Some(encoder.finish()));
-
-        // sync
         wgpu.device.poll(wgpu::wgt::PollType::Wait).unwrap();
 
         let array = GpuArray {
             module: Arc::new(self.clone()),
-            length: len as usize,
             pointer: (allocate.1, allocate.2),
-            shape: out_shape.to_vec(),
+            shape: output_shape,
+            length: len as usize,
             stride,
             space_type: allocate.0,
             binding: out_binding,

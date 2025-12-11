@@ -115,10 +115,10 @@ fn main(
         workgroupBarrier();
 
         // compute tilled
+        let global_m = (work_x * size) + row;
+        let global_n = (work_y * size) + coll;
         for (var ii = 0u; ii < size; ii++){
             let global_k = (i * size) + ii;
-            let global_m = (work_x * size) + row;
-            let global_n = (work_y * size) + coll;
 
             // overflow in k, m and n
             if (global_k >= k || global_m >= m || global_n >= n){break;}
