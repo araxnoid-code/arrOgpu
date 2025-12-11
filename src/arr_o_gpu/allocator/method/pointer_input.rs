@@ -16,7 +16,7 @@ impl Allocator {
         // monagement branch
         if !self.monanagement.is_empty() {
             // not empty
-            for (idx, (key, (_, range))) in self.monanagement.iter().enumerate() {
+            for (_, (key, (_, range))) in self.monanagement.iter().enumerate() {
                 let len = range.end - range.start;
                 if data_length == len {
                     // range is same => Range Mode
@@ -44,22 +44,22 @@ impl Allocator {
                     self.monanagement.insert(start, (id, start..end));
                     break;
                 }
+            }
 
-                if self.range_space.len() >= idx + 1 {
-                    // using last space
-                    let id = Uuid::new_v4().as_u128();
-                    pointer = (
-                        SpaceType::RangeSpace(id),
-                        self.last_space.0,
-                        self.last_space.0 + data_length,
-                    );
-                    // update last_space
-                    let start = self.last_space.0 + data_length;
-                    if start > self.last_space.1 {
-                        panic!("Allocator Error: Memory Overflow");
-                    }
-                    self.last_space.0 = start;
+            if pointer.1 == 0 && pointer.2 == 0 {
+                // using last space
+                let id = Uuid::new_v4().as_u128();
+                pointer = (
+                    SpaceType::RangeSpace(id),
+                    self.last_space.0,
+                    self.last_space.0 + data_length,
+                );
+                // update last_space
+                let start = self.last_space.0 + data_length;
+                if start > self.last_space.1 {
+                    panic!("Allocator Error: Memory Overflow");
                 }
+                self.last_space.0 = start;
             }
         } else {
             // empty
