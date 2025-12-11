@@ -1,6 +1,6 @@
 [package]
 name = "arrOgpu"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2024"
 
 [lib]
@@ -9,9 +9,7 @@ path = "src/lib.rs"
 
 [dependencies]
 bytemuck = "1.23.2"
-ndarray = "0.17.1"
 pollster = "=0.2.4"
-rotta_rs = "0.1.0"
 wgpu = "26.0.1"
 
 [dependencies.uuid]

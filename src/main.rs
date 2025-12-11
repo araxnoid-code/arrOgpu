@@ -1,7 +1,6 @@
 use std::fmt::{ Debug, Display };
 
 use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule, ArrayView, r };
-use rotta_rs::{ Tensor, arrayy::matmul_nd, matmul };
 
 fn main() {
     let module = ArrOgpuModule::default();
