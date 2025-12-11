@@ -1,47 +1,30 @@
-use std::{ ops::{ Range, RangeFull }, sync::mpsc, time::UNIX_EPOCH };
+use std::fmt::{ Debug, Display };
 
-use arr_o_gpu::{ ArangeArray, ArrOgpuModule, FlatteTrait };
-use ndarray::{ Array1, Array2 };
+use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule, r };
 
 fn main() {
-    let len = 8;
-    let data = (0..len)
-        .into_iter()
-        .map(|v| v as f32)
-        .collect::<Vec<f32>>();
-    let array_a = Array2::from_shape_vec([4, 2], data.clone()).unwrap();
-    // let slice = array_a.slice(info)
-    // let array_b = Array1::from_shape_vec([len], data.clone()).unwrap();
+    let module = ArrOgpuModule::default();
 
-    // let tick = std::time::SystemTime::now()
-    //     .duration_since(UNIX_EPOCH)
-    //     .unwrap()
-    //     .as_millis();
-    // let to_vec_numpy = array_a.dot(&array_b);
-    // // let tock = std::time::SystemTime::now()
-    // //     .duration_since(UNIX_EPOCH)
-    // //     .unwrap()
-    // //     .as_millis();
+    let arr_a = ArangeArray::arange(0..12)
+        .to_GpuArray_with_shape(&[2, 2, 3], &module)
+        .unwrap();
+    println!("{}", arr_a);
 
-    // // println!("{:?}", tock - tick)
+    let arr_b = ArangeArray::arange(0..12)
+        .to_GpuArray_with_shape(&[2, 3, 2], &module)
+        .unwrap();
+    println!("{}", arr_b);
+    // let arr_b = module.permute(&arr_b, &[1, 0]).unwrap();
+    // let arr_b = module.broadcast_view(&arr_b, &[3, 3, 10]).unwrap();
+    // let arr_b = module.index_view(&arr_b, &[1]).unwrap();
+    // let arr_b = module.slicing_view(&arr_b, &[r(..), r(3..6)]).unwrap();
 
-    // // println!("==============");
+    let mul = module.matmul_nd_view(&arr_a, &arr_b).unwrap();
+    print!("{}", mul);
 
-    // let module = ArrOgpuModule::default();
+    // println!("==============");
+    // let mul = module.matmul_2d_view(&arr_a, &arr_b.contiguous()).unwrap();
+    // print!("{}", mul);
 
-    // let array_a = module.array_from_vector(&data, &[len as u32]).unwrap();
-
-    // // let array_b = module.array_from_vector(&data, &[len as u32]).unwrap();
-
-    // // let tick = std::time::SystemTime::now()
-    // //     .duration_since(UNIX_EPOCH)
-    // //     .unwrap()
-    // //     .as_millis();
-    // let to_vec_my = module.dot_product(&array_a, &array_a).unwrap().get_heap()[0];
-    // // let tock = std::time::SystemTime::now()
-    // //     .duration_since(UNIX_EPOCH)
-    // //     .unwrap()
-    // //     .as_millis();
-
-    // println!("my:\t{:?}\nother:\t{:?}", to_vec_my, to_vec_numpy);
+    // println!("\n{:?}", module.get_heap());
 }

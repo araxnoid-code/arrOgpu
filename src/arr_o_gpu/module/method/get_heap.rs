@@ -22,8 +22,6 @@ impl ArrOgpuModule {
             })
         );
 
-        // I cannot vanish
-
         encoder.copy_buffer_to_buffer(&self.heap_buffer, 0, &copy_buffer, 0, size);
         wgpu_init.queue.submit(Some(encoder.finish()));
 

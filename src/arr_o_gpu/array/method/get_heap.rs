@@ -12,7 +12,7 @@ impl GpuArray {
 
         let pointer = self.pointer;
         let len = pointer.1 - pointer.0;
-        let mem = std::mem::size_of::<f32>();
+        let mem = std::mem::size_of::<f32>() as u32;
         let size = (mem * len) as u64;
 
         let copy_buffer = wgpu_init.device.create_buffer(

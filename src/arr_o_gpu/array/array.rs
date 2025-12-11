@@ -1,13 +1,21 @@
 use std::sync::Arc;
 
-use crate::{ArrOgpuModule, SpaceType};
+use wgpu::{ BindGroup, BindGroupLayout };
+
+use crate::{ ArrOgpuModule, SpaceType };
 
 pub struct GpuArray {
+    // module
     pub(crate) module: Arc<ArrOgpuModule>,
-    pub(crate) pointer: (usize, usize),
+
+    // meta data
+    pub(crate) pointer: (u32, u32),
     pub(crate) length: usize,
     pub(crate) shape: Vec<u32>,
     pub(crate) stride: Vec<u32>,
+
+    // bind_group
+    pub(crate) binding: (BindGroupLayout, BindGroup),
 
     //
     pub(crate) space_type: SpaceType,
@@ -18,7 +26,7 @@ impl GpuArray {
         &*self.module
     }
 
-    pub fn pointer(&self) -> (usize, usize) {
+    pub fn pointer(&self) -> (u32, u32) {
         self.pointer
     }
 

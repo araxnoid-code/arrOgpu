@@ -1,14 +1,8 @@
-mod base_operations;
-pub use base_operations::*;
+mod view;
+pub use view::*;
 
-mod indexing;
-pub use indexing::*;
+mod operation;
+pub use operation::*;
 
-mod broadcasting;
-pub use broadcasting::*;
-
-mod slicing;
-pub use slicing::*;
-
-mod dot_product;
-pub use dot_product::*;
+mod view_operation;
+pub use view_operation::*;
