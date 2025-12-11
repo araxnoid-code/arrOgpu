@@ -10,12 +10,17 @@ fn main() {
         .to_GpuArray_with_shape(&[2, 5, 10], &module)
         .unwrap();
     let arr_a = module.permute(&arr_a, &[0, 2, 1]).unwrap();
+    let arr_a = module.slicing_view(&arr_a, &[r(..), r(3..6), r(1..4)]).unwrap();
+
+    // println!("{}", arr_a.contiguous());
 
     let arr_b = ArangeArray::arange(0..10)
         .to_GpuArray_with_shape(&[10, 1], &module)
         .unwrap();
     let arr_b = module.broadcast_view(&arr_b, &[2, 10, 5]).unwrap();
     let arr_b = module.permute(&arr_b, &[0, 2, 1]).unwrap();
+    let arr_b = module.slicing_view(&arr_b, &[r(..), r(1..4), r(7..10)]).unwrap();
+    // println!("{}", arr_b.contiguous());
 
     // let arr =
     // println!("{}", arr_b.contiguous());
