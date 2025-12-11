@@ -5,29 +5,28 @@ use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule, r };
 fn main() {
     let module = ArrOgpuModule::default();
 
-    let arr_a = ArangeArray::arange(0..15)
-        .to_GpuArray_with_shape(&[5, 3], &module)
+    let arr_a = ArangeArray::arange(0..25 * 50)
+        .to_GpuArray_with_shape(&[25, 50], &module)
         .unwrap();
-    println!("{}", arr_a);
+    // println!("{}", arr_a);
 
-    let slicing_a = module.slicing_view(&arr_a, &[r(1..3)]).unwrap();
-    let slicing_a = module.permute(&slicing_a, &[1, 0]).unwrap();
-    let slicing_b = module.slicing_view(&arr_a, &[r(3..5)]).unwrap();
-    let slicing_b = module.permute(&slicing_b, &[1, 0]).unwrap();
+    let arr_b = ArangeArray::arange(0..500)
+        .to_GpuArray_with_shape(&[50, 10], &module)
+        .unwrap();
+    // println!("{}", arr_a);
 
-    let sub = module.mul_view(&slicing_a, &slicing_b).unwrap();
-    println!("{}", sub);
+    // let matmul_2d_old = module.matmul_2d(&arr_a, &arr_b).unwrap();
+    // println!("{}", matmul_2d_old);
 
-    println!("{}", slicing_a.contiguous());
-    println!("{}", slicing_b.contiguous());
+    println!("=======");
 
-    // let arr_b = ArangeArray::arange(0..15)
-    //     .to_GpuArray_with_shape(&[5, 3], &module)
-    //     .unwrap();
-    // println!("{}", arr_b);
+    let matmul = module.matmul_2d_view(&arr_a, &arr_b).unwrap();
+    println!("{}", matmul);
 
-    // let arr = module.add_view(&arr_a, &arr_b).unwrap();
-    // println!("{}", arr);
+    let a = ndarray::Array2::from_shape_vec([25, 50], arr_a.get_heap()).unwrap();
+    let b = ndarray::Array2::from_shape_vec([50, 10], arr_b.get_heap()).unwrap();
+    let c = a.dot(&b);
+    println!("{}", c);
 
-    // println!("{:?}", module.get_heap());
+    println!("{}", matmul.get_heap() == c.flatten().to_vec());
 }

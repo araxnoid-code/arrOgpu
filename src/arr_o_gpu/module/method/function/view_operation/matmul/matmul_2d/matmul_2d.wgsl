@@ -66,13 +66,15 @@ var<storage, read> stride_o: array<u32>;
 var<uniform> offset_o: u32;
 
 // workgroup / cache
-var<workgroup> tile_a = array<array<f32, 16>, 16>;
-var<workgroup> tile_b = array<array<f32, 16>, 16>;
+// // tile a
+var<workgroup> tile_a:array<array<f32, 16>, 16>;
+// // tile b
+var<workgroup> tile_b:array<array<f32, 16>, 16>;
 
 @compute @workgroup_size(16, 16, 1)
 fn main(
-    @builtin(local_invocation_id): local_id:vec3<u32>,
-    @builtin(workgroup_id): workgroup_id:vec3<u32>,
+    @builtin(local_invocation_id) local_id:vec3<u32>,
+    @builtin(workgroup_id) workgroup_id:vec3<u32>,
     @builtin(global_invocation_id) global_id:vec3<u32>
 ){
     let m = shape_a[0];
@@ -86,7 +88,7 @@ fn main(
     let work_y = workgroup_id.y;
 
     let iteration = (k + size - 1) / size;
-    var sum = 0;
+    var sum = 0.;
     for (var i = 0u; i < iteration; i++){
         // save to cache
         // // Array A
@@ -119,7 +121,7 @@ fn main(
             let global_n = (work_y * size) + coll;
 
             // overflow in k, m and n
-            if (global_k < k || global_m < m || global_n < n){break;}
+            if (global_k >= k || global_m >= m || global_n >= n){break;}
 
             // operation
             let a = tile_a[row][ii];
@@ -133,7 +135,7 @@ fn main(
 
     // output
     if (global_id.x < m && global_id.y < n){
-        let index = pointer_o.x + global_id.x * stride_o.x + global_id.y * stride_o.y;
+        let index = pointer_o.x + global_id.x * stride_o[0] + global_id.y * stride_o[1];
         heap[index] = sum;
     }
 }
