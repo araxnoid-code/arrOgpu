@@ -1,30 +1,26 @@
 use std::fmt::{ Debug, Display };
 
 use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule, r };
+use rotta_rs::{ Tensor, arrayy::matmul_nd, matmul };
 
 fn main() {
     let module = ArrOgpuModule::default();
 
-    let arr_a = ArangeArray::arange(0..12)
-        .to_GpuArray_with_shape(&[2, 2, 3], &module)
+    let arr_a = ArangeArray::arange(0..3 * 2 * 50 * 33)
+        .to_GpuArray_with_shape(&[3, 2, 50, 33], &module)
         .unwrap();
-    println!("{}", arr_a);
 
-    let arr_b = ArangeArray::arange(0..12)
-        .to_GpuArray_with_shape(&[2, 3, 2], &module)
+    let arr_b = ArangeArray::arange(0..3 * 2 * 33 * 20)
+        .to_GpuArray_with_shape(&[3, 2, 33, 20], &module)
         .unwrap();
-    println!("{}", arr_b);
-    // let arr_b = module.permute(&arr_b, &[1, 0]).unwrap();
-    // let arr_b = module.broadcast_view(&arr_b, &[3, 3, 10]).unwrap();
-    // let arr_b = module.index_view(&arr_b, &[1]).unwrap();
-    // let arr_b = module.slicing_view(&arr_b, &[r(..), r(3..6)]).unwrap();
 
     let mul = module.matmul_nd_view(&arr_a, &arr_b).unwrap();
-    print!("{}", mul);
 
-    // println!("==============");
-    // let mul = module.matmul_2d_view(&arr_a, &arr_b.contiguous()).unwrap();
-    // print!("{}", mul);
+    //
 
-    // println!("\n{:?}", module.get_heap());
+    // let tensor_a = Tensor::from_vector(vec![3, 2, 50, 33], arr_a.get_heap()).value();
+    // let tensor_b = Tensor::from_vector(vec![3, 2, 33, 20], arr_b.get_heap()).value();
+    // let tensor_mul = matmul_nd(&tensor_a, &tensor_b);
+
+    // println!("{}", mul.get_heap() == tensor_mul.value)
 }
