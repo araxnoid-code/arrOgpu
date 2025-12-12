@@ -1,23 +1,15 @@
-use std::sync::{ Arc, RwLockReadGuard };
+use std::sync::Arc;
 
 use wgpu::{
-    BindGroupDescriptor,
-    BindGroupEntry,
-    BindGroupLayoutDescriptor,
-    BindGroupLayoutEntry,
-    BufferBindingType,
-    BufferUsages,
     ComputePassDescriptor,
     ComputePipelineDescriptor,
     PipelineCompilationOptions,
     PipelineLayoutDescriptor,
     ShaderModuleDescriptor,
-    ShaderStages,
-    util::{ BufferInitDescriptor, DeviceExt },
     wgt::CommandEncoderDescriptor,
 };
 
-use crate::{ ArrOgpuErr, ArrOgpuModule, GpuArray, WgpuInit, bind_group_dot_product };
+use crate::{ ArrOgpuErr, ArrOgpuModule, GpuArray, bind_group_dot_product };
 
 impl ArrOgpuModule {
     pub fn dot_product(
