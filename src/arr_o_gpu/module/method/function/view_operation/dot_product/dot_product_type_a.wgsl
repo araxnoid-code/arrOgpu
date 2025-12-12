@@ -93,34 +93,39 @@ fn main(
         // paralel reduction
         var cache_size = init_cache_size(i, length, size);
         var total_unit = (cache_size + 2 - 1) / 2;
-        while true{
+        while total_unit != 0{
+            var sum = 0.;
             if (local_id.x < total_unit){
                 let start = local_id.x * 2;
                 let end = start + 1;
 
-                if (end < total_unit){
-                    let sum = cache[start] + cache[end];
-                    cache[local_id.x] = sum;
+                if (end < cache_size){
+                    sum = cache[start] + cache[end];
                 } else {
-                    cache[local_id.x] = cache[start];
+                    sum = cache[start];
                 }
+            }
 
-                if (total_unit == 1){
-                    break;
-                }
+            workgroupBarrier();
+            
+            if local_id.x < total_unit{
+                cache[local_id.x] = sum;
+            }
 
+            workgroupBarrier();
+
+            if total_unit != 1{
                 cache_size = total_unit;
                 total_unit = (total_unit + 2 - 1) / 2;
             } else {
-                break;
+                total_unit = 0;
             }
         }
 
-        // sync
-        workgroupBarrier();
-
         // accumulate
-        acc += cache[0];
+        if local_id.x == 0{
+            acc += cache[0];
+        }
     }
 
     if local_id.x == 0{
