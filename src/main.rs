@@ -5,38 +5,18 @@ use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule, ArrayView, r }
 fn main() {
     let module = ArrOgpuModule::default();
 
-    let arr_a = ArangeArray::arange(0..100)
-        .to_GpuArray_with_shape(&[2, 5, 10], &module)
+    let arr_a = ArangeArray::arange(0..10)
+        .to_GpuArray_with_shape(&[10], &module)
         .unwrap();
-    let arr_a = module.permute(&arr_a, &[0, 2, 1]).unwrap();
-    let arr_a = module.slicing_view(&arr_a, &[r(..), r(3..6), r(1..4)]).unwrap();
-
-    // println!("{}", arr_a.contiguous());
+    println!("{}", arr_a);
 
     let arr_b = ArangeArray::arange(0..10)
-        .to_GpuArray_with_shape(&[10, 1], &module)
+        .to_GpuArray_with_shape(&[10], &module)
         .unwrap();
-    let arr_b = module.broadcast_view(&arr_b, &[2, 10, 5]).unwrap();
-    let arr_b = module.permute(&arr_b, &[0, 2, 1]).unwrap();
-    let arr_b = module.slicing_view(&arr_b, &[r(..), r(1..4), r(7..10)]).unwrap();
-    // println!("{}", arr_b.contiguous());
+    println!("{}", arr_b);
 
-    // let arr =
-    // println!("{}", arr_b.contiguous());
-
-    let mul = module.matmul_nd_view(&arr_a, &arr_b).unwrap();
-    println!("{}", mul);
-
-    let mul_ = module.matmul_nd_view(&arr_a.contiguous(), &arr_b.contiguous()).unwrap();
-    println!("{}", mul_);
-
-    println!("{}", mul.get_heap() == mul_.get_heap());
-
-    //
-
-    // let tensor_a = Tensor::from_vector(vec![2, 5, 10], arr_a.get_heap()).value();
-    // let tensor_b = Tensor::from_vector(vec![2, 10, 5], arr_b.contiguous().get_heap()).value();
-    // let tensor_mul = matmul_nd(&tensor_a, &tensor_b);
-
-    // println!("{}", mul.get_heap() == tensor_mul.value)
+    let product = module.dot_product_view(&arr_a, &arr_b).unwrap();
+    println!("{}", product);
+    let product_con = module.dot_product(&arr_a, &arr_b).unwrap();
+    println!("{}", product_con)
 }

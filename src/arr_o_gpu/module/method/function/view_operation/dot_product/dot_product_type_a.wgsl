@@ -75,9 +75,9 @@ fn main(
     let length = shape_a[0];
     let size = 256u;
 
-    for iterator = (length + size - 1) / size;
-    var sum = 0.;
-    for( var i = 0u; i < iterator < i++){
+    let iterator = (length + size - 1) / size;
+    var acc = 0.;
+    for( var i = 0u; i < iterator; i++){
         let index = size * i + local_id.x;
 
         // mul
@@ -120,22 +120,24 @@ fn main(
         workgroupBarrier();
 
         // accumulate
-        sum = cache[0];
+        acc += cache[0];
     }
 
-    let heap_index = pointer_o.x;
-    heap[heap_index] = sum;
+    if local_id.x == 0{
+        let heap_index = pointer_o.x;
+        heap[heap_index] = acc;
+    }
 
 }
 
 fn indexing_a(x:u32) -> u32{
     let index = offset_a + x * stride_a[0];
-    index
+    return index;
 }
 
 fn indexing_b(x:u32) -> u32{
     let index = offset_b + x * stride_b[0];
-    index
+    return index;
 }
 
 fn init_cache_size(i:u32, len:u32, size:u32) -> u32{

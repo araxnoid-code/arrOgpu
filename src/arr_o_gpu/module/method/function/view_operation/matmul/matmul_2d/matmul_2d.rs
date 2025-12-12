@@ -98,7 +98,7 @@ impl ArrOgpuModule {
             })
         );
 
-        // begin compute pass
+        // encoder
         let mut encoder = wgpu.device.create_command_encoder(
             &(CommandEncoderDescriptor {
                 label: Some("Create Encoder For Matmul 2D"),
@@ -106,6 +106,7 @@ impl ArrOgpuModule {
         );
 
         {
+            // begin compute pass
             let mut bcp = encoder.begin_compute_pass(
                 &(ComputePassDescriptor {
                     label: Some("Create Begin Compute Pass For Matmul 2D"),
