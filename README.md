@@ -14,6 +14,8 @@ This library uses [`WGPU`](https://wgpu.rs/) to perform array operations
 ## 🚧 Nightly Version!
 is an experimental version used in development and testing.
 
+📜 Full changelog: [version.md](https://github.com/araxnoid-code/arrOgpu/blob/nightly/0.1.0.2/version.md)
+
 ## Code
 ```rust
 use arr_o_gpu::ArrOgpuModule;
