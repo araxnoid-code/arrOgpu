@@ -7,7 +7,7 @@
 - System
     - use of generic structures for all methods that allow operating GpuArrayView.
     - Each GpuArray and GpuArrayView has a memory binding that stores the meta data of the array itself.
-- Fitur
+- Features
     - slicing_view method
     - Broadcast_view method
     - matmul_2d_view
@@ -35,7 +35,7 @@
     - minor changes to the broadcasting algorithm
     - minor changes to the slicing algorithm
 
-- new features
+- Features
     - GpuArrayView
     - collect for GpuArrayView (fitur)
     - index_view (fitur)
