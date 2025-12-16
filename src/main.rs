@@ -1,5 +1,3 @@
-use std::ops::Range;
-
 fn main() {
     let data = (0..12).map(|v| v as f32).collect::<Vec<f32>>();
     let array = Array {
@@ -8,7 +6,7 @@ fn main() {
         stride: vec![6, 3, 1],
     };
 
-    sum_axis(array, &[0]);
+    sum_axis(array, &[1, 2]);
 }
 
 struct Array {
@@ -20,58 +18,70 @@ struct Array {
 fn sum_axis(array: Array, axis: &[usize]) {
     let mut out_shape = vec![];
     let mut total_jump = 1;
-    let mut iters = vec![];
+    let mut out_shape_keep_dim = vec![];
     'a: for (dim, shape) in array.shape.iter().enumerate() {
         for axis in axis {
             if &dim == axis {
                 total_jump *= shape;
-                iters.push(1);
+                out_shape_keep_dim.push(1);
                 continue 'a;
             }
         }
 
-        iters.push(*shape);
+        out_shape_keep_dim.push(*shape);
         out_shape.push(*shape);
     }
 
-    let iters = iters
+    let iters = out_shape_keep_dim
         .iter()
         .enumerate()
-        .map(|(i, _)| iters[i + 1..].iter().product())
+        .map(|(i, _)| out_shape_keep_dim[i + 1..].iter().product())
         .collect::<Vec<usize>>();
 
-    let stride = out_shape
+    // slicing
+    let slice_shape = array.shape
         .iter()
         .enumerate()
-        .map(|(i, _)| out_shape[i + 1..].iter().product())
-        .collect::<Vec<usize>>();
-
-    let total_unit = out_shape.iter().product::<usize>();
-    for i in 0..total_unit {
-        let mut slicing = vec![];
-        let mut offset = 0;
-        let mut indexing = 0;
-
-        let mut index = 0;
-        'a: for (ii, shape) in array.shape.iter().enumerate() {
+        .map(|(i, s)| {
             for axis in axis {
-                if &ii == axis {
-                    slicing.push(0..*shape);
-                    continue 'a;
+                if axis == &i {
+                    return *s;
                 }
             }
+            return 1;
+        })
+        .collect::<Vec<usize>>();
 
-            let permute_start = (i / stride[index]) % shape;
-            offset += permute_start * array.stride[ii];
+    let slicing_stride = slice_shape
+        .iter()
+        .enumerate()
+        .map(|(i, _)| slice_shape[i + 1..].iter().product())
+        .collect::<Vec<usize>>();
 
-            // for iii in 0..total_jump {
-            //     let permute = (iii / iters[ii]) % 1;
-            // }
+    for x in 0..out_shape.iter().product() {
+        for y in 0..total_jump {
+            let mut offset = 0;
+            let mut index = 0;
 
-            slicing.push(permute_start..permute_start + 1);
-            index += 1;
+            for i in 0..out_shape_keep_dim.len() {
+                let mut in_axis = false;
+                for axis in axis {
+                    if axis == &i {
+                        in_axis = true;
+                        break;
+                    }
+                }
+
+                if in_axis {
+                    let permute = (y / slicing_stride[i]) % array.shape[i];
+                    index += permute * array.stride[i];
+                } else {
+                    let permute = (x / iters[i]) % out_shape_keep_dim[i];
+                    offset += permute * array.stride[i];
+                }
+            }
+            print!("{} ", offset + index);
         }
-
-        println!("{:?}", slicing);
+        println!();
     }
 }
