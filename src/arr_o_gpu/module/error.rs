@@ -14,8 +14,9 @@ pub enum ArrOgpuErr {
     Mul(String),
     Div(String),
     DotProduct(String),
-    // View
+    SumAxis(String),
 
+    // View
     Indexing(String),
     Broadcast(String),
     Slicing(String),

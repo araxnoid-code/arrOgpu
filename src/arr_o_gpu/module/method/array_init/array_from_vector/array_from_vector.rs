@@ -116,7 +116,7 @@ impl ArrOgpuModule {
             &(PipelineLayoutDescriptor {
                 label: Some("create pipeline layout for array_init"),
                 bind_group_layouts: &[
-                    &self.binding_compounds.read().unwrap()[0].binding_group_layouts, // heap
+                    &self.heap_binding.binding_group_layouts, // heap
                     &binding_layout,
                 ],
                 push_constant_ranges: &[],
@@ -155,7 +155,7 @@ impl ArrOgpuModule {
             bcp.set_pipeline(&pipeline);
 
             // heap
-            bcp.set_bind_group(0, &self.binding_compounds.read().unwrap()[0].binding_groups, &[]);
+            bcp.set_bind_group(0, &self.heap_binding.binding_groups, &[]);
 
             bcp.set_bind_group(1, &binding, &[]);
             let x = ((len as f32) / 256.0).ceil() as u32;

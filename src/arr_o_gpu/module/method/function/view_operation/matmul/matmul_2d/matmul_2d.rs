@@ -47,7 +47,7 @@ impl ArrOgpuModule {
 
         // binding
         // // heap
-        let heap_binding = &self.binding_compounds.read().unwrap()[0];
+        let heap_binding = &self.heap_binding;
         // // array a
         let array_a_binding = array_a.binding();
         // // array b

@@ -222,7 +222,7 @@ impl ArrOgpuModule {
                 label: Some("Create Pipeline Layout For Matmul 2D"),
                 push_constant_ranges: &[],
                 bind_group_layouts: &[
-                    &self.binding_compounds.read().unwrap()[0].binding_group_layouts,
+                    &self.heap_binding.binding_group_layouts,
                     &binding_layout,
                     &binding_layout_of_output,
                 ],
@@ -257,7 +257,7 @@ impl ArrOgpuModule {
             bcp.set_pipeline(&pipeline);
 
             // group 0 binding 0
-            let heap_binding = &self.binding_compounds().read().unwrap()[0].binding_groups;
+            let heap_binding = &self.heap_binding.binding_groups;
             bcp.set_bind_group(0, Some(heap_binding), &[]);
 
             // group 1 binding 0 - 5

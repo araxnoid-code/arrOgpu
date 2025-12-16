@@ -29,7 +29,7 @@ impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
         let pointer_out = [allocate.1, allocate.2];
 
         // bind group
-        let heap_binding = &self.array.module().binding_compounds.read().unwrap()[0];
+        let heap_binding = &self.array.module().heap_binding;
         let array_bind_group = self.binding();
         let output_bind_group = self
             .module()

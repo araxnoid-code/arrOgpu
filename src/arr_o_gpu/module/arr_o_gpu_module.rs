@@ -10,7 +10,8 @@ pub struct ArrOgpuModule {
     pub(crate) maximum: Arc<u32>,
     pub(crate) wgpu_init: Arc<RwLock<WgpuInit>>,
     pub(crate) heap_buffer: Arc<Buffer>,
-    pub(crate) binding_compounds: Arc<RwLock<Vec<BindGroupCompound>>>,
+    pub(crate) heap_binding: Arc<BindGroupCompound>,
+    // pub(crate) binding_compounds: Arc<RwLock<Vec<BindGroupCompound>>>,
 }
 
 // basic
@@ -31,8 +32,8 @@ impl ArrOgpuModule {
         &*self.heap_buffer
     }
 
-    pub fn binding_compounds(&self) -> &RwLock<Vec<BindGroupCompound>> {
-        &self.binding_compounds
+    pub fn heap_binding(&self) -> &Arc<BindGroupCompound> {
+        &self.heap_binding
     }
 
     pub fn allocator_write(&self) -> std::sync::RwLockWriteGuard<'_, Allocator> {

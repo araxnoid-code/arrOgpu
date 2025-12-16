@@ -58,7 +58,7 @@ impl ArrOgpuModule {
         let wgpu = self.wgpu_init.read().unwrap();
 
         // binding
-        let heap_binding = &self.binding_compounds.read().unwrap()[0];
+        let heap_binding = &self.heap_binding;
         let array_a_binding = array_a.binding();
         let array_b_binding = array_b.binding();
         let out_binding = self.array_data_binding(

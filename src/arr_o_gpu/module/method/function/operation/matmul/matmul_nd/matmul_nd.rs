@@ -56,7 +56,7 @@ impl ArrOgpuModule {
         // bind group
         let (bind_group_layout, bind_group, output_shape, stride_out, allocate_out) =
             matmul_nd_group_binding(&wgpu_init.device, &self.allocator, arr_a, arr_b);
-        let heap_bindgroup = &self.binding_compounds.read().unwrap()[0];
+        let heap_bindgroup = &self.heap_binding;
 
         // pipeline
         let pipeline_layout = wgpu_init.device.create_pipeline_layout(

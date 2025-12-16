@@ -11,7 +11,6 @@ use wgpu::{
     ShaderModuleDescriptor,
     ShaderSource,
     ShaderStages,
-    util::DeviceExt,
     wgt::{ BufferDescriptor, PollType },
 };
 
@@ -118,19 +117,25 @@ impl Default for ArrOgpuModule {
         wgpu.queue.submit(Some(encoder.finish()));
         wgpu.device.poll(PollType::Wait).unwrap();
 
+        let bind_compound = BindGroupCompound {
+            group: 0,
+            binding_group_layouts: binding_layout,
+            binding_groups: binding,
+        };
         Self {
             allocator: Arc::new(RwLock::new(Allocator::init(maximum))),
             maximum: Arc::new(maximum),
             wgpu_init: Arc::new(RwLock::new(wgpu)),
-            binding_compounds: Arc::new(
-                RwLock::new(
-                    vec![BindGroupCompound {
-                        group: 0,
-                        binding_group_layouts: binding_layout,
-                        binding_groups: binding,
-                    }]
-                )
-            ),
+            heap_binding: Arc::new(bind_compound),
+            // binding_compounds: Arc::new(
+            //     RwLock::new(
+            //         vec![BindGroupCompound {
+            //             group: 0,
+            //             binding_group_layouts: binding_layout,
+            //             binding_groups: binding,
+            //         }]
+            //     )
+            // ),
             heap_buffer: Arc::new(buffer_heap),
         }
     }

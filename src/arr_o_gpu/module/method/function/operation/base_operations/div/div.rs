@@ -133,7 +133,7 @@ impl ArrOgpuModule {
             label: Some("Create Shaders For Div"),
             source: wgpu::ShaderSource::Wgsl(include_str!("./div.wgsl").into()),
         });
-        let binding_of_heap = &self.binding_compounds.read().unwrap()[0];
+        let binding_of_heap = &self.heap_binding;
         let pipeline_layout = wgpu_init.device.create_pipeline_layout(
             &(PipelineLayoutDescriptor {
                 label: Some("Create Pipeline Layout For Div"),
