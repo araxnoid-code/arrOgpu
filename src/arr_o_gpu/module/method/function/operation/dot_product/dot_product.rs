@@ -42,7 +42,7 @@ impl ArrOgpuModule {
         let wgpu_init = self.wgpu_init().read().unwrap();
 
         // bind_group
-        let heap_bind_group = &self.binding_compounds.read().unwrap()[0];
+        let heap_bind_group = &self.heap_binding;
         let (bing_group, bind_group_layout) = bind_group_dot_product(
             &wgpu_init,
             length,

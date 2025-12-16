@@ -92,7 +92,7 @@ impl ArrOgpuModule {
         );
 
         // pipeline
-        let bind_group_heap = &self.binding_compounds.read().unwrap()[0];
+        let bind_group_heap = &self.heap_binding;
         let pipeline_layout = wgpu_init.device.create_pipeline_layout(
             &(PipelineLayoutDescriptor {
                 label: Some("Create Pipeline Layout For Slicing"),

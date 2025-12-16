@@ -69,7 +69,7 @@ impl ArrOgpuModule {
         let wgpu_init = self.wgpu_init.read().unwrap();
         let allocator = self.allocator_write();
         // binding
-        let heap_binding = &self.binding_compounds.read().unwrap()[0];
+        let heap_binding = &self.heap_binding;
         let (bind_group_layout, bind_group, thread_limit, stride_out, output_allocate) =
             broadcast_bind_group(
                 &wgpu_init.device,
