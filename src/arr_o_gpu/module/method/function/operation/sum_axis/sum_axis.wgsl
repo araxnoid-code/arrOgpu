@@ -72,55 +72,87 @@ fn main(
     let local_y = global_id.y;
 
     let length_output = pointer_o.y - pointer_o.x;
-    if (global_x < length_output){
-        let axis_length = arrayLength(&axis_list);
-        let shape_length = arrayLength(shape);
+    let axis_length = arrayLength(&axis_list);
+    let shape_length = arrayLength(shape);
 
-        let total_value = get_total_value();
-        let size = 16;
-        let iteration_value = (total_value + size - 1) / size;
+    let total_value = get_total_value();
+    let size = 16;
+    let iteration_value = (total_value + size - 1) / size;
 
-        for (var i = 0; i < iteration_value; i++){
-            // save value to cache
-            let index = size * i + local_y;
-            if index < total_value {
-                var offset = offset;
-                var indexing = 0;
-
-                var idx = 0;
-                for(var i = 0; i < shape_length; i++){
-                    var in_axis = false;
-                    for(var ii = 0; ii < axis_length; ii++){
-                        if (shape[i] == axis_list[ii]){
-                            in_axis = true;
-                            break;
-                        }
-                    }
-                    if (in_axis){
-                        let start_permute = (index / stride_of_slice[i]) % shape_of_slice[i];
-                        indexing += start_permute * stride[i]; 
-                    } else {
-                        let start_permute = (global_x / iters_o[idx]) % shape_o[idx];
-                        idx += 1;
-                        offset += start_permute * stride[i];
+    var acc = 0;
+    for (var i = 0; i < iteration_value; i++){
+        // save value to cache
+        let index = size * i + local_y;
+        if index < total_value && global_x < length_output {
+            var offset = offset;
+            var indexing = 0;
+            var idx = 0;
+            for(var i = 0; i < shape_length; i++){
+                var in_axis = false;
+                for(var ii = 0; ii < axis_length; ii++){
+                    if (shape[i] == axis_list[ii]){
+                        in_axis = true;
+                        break;
                     }
                 }
-                indexing += offset;
+                if (in_axis){
+                    let start_permute = (index / stride_of_slice[i]) % shape_of_slice[i];
+                    indexing += start_permute * stride[i]; 
+                } else {
+                    let start_permute = (global_x / iters_o[idx]) % shape_o[idx];
+                    idx += 1;
+                    offset += start_permute * stride[i];
+                }
+            }
+            indexing += (offset + pointer.x);
+            cache[local_x][local_y] = heap[indexing];
+        }
 
-                cache[local_x][local_y] = heap[indexing];
+        workgroupBarrier();
+
+        // paralel reduction
+        var length_cache = size;
+        if (i + 1) >= iteration_value {
+            length_cache = total_value - size * i;
+        }
+        var total_unit = (length_cache + 2 - 1) / 2;
+
+        while total_unit != 0 {
+            var sum = 0;
+            if local_y < total_unit && global_x < length_output {
+                let start = local_y * 2;
+                let end = start + 1;
+                if end < length_cache{
+                    sum = cache[local_x][start] + cache[local_x][end];
+                } else {
+                    sum = cache[local_x][start];
+                }
             }
 
-            // sync
             workgroupBarrier();
 
-            // paralel reduction
-            var length_cache = size;
-            if (i + 1) < iteration_value {
-                length_cache = total_value - size * i;
+            if local_y < total_unit && global_x < length_output{
+                cache[local_x][local_y] = sum;
             }
-            let total_unit = (length_cache + 2 - 1) / 2;
 
+            workgroupBarrier();
+
+            if total_unit > 1 {
+                length_cache = total_unit;
+                total_unit = (length_cache + 2 - 1) / 2;
+            } else {
+                total_unit = 0;
+            }
         }
+
+        if local_y == 0 && global_x < length_output{
+            acc += cache[0];
+        }
+    }
+
+    let index = pointer_o.x + global_x;
+    if global_x < length_output && local_y == 0{
+        heap[index] = cache[0];
     }
 }
 
