@@ -8,7 +8,7 @@ fn main() {
         stride: vec![6, 3, 1],
     };
 
-    sum_axis(array, &[1]);
+    sum_axis(array, &[0, 1]);
 }
 
 struct Array {
@@ -75,6 +75,7 @@ fn sum_axis(array: Array, axis: &[usize]) {
 
                 if in_axis {
                     let permute = (y / slicing_stride[i]) % array.shape[i];
+                    println!("\n====> {:?}\n", y);
                     index += permute * array.stride[i];
                 } else {
                     let permute = (x / out_iters[idx]) % out_shape[idx];
