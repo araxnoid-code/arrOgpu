@@ -1,139 +1,147 @@
 // heap
 @group(0) @binding(0)
-var <storage, read_write> heap: array<f32>;
+var<storage, read_write> heap:array<f32>;
 
-// A
+// array A
 // // pointer
 @group(1) @binding(0)
-var <uniform> pointer_a: vec2<u32>;
+var<uniform> pointer_a: vec2<u32>;
 
-// // stride of matrix
+// // shape
 @group(1) @binding(1)
-var <uniform> matrix_stride_a: vec2<u32>;
+var<storage, read> shape_a: array<u32>;
 
-// // shape of matrix
+// // iters
 @group(1) @binding(2)
-var <uniform> matrix_shape_a: vec2<u32>;
+var<storage, read> iters_a: array<u32>;
 
-// B
-// // pointer
+// // stride
 @group(1) @binding(3)
-var <uniform> pointer_b: vec2<u32>;
+var<storage, read> stride_a: array<u32>;
 
-// // stride of matrix
+// // offset
 @group(1) @binding(4)
-var <uniform> matrix_stride_b: vec2<u32>;
+var<uniform> offset_a: u32;
 
-// // shape of matrix
-@group(1) @binding(5)
-var <uniform> matrix_shape_b: vec2<u32>;
+// array B
+// // pointer
+@group(2) @binding(0)
+var<uniform> pointer_b: vec2<u32>;
+
+// // shape
+@group(2) @binding(1)
+var<storage, read> shape_b: array<u32>;
+
+// // iters
+@group(2) @binding(2)
+var<storage, read> iters_b: array<u32>;
+
+// // stride
+@group(2) @binding(3)
+var<storage, read> stride_b: array<u32>;
+
+// // offset
+@group(2) @binding(4)
+var<uniform> offset_b: u32;
 
 // output
 // // pointer
-@group(1) @binding(6)
-var <uniform> pointer_out: vec2<u32>;
+@group(3) @binding(0)
+var<uniform> pointer_o: vec2<u32>;
 
-// // stride of matrix
-@group(1) @binding(7)
-var <uniform> matrix_stride_out: vec2<u32>;
+// // shape
+@group(3) @binding(1)
+var<storage, read> shape_o: array<u32>;
 
-// other
-@group(1) @binding(8)
-var <uniform> stride_between_matrix_a: u32; // = length of matrix a
+// // iters
+@group(3) @binding(2)
+var<storage, read> iters_o: array<u32>;
 
-@group(1) @binding(9)
-var <uniform> stride_between_matrix_b: u32; // = length of matrix b
+// // stride
+@group(3) @binding(3)
+var<storage, read> stride_o: array<u32>;
 
-@group(1) @binding(10)
-var <uniform> stride_between_matrix_out: u32; // = length of output matrix
+// // offset
+@group(3) @binding(4)
+var<uniform> offset_o: u32;
 
+// workgroup / cache
+// // tile a
+var<workgroup> tile_a:array<array<f32, 16>, 16>;
+// // tile b
+var<workgroup> tile_b:array<array<f32, 16>, 16>;
 
-// workgroup
-// // tile
-// // // a
-var <workgroup> tile_a: array<array<f32, 16>, 16>;
-
-// // // b
-var <workgroup> tile_b: array<array<f32, 16>, 16>;
-
-// description
-// n-dimensional array multiplication function using tiling with a size of 16x16
 @compute @workgroup_size(16, 16, 1)
 fn main(
-    @builtin(global_invocation_id) global_id:vec3<u32>,
     @builtin(local_invocation_id) local_id: vec3<u32>,
-    @builtin(workgroup_id) group_id:vec3<u32>
+    @builtin(workgroup_id) work_id: vec3<u32>,
+    @builtin(global_invocation_id) global_id:vec3<u32>,
 ){
-    // init
-    // i, j, m, k * i, j, k, n
-    let m = matrix_shape_a.x;
-    let k = matrix_shape_a.y;
-    let n = matrix_shape_b.y;
+    let len_of_shape = arrayLength(&shape_a);
+    let z = global_id.z;
+    let m = shape_a[len_of_shape - 2];
+    let k = shape_b[len_of_shape - 2];
+    let n = shape_b[len_of_shape - 1];
+
+    let row = local_id.x;
+    let coll = local_id.y;
+    let work_x = work_id.x;
+    let work_y = work_id.y;
     let size = 16u;
-    let total_group_loop = (k + size - 1) / size;
 
-    // range of matrix on Array
-    // useful in jumping to the target matrix
-    let start_a = global_id.z * stride_between_matrix_a;
-    let start_b = global_id.z * stride_between_matrix_b;
-    
-    var acc = 0.;
-    for (var i = 0u; i < total_group_loop; i++){
-        // cache A
-        let index_x_a = local_id.x + (group_id.x * size);
-        let index_y_a = local_id.y + (i * size);
 
-        // get the value of array a that corresponds to the tiling range and store it in the cache tile_a
-        if (index_x_a < matrix_shape_a.x && index_y_a < matrix_shape_a.y){
-            let index_a = pointer_a.x + indexing_pointer(start_a, index_x_a, index_y_a, matrix_stride_a);
-            tile_a[local_id.x][local_id.y] = heap[index_a];
+    let iteration = (k + size - 1) / size;
+    var sum = 0.;
+    for (var i = 0u; i < iteration; i++){
+        // get cache
+        // // array a
+        let row_a = (size * work_x) + row;
+        let coll_a = (size * i) + coll;
+        if (row_a < m && coll_a < k){
+            let index = indexing_array_a(row_a, coll_a, len_of_shape, z) + pointer_a.x;
+            tile_a[row][coll] = heap[index];
         } else {
-            tile_a[local_id.x][local_id.y] = 0.;
+            tile_a[row][coll] = 0.;
         }
 
-        // cache B
-        let index_x_b = local_id.x + (i * size);
-        let index_y_b = local_id.y + (group_id.y * size);
-
-        // get the value of array a that corresponds to the tiling range and store it in the cache tile_b
-        if (index_x_b < matrix_shape_b.x && index_y_b < matrix_shape_b.y){
-            let index_b = pointer_b.x + indexing_pointer(start_b, index_x_b, index_y_b, matrix_stride_b);
-            tile_b[local_id.x][local_id.y] = heap[index_b];
+        // // array b
+        let row_b = (size * i) + row;
+        let coll_b = (size * work_y) + coll;
+        if(row_b < k && coll_b < n){
+            let index = indexing_array_b(row_b, coll_b, len_of_shape, z) + pointer_b.x;
+            tile_b[row][coll] = heap[index];
         } else {
-            tile_b[local_id.x][local_id.y] = 0.;
+            tile_b[row][coll] = 0.;
         }
 
-        // sync thread
+        // sync
         workgroupBarrier();
 
-        // the limits of arrays a and b
-        let array_a_k = group_id.x * size + local_id.x;
-        let array_b_k = group_id.y * size + local_id.y;
-        // matrix operation between tile_a and tile_b
+        // compute
+        let global_m = (size * work_x) + row;
+        let global_n = (size * work_y) + coll;
         for (var ii = 0u; ii < size; ii++){
-            var _k = ii + i * size;
-
-            // indexing over 
-            if (_k >= k || array_a_k >= m || array_b_k >= n){break;}
-            
-            acc += tile_a[local_id.x][ii] * tile_b[ii][local_id.y];
+            let global_k = (size * i) + ii;
+            if (global_k >= k || global_m >= m || global_n >= n){break;}
+            sum += tile_a[row][ii] * tile_b[ii][coll]; 
         }
 
-        // sync thread
+        // sync
         workgroupBarrier();
     }
 
-    let x = local_id.x + size * group_id.x;
-    let y = local_id.y + size * group_id.y;
-    if (x < m && y < n){
-        let start_out = global_id.z * stride_between_matrix_out;
-        let indexing = pointer_out.x + indexing_pointer(start_out, x, y, matrix_stride_out);
-        heap[indexing] = acc;
+    if (global_id.x < m && global_id.y < n){
+            let index = pointer_o.x + stride_o[len_of_shape - 2] * global_id.x + stride_o[len_of_shape - 1] * global_id.y + stride_o[len_of_shape - 3] * z;
+            heap[index] = sum;
     }
 }
 
-// description
-// determine linear index based on index array n-dimension
-fn indexing_pointer(start:u32, x:u32, y:u32, stride:vec2<u32>)-> u32{
-    return start + x * stride.x + y * stride.y;
+fn indexing_array_a(row:u32, coll:u32, len:u32, z:u32) -> u32{
+    let index = offset_a + stride_a[len - 2] * row + stride_a[len - 1] * coll + stride_a[len - 3] * z;
+    return index;
+}
+
+fn indexing_array_b(row:u32, coll:u32, len:u32, z:u32) -> u32{
+    let index = offset_b + stride_b[len - 2] * row + stride_b[len - 1] * coll + stride_b[len - 3] * z;
+    return index;
 }

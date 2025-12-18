@@ -13,12 +13,12 @@ use wgpu::{
 use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArray, get_stride_from_shape };
 
 impl ArrOgpuModule {
-    pub fn sub_view<'a, A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
+    pub fn div_view<'a, A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
         where A: ArrayView, B: ArrayView
     {
         if array_a.shape() != array_b.shape() {
             let err = format!(
-                "Array Div Error, Shape Of A is {:?} but Minus with Shape Of B is {:?}",
+                "Array Div Error, Shape Of A is {:?} but Divided with Shape Of B is {:?}",
                 array_a.shape(),
                 array_b.shape()
             );
@@ -44,7 +44,7 @@ impl ArrOgpuModule {
         let array_b_binding = array_b.binding();
         let pipeline_layout = wgpu.device.create_pipeline_layout(
             &(PipelineLayoutDescriptor {
-                label: Some("Create Pipeline Layout For Sub"),
+                label: Some("Create Pipeline Layout For Div"),
                 bind_group_layouts: &[
                     // heap
                     &heap_binding.binding_group_layouts,
@@ -60,12 +60,12 @@ impl ArrOgpuModule {
         );
 
         let shader = wgpu.device.create_shader_module(ShaderModuleDescriptor {
-            label: Some("Create Shader For Sub"),
-            source: ShaderSource::Wgsl(include_str!("view_sub.wgsl").into()),
+            label: Some("Create Shader For Div"),
+            source: ShaderSource::Wgsl(include_str!("div.wgsl").into()),
         });
         let pipeline = wgpu.device.create_compute_pipeline(
             &(ComputePipelineDescriptor {
-                label: Some("Create Pipeline For Sub"),
+                label: Some("Create Pipeline For Div"),
                 cache: None,
                 layout: Some(&pipeline_layout),
                 compilation_options: PipelineCompilationOptions::default(),
@@ -76,14 +76,14 @@ impl ArrOgpuModule {
 
         let mut encoder = wgpu.device.create_command_encoder(
             &(CommandEncoderDescriptor {
-                label: Some("Create Encoder For Sub"),
+                label: Some("Create Encoder For Div"),
             })
         );
 
         {
             let mut bcp = encoder.begin_compute_pass(
                 &(ComputePassDescriptor {
-                    label: Some("Create Compute Pass For Sub"),
+                    label: Some("Create Compute Pass For Div"),
                     timestamp_writes: None,
                 })
             );

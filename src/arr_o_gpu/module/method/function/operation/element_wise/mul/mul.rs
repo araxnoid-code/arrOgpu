@@ -61,7 +61,7 @@ impl ArrOgpuModule {
 
         let shader = wgpu.device.create_shader_module(ShaderModuleDescriptor {
             label: Some("Create Shader For Mul"),
-            source: ShaderSource::Wgsl(include_str!("view_mul.wgsl").into()),
+            source: ShaderSource::Wgsl(include_str!("mul.wgsl").into()),
         });
         let pipeline = wgpu.device.create_compute_pipeline(
             &(ComputePipelineDescriptor {

@@ -1,132 +1,151 @@
 // heap
 @group(0) @binding(0)
-var <storage, read_write> heap: array<f32>;
+var<storage, read_write> heap:array<f32>;
 
 // array A
 // // pointer
 @group(1) @binding(0)
-var <uniform> pointer_a: vec2<u32>;
+var<uniform> pointer_a: vec2<u32>;
 
 // // shape
 @group(1) @binding(1)
-var <uniform> shape_a: vec2<u32>;
+var<storage, read> shape_a: array<u32>;
+
+// // iters
+@group(1) @binding(2)
+var<storage, read> iters_a: array<u32>;
 
 // // stride
-@group(1) @binding(2)
-var <uniform> stride_a: vec2<u32>;
+@group(1) @binding(3)
+var<storage, read> stride_a: array<u32>;
+
+// // offset
+@group(1) @binding(4)
+var<uniform> offset_a: u32;
 
 // array B
 // // pointer
-@group(1) @binding(3)
-var <uniform> pointer_b: vec2<u32>;
+@group(2) @binding(0)
+var<uniform> pointer_b: vec2<u32>;
 
 // // shape
-@group(1) @binding(4)
-var <uniform> shape_b: vec2<u32>;
+@group(2) @binding(1)
+var<storage, read> shape_b: array<u32>;
+
+// // iters
+@group(2) @binding(2)
+var<storage, read> iters_b: array<u32>;
 
 // // stride
-@group(1) @binding(5)
-var <uniform> stride_b: vec2<u32>;
+@group(2) @binding(3)
+var<storage, read> stride_b: array<u32>;
+
+// // offset
+@group(2) @binding(4)
+var<uniform> offset_b: u32;
 
 // output
 // // pointer
-@group(2) @binding(0)
-var <uniform> pointer_output: vec2<u32>;
+@group(3) @binding(0)
+var<uniform> pointer_o: vec2<u32>;
+
+// // shape
+@group(3) @binding(1)
+var<storage, read> shape_o: array<u32>;
+
+// // iters
+@group(3) @binding(2)
+var<storage, read> iters_o: array<u32>;
 
 // // stride
-@group(2) @binding(1)
-var <uniform> stride_output: vec2<u32>;
+@group(3) @binding(3)
+var<storage, read> stride_o: array<u32>;
 
-// workgroup
-// // tiling
-// // // a
-var <workgroup> tile_a: array<array<f32, 16>, 16>;
-// // // b
-var <workgroup> tile_b: array<array<f32, 16>, 16>;
+// // offset
+@group(3) @binding(4)
+var<uniform> offset_o: u32;
 
-// description
-// 2-dimensional array (matrix) multiplication function using tiling with a size of 16x16
+// workgroup / cache
+// // tile a
+var<workgroup> tile_a:array<array<f32, 16>, 16>;
+// // tile b
+var<workgroup> tile_b:array<array<f32, 16>, 16>;
+
 @compute @workgroup_size(16, 16, 1)
 fn main(
     @builtin(local_invocation_id) local_id:vec3<u32>,
     @builtin(workgroup_id) workgroup_id:vec3<u32>,
-    @builtin(global_invocation_id) global_id:vec3<u32>,
+    @builtin(global_invocation_id) global_id:vec3<u32>
 ){
-    // init
+    let m = shape_a[0];
+    let k = shape_a[1];
+    let n = shape_b[1];
+
     let size = 16u;
-    let m = shape_a.x;
-    let n = shape_b.y;
-    let k = shape_b.x;
-    let group_x = workgroup_id.x;
-    let group_y = workgroup_id.y;
+    let row = local_id.x;
+    let coll = local_id.y;
+    let work_x = workgroup_id.x;
+    let work_y = workgroup_id.y;
 
-    let looping = (k + size - 1) / size;    // determine tiling movement
-    var acc = 0.0;                          // will accumulate the results on each related tiling
-    for (var i = 0u; i < looping; i++) {
-        // a
-        // tiling range on array a
-        let x_a = local_id.x + (size * group_x);
-        let y_a = local_id.y + (size * i);
-
-        // b
-        // tiling range on array b
-        let x_b = local_id.x + (size * i);
-        let y_b = local_id.y + (size * group_y);
-
-        // get the value of array a that corresponds to the tiling range and store it in the cache tile_a
-        if (x_a < shape_a.x && y_a < shape_a.y) {
-            let index_a = pointer_a.x + pointing(x_a, y_a, stride_a);
-            tile_a[local_id.x][local_id.y] = heap[index_a];
+    let iteration = (k + size - 1) / size;
+    var sum = 0.;
+    for (var i = 0u; i < iteration; i++){
+        // save to cache
+        // // Array A
+        let row_a = (work_x * size) + row;
+        let coll_a = (i * size) + coll;
+        if (row_a < m && coll_a < k){
+            let index_a = indexing_array_a(row_a, coll_a) + pointer_a.x;
+            tile_a[row][coll] = heap[index_a];
         } else {
-            tile_a[local_id.x][local_id.y] = 0.0;
+            tile_a[row][coll] = 0.;
         }
 
-        // get the value of array a that corresponds to the tiling range and store it in the cache tile_b
-        if (x_b < shape_b.x && y_b < shape_b.y) {
-            let index_b = pointer_b.x + pointing(x_b, y_b, stride_b);
-            tile_b[local_id.x][local_id.y] = heap[index_b];
+        // // Array B
+        let row_b = (i * size) + row;
+        let coll_b = (work_y * size) + coll;
+        if (row_b < k && coll_b < n){
+            let index_b = indexing_array_b(row_b, coll_b) + pointer_b.x;
+            tile_b[row][coll] = heap[index_b];
         } else {
-            tile_b[local_id.x][local_id.y] = 0.0;
+            tile_b[row][coll] = 0.;
         }
 
-        // sync thread
+        // sync
         workgroupBarrier();
 
-        // the limits of arrays a and b
-        let array_a_k = group_x * size + local_id.x;
-        let array_b_k = group_y * size + local_id.y;
-        // matrix operation between tile_a and tile_b
-        for (var t_k = 0u; t_k < size; t_k++) {
-            let global_k = i * size + t_k;
+        // compute tilled
+        let global_m = (work_x * size) + row;
+        let global_n = (work_y * size) + coll;
+        for (var ii = 0u; ii < size; ii++){
+            let global_k = (i * size) + ii;
 
-            // indexing over 
-            if (global_k >= k || array_a_k >= m || array_b_k >= n) { break; }
+            // overflow in k, m and n
+            if (global_k >= k || global_m >= m || global_n >= n){break;}
 
-            // accumulate
-            acc += tile_a[local_id.x][t_k] * tile_b[t_k][local_id.y];
+            // operation
+            let a = tile_a[row][ii];
+            let b = tile_b[ii][coll];
+            sum += a * b;
         }
 
-        // sync thread
+        // sync
         workgroupBarrier();
     }
 
-    // save the accumulated results as output
+    // output
     if (global_id.x < m && global_id.y < n){
-        let output_index = pointing(global_id.x, global_id.y, stride_output) + pointer_output.x;
-        heap[output_index] = acc;
+        let index = pointer_o.x + global_id.x * stride_o[0] + global_id.y * stride_o[1];
+        heap[index] = sum;
     }
-
-    // let x = local_id.x + (group_x * size);
-    // let y = local_id.y + (group_y * size);
-    // if (x < n && y < m) {
-        // let output_index = pointing(x, y, stride_output);
-        // let heap_index = pointer_output.x + output_index;
-    //     heap[heap_index] = acc;
-    // }
 }
 
-// description
-// determine linear index based on index matrix
-fn pointing(x:u32, y:u32, stride:vec2<u32>) -> u32{
-    return x * stride.x + y * stride.y;
+fn indexing_array_a(row:u32, coll:u32)-> u32{
+    var index = offset_a + stride_a[0] * row + stride_a[1] * coll;
+    return index;
+}
+
+fn indexing_array_b(row:u32, coll:u32)-> u32{
+    var index = offset_b + stride_b[0] * row + stride_b[1] * coll;
+    return index;
 }

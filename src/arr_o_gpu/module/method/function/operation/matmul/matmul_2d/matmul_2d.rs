@@ -1,235 +1,93 @@
 use std::sync::Arc;
 
 use wgpu::{
-    BindGroupDescriptor,
-    BindGroupEntry,
-    BindGroupLayout,
-    BindGroupLayoutDescriptor,
-    BindGroupLayoutEntry,
-    BindingType,
-    BufferBindingType,
-    BufferUsages,
     ComputePassDescriptor,
     ComputePipelineDescriptor,
-    Device,
     PipelineCompilationOptions,
     PipelineLayoutDescriptor,
     ShaderModuleDescriptor,
     ShaderSource,
-    ShaderStages,
-    util::{ BufferInitDescriptor, DeviceExt },
-    wgt::{ CommandEncoderDescriptor, PollType },
+    wgt::CommandEncoderDescriptor,
 };
 
-use crate::{ ArrOgpuErr, ArrOgpuModule, GpuArray, get_stride_from_shape };
+use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArray, get_stride_from_shape };
 
 impl ArrOgpuModule {
-    pub fn matmul_2d(&self, arr_a: &GpuArray, arr_b: &GpuArray) -> Result<GpuArray, ArrOgpuErr> {
-        if arr_a.dim() != 2 || arr_b.dim() != 2 {
+    pub fn matmul_2d<'a, A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
+        where A: ArrayView, B: ArrayView
+    {
+        if array_a.dim() != 2 || array_b.dim() != 2 {
             let err = format!(
                 "Array matmul 2d Error, dim of array A is {} and dim of array B is {}",
-                arr_a.dim(),
-                arr_b.dim()
+                array_a.dim(),
+                array_b.dim()
             );
             return Err(ArrOgpuErr::Matmul2D(err));
         }
 
-        let m_k = [arr_a.shape[0], arr_a.shape[1]];
-        let k_n = [arr_b.shape[0], arr_b.shape[1]];
+        let shape_a = array_a.shape();
+        let shape_b = array_b.shape();
+
+        let m_k = [shape_a[0], shape_a[1]];
+        let k_n = [shape_b[0], shape_b[1]];
         if m_k[1] != k_n[0] {
             let err = format!(
                 "Array matmul 2d Error, Array A {:?} can't matmul with Array B {:?}",
-                arr_a.shape(),
-                arr_b.shape()
+                shape_a,
+                shape_b
             );
             return Err(ArrOgpuErr::Matmul2D(err));
         }
+
+        let wgpu = self.wgpu_init.read().unwrap();
         let out_shape = [m_k[0], k_n[1]];
-
-        let wgpu_init = &self.wgpu_init.read().unwrap();
-        let binding_layout = build_binding_layout(&wgpu_init.device);
-        let binding_layout_of_output = build_binding_of_output_layout(&wgpu_init.device);
-
-        // Array A
-        // pointer
-        let pointer_a = wgpu_init.device.create_buffer_init(
-            &(BufferInitDescriptor {
-                label: Some("Create Pointer A Buffer Layout For Matmul 2D"),
-                usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
-                contents: bytemuck::cast_slice(&arr_a.pointer_to_arr()),
-            })
-        );
-
-        // shape
-        let shape_a = wgpu_init.device.create_buffer_init(
-            &(BufferInitDescriptor {
-                label: Some("Create Pointer A Buffer Layout For Matmul 2D"),
-                usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
-                contents: bytemuck::cast_slice(&arr_a.shape),
-            })
-        );
-
-        // stride
-        let stride_a = wgpu_init.device.create_buffer_init(
-            &(BufferInitDescriptor {
-                label: Some("Create Pointer A Buffer Layout For Matmul 2D"),
-                usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
-                contents: bytemuck::cast_slice(&arr_a.stride),
-            })
-        );
-
-        // Array B
-        // pointer
-        let pointer_b = wgpu_init.device.create_buffer_init(
-            &(BufferInitDescriptor {
-                label: Some("Create Pointer A Buffer Layout For Matmul 2D"),
-                usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
-                contents: bytemuck::cast_slice(&arr_b.pointer_to_arr()),
-            })
-        );
-
-        // shape
-        let shape_b = wgpu_init.device.create_buffer_init(
-            &(BufferInitDescriptor {
-                label: Some("Create Pointer A Buffer Layout For Matmul 2D"),
-                usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
-                contents: bytemuck::cast_slice(&arr_b.shape),
-            })
-        );
-
-        // stride
-        let stride_b = wgpu_init.device.create_buffer_init(
-            &(BufferInitDescriptor {
-                label: Some("Create Pointer A Buffer Layout For Matmul 2D"),
-                usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
-                contents: bytemuck::cast_slice(&arr_b.stride),
-            })
-        );
-
-        // output
-        // size
-        // let mem_f32 = std::mem::size_of::<f32>() as u64;
+        let stride = get_stride_from_shape(&out_shape);
         let len = out_shape.iter().product::<u32>();
-        // let size = (len as u64) * mem_f32;
-        // let output = wgpu_init.device.create_buffer(
-        //     &(BufferDescriptor {
-        //         label: Some("Create Buffer Output For Matmul 2D"),
-        //         mapped_at_creation: false,
-        //         size,
-        //         usage: BufferUsages::COPY_SRC | BufferUsages::STORAGE,
-        //     })
-        // );
+        let allocate = self.allocator.write().unwrap().pointer_input(len);
 
-        // pointer
-        let (type_output_pointer, output_pointer_start, output_pointer_end) = self
-            .allocator_write()
-            .pointer_input(len);
-        let output_pointer_list = [output_pointer_start, output_pointer_end];
-        let output_pointer_buffer = wgpu_init.device.create_buffer_init(
-            &(BufferInitDescriptor {
-                label: Some("Create Buffer Output Pointer For Matmul 2D"),
-                contents: bytemuck::cast_slice(&output_pointer_list),
-                usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
-            })
+        // binding
+        // // heap
+        let heap_binding = &self.heap_binding;
+        // // array a
+        let array_a_binding = array_a.binding();
+        // // array b
+        let array_b_binding = array_b.binding();
+        // // out
+        let out_binding = self.array_data_binding(
+            &[allocate.1, allocate.2],
+            &out_shape,
+            &stride,
+            &stride,
+            &0
         );
 
-        // stride
-        let stride_out = out_shape.to_vec();
-        let stride_out = get_stride_from_shape(&stride_out);
-        let stride_out = wgpu_init.device.create_buffer_init(
-            &(BufferInitDescriptor {
-                label: Some("Create Stride Output Buffer Layout For Matmul 2D"),
-                usage: BufferUsages::COPY_SRC | BufferUsages::UNIFORM,
-                contents: bytemuck::cast_slice(&stride_out),
-            })
-        );
-
-        // copy
-        // let copy_buffer = wgpu_init.device.create_buffer(
-        //     &(BufferDescriptor {
-        //         label: Some("Create Copy Buffer For Matmul 2D"),
-        //         mapped_at_creation: false,
-        //         size,
-        //         usage: BufferUsages::COPY_DST | BufferUsages::MAP_READ,
-        //     })
-        // );
-
-        let binding = wgpu_init.device.create_bind_group(
-            &(BindGroupDescriptor {
-                label: Some("Create Binding For Matmul 2D"),
-                layout: &binding_layout,
-                entries: &[
-                    // array A
-                    // pointer
-                    BindGroupEntry {
-                        binding: 0,
-                        resource: pointer_a.as_entire_binding(),
-                    },
-                    // shape
-                    BindGroupEntry {
-                        binding: 1,
-                        resource: shape_a.as_entire_binding(),
-                    },
-                    // stride
-                    BindGroupEntry {
-                        binding: 2,
-                        resource: stride_a.as_entire_binding(),
-                    },
-                    // Array B
-                    // pointer
-                    BindGroupEntry {
-                        binding: 3,
-                        resource: pointer_b.as_entire_binding(),
-                    },
-                    // shape
-                    BindGroupEntry {
-                        binding: 4,
-                        resource: shape_b.as_entire_binding(),
-                    },
-                    // stride
-                    BindGroupEntry {
-                        binding: 5,
-                        resource: stride_b.as_entire_binding(),
-                    },
-                ],
-            })
-        );
-
-        let binding_of_output = wgpu_init.device.create_bind_group(
-            &(BindGroupDescriptor {
-                label: Some("Create Binding OF Output For Matmul 2D"),
-                layout: &binding_layout_of_output,
-                entries: &[
-                    BindGroupEntry {
-                        binding: 0,
-                        resource: output_pointer_buffer.as_entire_binding(),
-                    },
-                    BindGroupEntry {
-                        binding: 1,
-                        resource: stride_out.as_entire_binding(),
-                    },
-                ],
-            })
-        );
-
-        let shader = wgpu_init.device.create_shader_module(ShaderModuleDescriptor {
-            label: Some("Create Shaders For Matmul 2D"),
+        // pipeline
+        // // shader
+        let shader = wgpu.device.create_shader_module(ShaderModuleDescriptor {
+            label: Some("Create Shader For Matmul 2D"),
             source: ShaderSource::Wgsl(include_str!("./matmul_2d.wgsl").into()),
         });
 
-        let pipeline_layout = wgpu_init.device.create_pipeline_layout(
+        // // pipeline_layout
+        let pipeline_layout = wgpu.device.create_pipeline_layout(
             &(PipelineLayoutDescriptor {
                 label: Some("Create Pipeline Layout For Matmul 2D"),
-                push_constant_ranges: &[],
                 bind_group_layouts: &[
-                    &self.heap_binding.binding_group_layouts,
-                    &binding_layout,
-                    &binding_layout_of_output,
+                    // heap
+                    &heap_binding.binding_group_layouts,
+                    // array a
+                    &array_a_binding.0,
+                    // array b
+                    &array_b_binding.0,
+                    // output
+                    &out_binding.0,
                 ],
+                push_constant_ranges: &[],
             })
         );
 
-        let pipeline = wgpu_init.device.create_compute_pipeline(
+        // // pipeline
+        let pipeline = wgpu.device.create_compute_pipeline(
             &(ComputePipelineDescriptor {
                 label: Some("Create Pipeline For Matmul 2D"),
                 cache: None,
@@ -240,177 +98,57 @@ impl ArrOgpuModule {
             })
         );
 
-        let mut encoder = wgpu_init.device.create_command_encoder(
+        // encoder
+        let mut encoder = wgpu.device.create_command_encoder(
             &(CommandEncoderDescriptor {
                 label: Some("Create Encoder For Matmul 2D"),
             })
         );
 
         {
+            // begin compute pass
             let mut bcp = encoder.begin_compute_pass(
                 &(ComputePassDescriptor {
-                    label: Some("Create Compute Pass For Matmul 2D"),
+                    label: Some("Create Begin Compute Pass For Matmul 2D"),
                     timestamp_writes: None,
                 })
             );
 
+            // set pipeline
             bcp.set_pipeline(&pipeline);
 
-            // group 0 binding 0
-            let heap_binding = &self.heap_binding.binding_groups;
-            bcp.set_bind_group(0, Some(heap_binding), &[]);
+            // set bind group
+            // // heap
+            bcp.set_bind_group(0, Some(&heap_binding.binding_groups), &[]);
+            // // array a
+            bcp.set_bind_group(1, Some(&array_a_binding.1), &[]);
+            // // array b
+            bcp.set_bind_group(2, Some(&array_b_binding.1), &[]);
+            // // out
+            bcp.set_bind_group(3, Some(&out_binding.1), &[]);
 
-            // group 1 binding 0 - 5
-            bcp.set_bind_group(1, Some(&binding), &[]);
-
-            // group 2
-            bcp.set_bind_group(2, Some(&binding_of_output), &[]);
-
-            let m = ((out_shape[0] as f32) / 16.0).ceil() as u32;
-            let n = ((out_shape[1] as f32) / 16.0).ceil() as u32;
-            // m, n, k
-            bcp.dispatch_workgroups(m, n, 1);
+            // dispatch
+            let x = (m_k[0] + 16 - 1) / 16;
+            let y = (k_n[1] + 16 - 1) / 16;
+            bcp.dispatch_workgroups(x, y, 1);
         }
 
-        wgpu_init.queue.submit(Some(encoder.finish()));
-        wgpu_init.device.poll(PollType::Wait).unwrap();
+        // submit
+        wgpu.queue.submit(Some(encoder.finish()));
 
-        let pointer = (output_pointer_start, output_pointer_end);
-
-        let len = out_shape.iter().product::<u32>() as usize;
-        let stride = get_stride_from_shape(&out_shape);
-
-        let shape = out_shape.to_vec();
-        let binding = self.array_data_binding(
-            &[pointer.0, pointer.1],
-            &shape,
-            &stride,
-            &stride,
-            &0
-        );
+        // sync
+        wgpu.device.poll(wgpu::wgt::PollType::Wait).unwrap();
 
         let array = GpuArray {
             module: Arc::new(self.clone()),
-            shape,
-            length: len,
-            pointer,
-            space_type: type_output_pointer,
+            length: len as usize,
+            pointer: (allocate.1, allocate.2),
+            shape: out_shape.to_vec(),
             stride,
-            binding,
+            space_type: allocate.0,
+            binding: out_binding,
         };
 
         Ok(array)
     }
-}
-
-fn build_binding_layout(device: &Device) -> wgpu::BindGroupLayout {
-    let binding_layout = device.create_bind_group_layout(
-        &(BindGroupLayoutDescriptor {
-            label: Some("Create Binding Layout For Matmul 2D"),
-            entries: &[
-                // array A
-                // pointer
-                BindGroupLayoutEntry {
-                    binding: 0,
-                    count: None,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                },
-                // shape
-                BindGroupLayoutEntry {
-                    binding: 1,
-                    count: None,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                },
-                // stride
-                BindGroupLayoutEntry {
-                    binding: 2,
-                    count: None,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                },
-                // array B
-                // pointer
-                BindGroupLayoutEntry {
-                    binding: 3,
-                    count: None,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                },
-                // shape
-                BindGroupLayoutEntry {
-                    binding: 4,
-                    count: None,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                },
-                // stride
-                BindGroupLayoutEntry {
-                    binding: 5,
-                    count: None,
-                    visibility: ShaderStages::COMPUTE,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                },
-            ],
-        })
-    );
-    binding_layout
-}
-
-fn build_binding_of_output_layout(device: &Device) -> BindGroupLayout {
-    let binding_layout = device.create_bind_group_layout(
-        &(BindGroupLayoutDescriptor {
-            label: Some("Create Binding Layout Of Output For Matmul 2D"),
-            entries: &[
-                // pointer_output
-                BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: ShaderStages::COMPUTE,
-                    count: None,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                },
-                // stride_output
-                BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: ShaderStages::COMPUTE,
-                    count: None,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                },
-            ],
-        })
-    );
-    binding_layout
 }

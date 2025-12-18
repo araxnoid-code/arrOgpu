@@ -6,17 +6,15 @@ use wgpu::{
     PipelineCompilationOptions,
     PipelineLayoutDescriptor,
     ShaderModuleDescriptor,
-    wgt::CommandEncoderDescriptor,
+    ShaderSource,
 };
 
-use crate::{ ArrOgpuErr, ArrOgpuModule, GpuArray, bind_group_dot_product };
+use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArray };
 
 impl ArrOgpuModule {
-    pub fn dot_product(
-        &self,
-        array_a: &GpuArray,
-        array_b: &GpuArray
-    ) -> Result<GpuArray, ArrOgpuErr> {
+    pub fn dot_product<A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
+        where A: ArrayView, B: ArrayView
+    {
         let shape_a = array_a.shape();
         let shape_b = array_b.shape();
 
@@ -32,46 +30,51 @@ impl ArrOgpuModule {
             return Err(ArrOgpuErr::DotProduct(err));
         }
 
-        let length = length_a as u32;
-        let pointer_a = array_a.pointer_to_arr();
-        let pointer_b = array_b.pointer_to_arr();
-        let output_allocate = self.allocator_write().pointer_input(1);
+        let shape = vec![1];
+        let len = 1;
+        let stride = vec![1];
+        let allocate = self.allocator.write().unwrap().pointer_input(len);
 
-        let pointer_output = [output_allocate.1, output_allocate.2];
+        let wgpu = self.wgpu_init.read().unwrap();
 
-        let wgpu_init = self.wgpu_init().read().unwrap();
-
-        // bind_group
-        let heap_bind_group = &self.heap_binding;
-        let (bing_group, bind_group_layout) = bind_group_dot_product(
-            &wgpu_init,
-            length,
-            &pointer_a,
-            &pointer_b,
-            &pointer_output
+        // binding
+        let heap_binding = &self.heap_binding;
+        let array_a_binding = array_a.binding();
+        let array_b_binding = array_b.binding();
+        let out_binding = self.array_data_binding(
+            &[allocate.1, allocate.2],
+            &shape,
+            &stride,
+            &stride,
+            &0
         );
 
-        // pipeline and shader
-        let pipeline_layout = wgpu_init.device.create_pipeline_layout(
+        // // pipeline_layout
+        let pipeline_layout = wgpu.device.create_pipeline_layout(
             &(PipelineLayoutDescriptor {
                 label: Some("Create Pipeline Layout For Dot Product"),
-                push_constant_ranges: &[],
                 bind_group_layouts: &[
                     // heap
-                    &heap_bind_group.binding_group_layouts,
-                    &bind_group_layout,
+                    &heap_binding.binding_group_layouts,
+                    // array a
+                    &array_a_binding.0,
+                    // array b
+                    &array_b_binding.0,
+                    // output
+                    &out_binding.0,
                 ],
+                push_constant_ranges: &[],
             })
         );
 
-        let shader = wgpu_init.device.create_shader_module(ShaderModuleDescriptor {
-            label: Some("Create Shaders For Dot Product"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("./dot_product.wgsl").into()),
+        // // pipeline
+        let shader = wgpu.device.create_shader_module(ShaderModuleDescriptor {
+            label: Some("Create Shader For Dot Product"),
+            source: ShaderSource::Wgsl(include_str!("dot_product_type_a.wgsl").into()),
         });
-
-        let pipeline = wgpu_init.device.create_compute_pipeline(
+        let pipeline = wgpu.device.create_compute_pipeline(
             &(ComputePipelineDescriptor {
-                label: Some("Create Pipeline Layout For Dot Product"),
+                label: Some("Create Pipeline For Matmul 2D"),
                 cache: None,
                 compilation_options: PipelineCompilationOptions::default(),
                 entry_point: Some("main"),
@@ -80,52 +83,47 @@ impl ArrOgpuModule {
             })
         );
 
-        let mut encoder = wgpu_init.device.create_command_encoder(
-            &(CommandEncoderDescriptor {
+        // let encoder
+        let mut encoder = wgpu.device.create_command_encoder(
+            &(wgpu::wgt::CommandEncoderDescriptor {
                 label: Some("Create Encoder For Dot Product"),
             })
         );
 
         {
+            // begin compute pass
             let mut bcp = encoder.begin_compute_pass(
                 &(ComputePassDescriptor {
-                    label: Some("Create Compute Pass For Dot Product"),
+                    label: Some("Create Begin COmpute Pass For Dot Product"),
                     timestamp_writes: None,
                 })
             );
 
+            // pipeline
             bcp.set_pipeline(&pipeline);
 
-            // group 0
-            bcp.set_bind_group(0, Some(&heap_bind_group.binding_groups), &[]);
-            // group 1
-            bcp.set_bind_group(1, Some(&bing_group), &[]);
+            // group
+            bcp.set_bind_group(0, Some(&heap_binding.binding_groups), &[]);
+            bcp.set_bind_group(1, Some(&array_a_binding.1), &[]);
+            bcp.set_bind_group(2, Some(&array_b_binding.1), &[]);
+            bcp.set_bind_group(3, Some(&out_binding.1), &[]);
+
+            // dispact
             bcp.dispatch_workgroups(1, 1, 1);
         }
+        wgpu.queue.submit(Some(encoder.finish()));
+        wgpu.device.poll(wgpu::wgt::PollType::Wait).unwrap();
 
-        wgpu_init.queue.submit(Some(encoder.finish()));
-        wgpu_init.device.poll(wgpu::wgt::PollType::Wait).unwrap();
-
-        let shape = vec![1];
-        let stride = vec![1];
-        let binding = self.array_data_binding(
-            &[output_allocate.1, output_allocate.2],
-            &shape,
-            &stride,
-            &stride,
-            &0
-        );
-
-        let arr = GpuArray {
-            length: length_a,
+        let array = GpuArray {
             module: Arc::new(self.clone()),
-            pointer: (output_allocate.1, output_allocate.2),
             shape,
-            space_type: output_allocate.0,
+            pointer: (allocate.1, allocate.2),
+            length: len as usize,
+            space_type: allocate.0,
             stride,
-            binding: binding,
+            binding: out_binding,
         };
 
-        Ok(arr)
+        Ok(array)
     }
 }
