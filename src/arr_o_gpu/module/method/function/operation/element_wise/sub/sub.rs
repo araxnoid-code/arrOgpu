@@ -13,7 +13,7 @@ use wgpu::{
 use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArray, get_stride_from_shape };
 
 impl ArrOgpuModule {
-    pub fn sub_view<'a, A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
+    pub fn sub<'a, A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
         where A: ArrayView, B: ArrayView
     {
         if array_a.shape() != array_b.shape() {
@@ -106,7 +106,10 @@ impl ArrOgpuModule {
         }
 
         wgpu.queue.submit(Some(encoder.finish()));
-        wgpu.device.poll(wgpu::wgt::PollType::Wait).unwrap();
+        if let Err(poll_err) = wgpu.device.poll(wgpu::wgt::PollType::Wait) {
+            let error = "Add Error, Error While Poll".to_string();
+            return Err(ArrOgpuErr::Poll(error, poll_err));
+        }
 
         let array = GpuArray {
             module: Arc::new(self.clone()),

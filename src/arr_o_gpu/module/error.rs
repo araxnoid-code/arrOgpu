@@ -23,5 +23,5 @@ pub enum ArrOgpuErr {
     Reshape(String),
     Permute(String),
     // pool
-    Poll(PollError),
+    Poll(String, PollError),
 }

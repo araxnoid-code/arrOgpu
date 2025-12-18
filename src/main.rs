@@ -1,18 +1,14 @@
-use arr_o_gpu::{ ArrOgpuErr, ArrOgpuModule, r };
+use arr_o_gpu::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArray, r };
 
-fn main() -> Result<(), ArrOgpuErr> {
-    let module = ArrOgpuModule::default();
+fn main() {
+    let data = 10;
+    get_data(&data);
 
-    let data = (0..6).map(|v| v as f32).collect::<Vec<f32>>();
-    let array = module.array_from_vector(&data, &[2, 1, 3])?;
+    let data = "halo";
+    get_data(data);
 
-    let array = module.permute(&array, &[2, 1, 0])?;
-    let array = module.broadcast(&array, &[3, 3, 2])?;
-    let array = module.slicing(&array, &[r(..), r(1..), r(..1)])?;
-    let out_a = module.sum_axis(&array, &[0])?;
-    println!("===========");
-    println!("{}", array.contiguous());
-    println!("{}", out_a);
-
-    Ok(())
+    let data = false;
+    get_data(&data);
 }
+
+fn get_data<T>(data: &T) where T: ?Sized {}

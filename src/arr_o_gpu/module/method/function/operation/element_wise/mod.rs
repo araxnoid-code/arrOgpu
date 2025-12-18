@@ -1,11 +1,13 @@
 mod add;
-pub use add::*;
+// pub use add::*;
 
 mod div;
-pub use div::*;
+// pub use div::*;
 
 mod mul;
-pub use mul::*;
+// pub use mul::*;
 
 mod sub;
-pub use sub::*;
+// pub use sub::*;
+
+mod skalar_operation;

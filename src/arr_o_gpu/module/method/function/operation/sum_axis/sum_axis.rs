@@ -1,4 +1,4 @@
-use std::{ collections::HashSet, sync::Arc };
+use std::sync::Arc;
 
 use wgpu::{
     BindGroupDescriptor,
@@ -25,7 +25,7 @@ use crate::{
     ArrOgpuModule,
     ArrayView,
     GpuArray,
-    arr_o_gpu::module::method::function::operation::sum_axis::error_handling,
+    arr_o_gpu::module::method::function::operation::sum_axis::error_handling::{ error_handling },
     get_stride_from_shape,
 };
 

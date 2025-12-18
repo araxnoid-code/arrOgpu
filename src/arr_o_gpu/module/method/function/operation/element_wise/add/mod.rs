@@ -1,2 +1,3 @@
 mod add;
-use add::*;
+mod add_array;
+mod add_skalar;

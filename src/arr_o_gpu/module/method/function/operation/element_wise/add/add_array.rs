@@ -13,12 +13,17 @@ use wgpu::{
 use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArray, get_stride_from_shape };
 
 impl ArrOgpuModule {
-    pub fn div<'a, A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
-        where A: ArrayView, B: ArrayView
+    pub(crate) fn add_array<'a, A, B>(
+        &self,
+        array_a: &A,
+        array_b: &B
+    )
+        -> Result<GpuArray, ArrOgpuErr>
+        where A: ArrayView, B: ArrayView + ?Sized
     {
         if array_a.shape() != array_b.shape() {
             let err = format!(
-                "Array Div Error, Shape Of A is {:?} but Divided with Shape Of B is {:?}",
+                "Array Add Error, Shape Of A is {:?} but adding with Shape Of B is {:?}",
                 array_a.shape(),
                 array_b.shape()
             );
@@ -44,7 +49,7 @@ impl ArrOgpuModule {
         let array_b_binding = array_b.binding();
         let pipeline_layout = wgpu.device.create_pipeline_layout(
             &(PipelineLayoutDescriptor {
-                label: Some("Create Pipeline Layout For Div"),
+                label: Some("Create Pipeline Layout For Add"),
                 bind_group_layouts: &[
                     // heap
                     &heap_binding.binding_group_layouts,
@@ -60,12 +65,12 @@ impl ArrOgpuModule {
         );
 
         let shader = wgpu.device.create_shader_module(ShaderModuleDescriptor {
-            label: Some("Create Shader For Div"),
-            source: ShaderSource::Wgsl(include_str!("div.wgsl").into()),
+            label: Some("Create Shader For Add"),
+            source: ShaderSource::Wgsl(include_str!("./wgsl/add.wgsl").into()),
         });
         let pipeline = wgpu.device.create_compute_pipeline(
             &(ComputePipelineDescriptor {
-                label: Some("Create Pipeline For Div"),
+                label: Some("Create Pipeline For Add"),
                 cache: None,
                 layout: Some(&pipeline_layout),
                 compilation_options: PipelineCompilationOptions::default(),
@@ -76,14 +81,14 @@ impl ArrOgpuModule {
 
         let mut encoder = wgpu.device.create_command_encoder(
             &(CommandEncoderDescriptor {
-                label: Some("Create Encoder For Div"),
+                label: Some("Create Encoder For Add"),
             })
         );
 
         {
             let mut bcp = encoder.begin_compute_pass(
                 &(ComputePassDescriptor {
-                    label: Some("Create Compute Pass For Div"),
+                    label: Some("Create Compute Pass For Add"),
                     timestamp_writes: None,
                 })
             );
