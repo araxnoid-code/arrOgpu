@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{ collections::HashSet, sync::Arc };
 
 use wgpu::{
     BindGroupDescriptor,
@@ -9,16 +9,21 @@ use wgpu::{
     BindingType,
     BufferBindingType,
     BufferUsages,
+    ComputePassDescriptor,
+    ComputePipelineDescriptor,
     Device,
+    PipelineCompilationOptions,
+    PipelineLayoutDescriptor,
     ShaderModuleDescriptor,
     ShaderStages,
     util::{ BufferInitDescriptor, DeviceExt },
+    wgt::CommandEncoderDescriptor,
 };
 
-use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, get_stride_from_shape };
+use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArray, get_stride_from_shape };
 
 impl ArrOgpuModule {
-    pub fn sum_axis<A, B>(&self, array_a: &A, axis: &[usize]) -> Result<(), ArrOgpuErr>
+    pub fn sum_axis<A>(&self, array_a: &A, axis: &[u32]) -> Result<GpuArray, ArrOgpuErr>
         where A: ArrayView
     {
         let mut axis = axis.to_vec();
@@ -28,12 +33,19 @@ impl ArrOgpuModule {
         error_handling(array_a, &axis)?;
 
         // out meta data
-        let mut out_shape = array_a.shape().clone();
-        axis.iter()
-            .rev()
-            .for_each(|idx| {
-                out_shape.remove(*idx);
-            });
+        let array_shape = array_a.shape();
+        let mut out_shape = array_shape.clone();
+
+        if array_shape.len() != axis.len() {
+            axis.iter()
+                .rev()
+                .for_each(|idx| {
+                    out_shape.remove(*idx as usize);
+                });
+        } else {
+            out_shape = vec![1];
+        }
+
         let stride = get_stride_from_shape(&out_shape);
         let out_len = out_shape.iter().product::<u32>();
         let allocate = self.allocator.write().unwrap().pointer_input(out_len);
@@ -49,10 +61,17 @@ impl ArrOgpuModule {
             &0
         );
 
-        // others
-
         // wgpu
         let wgpu = self.wgpu_init.read().unwrap();
+
+        // others
+        let mut shape_of_slice = vec![1; array_shape.len()];
+        for idx in &axis {
+            shape_of_slice[*idx as usize] = array_shape[*idx as usize];
+        }
+        let stride_of_slice = get_stride_from_shape(&shape_of_slice);
+
+        let others_binding = others_binding(&wgpu.device, &axis, &shape_of_slice, &stride_of_slice);
 
         // pipeline
         let shader = wgpu.device.create_shader_module(ShaderModuleDescriptor {
@@ -60,11 +79,86 @@ impl ArrOgpuModule {
             source: wgpu::ShaderSource::Wgsl(include_str!("sum_axis.wgsl").into()),
         });
 
-        Ok(())
+        let pipeline = wgpu.device.create_pipeline_layout(
+            &(PipelineLayoutDescriptor {
+                label: Some("Create Pipeline For Sum Axis"),
+                bind_group_layouts: &[
+                    &heap_binding.binding_group_layouts,
+                    &array_binding.0,
+                    &out_binding.0,
+                    &others_binding.0,
+                ],
+                push_constant_ranges: &[],
+            })
+        );
+
+        let pipeline = wgpu.device.create_compute_pipeline(
+            &(ComputePipelineDescriptor {
+                label: Some("Create Pipeline For Sum Axis"),
+                layout: Some(&pipeline),
+                module: &shader,
+                compilation_options: PipelineCompilationOptions::default(),
+                entry_point: Some("main"),
+                cache: None,
+            })
+        );
+
+        // encoder
+        let mut encoder = wgpu.device.create_command_encoder(
+            &(CommandEncoderDescriptor {
+                label: Some("Create Encoder For Sum Axis"),
+            })
+        );
+
+        {
+            // begin compute pass
+            let mut bcp = encoder.begin_compute_pass(
+                &(ComputePassDescriptor {
+                    label: Some("Create Begin Compute Pass For Sum Axis"),
+                    timestamp_writes: None,
+                })
+            );
+
+            // set pipeline
+            bcp.set_pipeline(&pipeline);
+
+            // bind group
+            // // heap
+            bcp.set_bind_group(0, Some(&heap_binding.binding_groups), &[]);
+
+            // // array
+            bcp.set_bind_group(1, Some(&array_binding.1), &[]);
+
+            // // out
+            bcp.set_bind_group(2, Some(&out_binding.1), &[]);
+
+            // // others
+            bcp.set_bind_group(3, Some(&others_binding.1), &[]);
+
+            let x = (out_len + 16 - 1) / 16;
+            let y = 1;
+            let z = 1;
+            bcp.dispatch_workgroups(x, y, z);
+        }
+
+        wgpu.queue.submit(Some(encoder.finish()));
+        wgpu.device.poll(wgpu::wgt::PollType::Wait).unwrap();
+
+        let array = GpuArray {
+            module: Arc::new(self.clone()),
+            binding: out_binding,
+            length: out_len as usize,
+            pointer: (allocate.1, allocate.2),
+            space_type: allocate.0,
+            shape: out_shape,
+            stride: stride,
+        };
+
+        Ok(array)
     }
 }
 
-fn error_handling<A>(array_a: &A, axis: &[usize]) -> Result<(), ArrOgpuErr> where A: ArrayView {
+fn error_handling<A>(array_a: &A, axis: &[u32]) -> Result<(), ArrOgpuErr> where A: ArrayView {
     // indexing out of shape
     let shape = array_a.shape();
     let axis_len = axis.len();
@@ -75,15 +169,29 @@ fn error_handling<A>(array_a: &A, axis: &[usize]) -> Result<(), ArrOgpuErr> wher
             array_a.shape()
         );
         return Err(ArrOgpuErr::SumAxis(error));
+    } else if axis_len == 0 {
+        let error = format!("Sum Axis Error, Axis Cannot Be Empty");
+        return Err(ArrOgpuErr::SumAxis(error));
     }
 
-    // repeated index
+    // repeated index & check all index on axis
     let mut value: HashSet<usize> = HashSet::new();
-    for idx in axis {
-        if let None = value.get(idx) {
-            value.insert(*idx);
+    let array_dim = shape.len();
+    for &idx in axis {
+        if (idx as usize) >= array_dim {
+            let error = format!(
+                "Sum Axis Error, The Index On {:?} Is Greater Than The Dimension On Array {:?}",
+                axis,
+                shape
+            );
+            return Err(ArrOgpuErr::SumAxis(error));
+        }
+
+        let idx = idx as usize;
+        if let None = value.get(&idx) {
+            value.insert(idx);
         } else {
-            let error = format!(" Sum Axis Error, Found Repeated Indexes On The Axis {:?}", axis);
+            let error = format!("Sum Axis Error, Found Repeated Indexes On The Axis {:?}", axis);
             return Err(ArrOgpuErr::SumAxis(error));
         }
     }
