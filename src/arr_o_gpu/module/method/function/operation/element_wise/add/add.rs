@@ -16,17 +16,9 @@ impl ArrOgpuModule {
             ElementWiseOption::Array(array) => {
                 return self.add_array(array_a, array);
             }
-            ElementWiseOption::Skalar(pointer_option) =>
-                match pointer_option {
-                    PointerOption::Pointer(pointer) => {
-                        let error = format!("Skalar Operation Not Yet Done");
-                        Err(ArrOgpuErr::Add(error))
-                    }
-                    PointerOption::Skalar(skalar) => {
-                        let error = format!("Skalar Operation Not Yet Done");
-                        Err(ArrOgpuErr::Add(error))
-                    }
-                }
+            ElementWiseOption::Skalar(meta_data_option) => {
+                return self.add_skalar(array_a, meta_data_option);
+            }
         }
     }
 }

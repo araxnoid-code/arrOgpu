@@ -75,22 +75,24 @@ fn main(@builtin(global_invocation_id) global_id:vec3<u32>){
     }
 }
 
-fn indexing(i:u32) -> u32{
+fn indexing(x:u32) -> u32{
+    var index = offset_a;
     let length = arrayLength(&shape_a);
-    var index = 0u;
     for (var i = 0u; i < length; i++){
-        let permute = (i / iters_a[i]) % shape_a[i];
-        index = (permute * stride_a[i]);
+        let permute = (x / iters_a[i]) % shape_a[i];
+        index += (permute * stride_a[i]);
     }
     return index;
 }
 
+
 fn skalar_indexing() -> u32{
-    let i = 0u;
+    let x = 0u;
+    var index = offset_b;
     let length = arrayLength(&shape_b);
     for (var i = 0u; i < length; i++){
-        let permute = (i / iters_b[i]) % shape_b[i];
-        index = (permute *  stride_b[i]);
+        let permute = (x / iters_b[i]) % shape_b[i];
+        index += (permute *  stride_b[i]);
     }
     return index;
 }

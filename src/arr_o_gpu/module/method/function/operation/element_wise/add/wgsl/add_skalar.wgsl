@@ -23,31 +23,30 @@ var<storage, read> stride_a: array<u32>;
 @group(1) @binding(4)
 var<uniform> offset_a: u32;
 
+// skalar 
+@group(2) @binding(0)
+var<uniform> skalar: f32;
+
 // output
 // // pointer
-@group(2) @binding(0)
+@group(3) @binding(0)
 var<uniform> pointer_o: vec2<u32>;
 
 // // shape
-@group(2) @binding(1)
+@group(3) @binding(1)
 var<storage, read> shape_o: array<u32>;
 
 // // iters
-@group(2) @binding(2)
+@group(3) @binding(2)
 var<storage, read> iters_o: array<u32>;
 
 // // stride
-@group(2) @binding(3)
+@group(3) @binding(3)
 var<storage, read> stride_o: array<u32>;
 
 // // offset
-@group(2) @binding(4)
+@group(3) @binding(4)
 var<uniform> offset_o: u32;
-
-// others
-// // skalar 
-@group(1) @binding(0)
-var<uniform> skalar: f32;
 
 @compute @workgroup_size(256, 1, 1)
 fn main(@builtin(global_invocation_id) global_id:vec3<u32>){
@@ -58,12 +57,12 @@ fn main(@builtin(global_invocation_id) global_id:vec3<u32>){
     }
 }
 
-fn indexing(i:u32) -> u32{
+fn indexing(x:u32) -> u32{
+    var index = offset_a;
     let length = arrayLength(&shape_a);
-    var index = 0u;
     for (var i = 0u; i < length; i++){
-        let permute = (i / iters_a[i]) % shape_a[i];
-        index = (permute * stride_a[i]);
+        let permute = (x / iters_a[i]) % shape_a[i];
+        index += (permute * stride_a[i]);
     }
     return index;
 }
