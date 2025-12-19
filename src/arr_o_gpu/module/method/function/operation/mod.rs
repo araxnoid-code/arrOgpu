@@ -7,7 +7,7 @@ mod matmul;
 mod dot_product;
 // pub use dot_product::*;
 
-mod sum_axis;
+mod sum;
 // pub use sum_axis::*;
 
 mod function;

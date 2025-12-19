@@ -11,12 +11,13 @@ use arr_o_gpu::{
 fn main() {
     let module = ArrOgpuModule::default();
 
-    let array_a = ArangeArray::arange(0..12)
-        .to_GpuArray_with_shape(&[2, 2, 3], &module)
+    let array_a = ArangeArray::arange(0..120)
+        .to_GpuArray_with_shape(&[20, 2, 3], &module)
         .unwrap();
     println!("{}", array_a);
 
-    let out = module.tan(&array_a).unwrap();
+    // let dim = vec![1];
 
-    println!("{}", out);
+    // let out_keep_dim = module.sum_axis_keep_dim(&array_a, &dim).unwrap();
+    // println!("{}", out_keep_dim);
 }
