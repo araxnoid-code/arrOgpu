@@ -9,3 +9,5 @@ mod dot_product;
 
 mod sum_axis;
 // pub use sum_axis::*;
+
+mod function;
