@@ -16,8 +16,8 @@ fn main() {
         .unwrap();
     println!("{}", array_a);
 
-    // let dim = vec![1];
+    let dim = vec![1];
 
-    // let out_keep_dim = module.sum_axis_keep_dim(&array_a, &dim).unwrap();
-    // println!("{}", out_keep_dim);
+    let out_keep_dim = module.sum(&array_a).unwrap();
+    println!("{}", out_keep_dim);
 }
