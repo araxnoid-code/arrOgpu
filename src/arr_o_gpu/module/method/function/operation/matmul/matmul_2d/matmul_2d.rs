@@ -137,7 +137,7 @@ impl ArrOgpuModule {
         wgpu.queue.submit(Some(encoder.finish()));
 
         // sync
-        wgpu.device.poll(wgpu::wgt::PollType::Wait).unwrap();
+        // wgpu.device.poll(wgpu::wgt::PollType::Wait).unwrap();
 
         let array = GpuArray {
             module: Arc::new(self.clone()),

@@ -112,7 +112,7 @@ impl ArrOgpuModule {
             bcp.dispatch_workgroups(1, 1, 1);
         }
         wgpu.queue.submit(Some(encoder.finish()));
-        wgpu.device.poll(wgpu::wgt::PollType::Wait).unwrap();
+        // wgpu.device.poll(wgpu::wgt::PollType::Wait).unwrap();
 
         let array = GpuArray {
             module: Arc::new(self.clone()),

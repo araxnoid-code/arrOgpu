@@ -111,10 +111,10 @@ impl ArrOgpuModule {
         }
 
         wgpu.queue.submit(Some(encoder.finish()));
-        if let Err(poll_err) = wgpu.device.poll(wgpu::wgt::PollType::Wait) {
-            let error = "Add Error, Error While Poll".to_string();
-            return Err(ArrOgpuErr::Poll(error, poll_err));
-        }
+        // if let Err(poll_err) = wgpu.device.poll(wgpu::wgt::PollType::Wait) {
+        //     let error = "Add Error, Error While Poll".to_string();
+        //     return Err(ArrOgpuErr::Poll(error, poll_err));
+        // }
 
         let array = GpuArray {
             module: Arc::new(self.clone()),
