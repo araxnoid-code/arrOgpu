@@ -2,6 +2,9 @@ use wgpu::PollError;
 
 #[derive(Debug)]
 pub enum ArrOgpuErr {
+    // module
+    ModuleInit(String),
+
     // Init
     Init(String),
     ArangeInit(String),

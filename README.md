@@ -4,7 +4,7 @@
     <b><p>Array Operations On Gpu</p></b>
     <p>⚙️ under development ⚙️</p>
     <b>
-        <p>nightly / 0.1.0.2</p>
+        <p>nightly / 0.1.0.3</p>
     </b>
 </div>
 
@@ -14,7 +14,7 @@ This library uses [`WGPU`](https://wgpu.rs/) to perform array operations
 ## 🚧 Nightly Version!
 is an experimental version used in development and testing.
 
-📜 Full changelog: [version.md](https://github.com/araxnoid-code/arrOgpu/blob/nightly/0.1.0.2/version.md)
+📜 Full changelog: [version.md](./version.md)
 
 ## Code
 ```rust
@@ -26,270 +26,92 @@ fn main() {
 ```
 ### 🚧 Announcement
 - arrOgpu only supports numbers of type f32.
-- In this version, arrOgpu is still in the development stage, therefore the maximum storage allowed is 400000 bytes or 100000 numbers of type f32.
 - in this version there are still a few features and the possibility of bugs will occur, in the future it will continue to be developed.
 
 ## What New?
 ### Fixed Bug
-- Fixed bug in index_view method.
-- Fixed broadcasting_view not syncing with permute method due to stride.
-- Fixed bug in matmul_2d.
-- Fixed a bug in allocator management due to a logic error.
-
-### Change
-- change the name of collect method to contiguous method.
+- Fixed bug in matmul_nd method.
 
 ### System
-- use of generic structures for all methods that allow operating GpuArrayView.
-- Each GpuArray and GpuArrayView has a memory binding that stores the meta data of the array itself.
+- The maximum storage or heap capacity of ArrOgpuModule now does not have to be 100000 float numbers or 400000 bytes.
+- Make the data type that implements the ArrayView trait(GpuArray and GpuArrayView) the primary data type in the parameters for the methods in the module.
+- Remove the binding_compounds property from ArrOgpuModule, then add the heap_binding property to access the heap bind group.
+
+### Optimaze
+- Remove unnecessary poll.
+- Remove no_longer_use folder.
 
 ### Features
-#### slicing_view method
+#### Manual initialization of ArrOgpuModule.
 ```rust
-use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule, r };
+use arr_o_gpu::{ ArrOgpuModule, ArrOgpuModuleInit };
 fn main() {
     let module = ArrOgpuModule::default();
+    // or
+    let module = ArrOgpuModule::init(ArrOgpuModuleInit::default()).unwrap();
+}
+```
+by default will set:
+- The maximum storage capacity is 100000 float numbers or 400000 bytes.
+- memory: MemoryUsage,
+- power : LowPower,
 
-    let array = ArangeArray::arange(0..27)
-        .to_GpuArray_with_shape(&[3, 3, 3], &module)
-        .unwrap();
-    println!("{}", array);
-    // [
-    //  [
-    //   [0.0, 1.0, 2.0]
-    //   [3.0, 4.0, 5.0]
-    //   [6.0, 7.0, 8.0]
-    //  ]
-    //  [
-    //   [9.0, 10.0, 11.0]
-    //   [12.0, 13.0, 14.0]
-    //   [15.0, 16.0, 17.0]
-    //  ]
-    //  [
-    //   [18.0, 19.0, 20.0]
-    //   [21.0, 22.0, 23.0]
-    //   [24.0, 25.0, 26.0]
-    //  ]
-    // ]
-
-    let array_view = module.slicing_view(&array, &[r(..), r(0..2), r(1..3)]).unwrap();
-    println!("{}", array_view.contiguous());
-    // [
-    //  [
-    //   [1.0, 2.0]
-    //   [4.0, 5.0]
-    //  ]
-    //  [
-    //   [10.0, 11.0]
-    //   [13.0, 14.0]
-    //  ]
-    //  [
-    //   [19.0, 20.0]
-    //   [22.0, 23.0]
-    //  ]
-    // ]
+to be more specific
+```rust
+use arr_o_gpu::{ ArrOgpuModule, ArrOgpuModuleInit, HeapSize, ManualInit, Memory, Power, WgpuInit };
+fn main() {
+    let module = ArrOgpuModule::init(ArrOgpuModuleInit {
+        heap_size: HeapSize::Item(100000), // 100000 float numbers
+        wgpu: WgpuInit::ManualInit(ManualInit {
+            memory: Memory::Performance,
+            power: Power::HighPerformance,
+        }),
+    }).unwrap();
 }
 ```
 
-#### Broadcast_view method
+further explanation:
 ```rust
-use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule };
-fn main() {
-    let module = ArrOgpuModule::default();
-
-    let array = ArangeArray::arange(0..6)
-        .to_GpuArray_with_shape(&[2, 1, 3], &module)
-        .unwrap();
-    println!("{}", array);
-    // [
-    //  [
-    //   [0.0, 1.0, 2.0]
-    //  ]
-    //  [
-    //   [3.0, 4.0, 5.0]
-    //  ]
-    // ]
-
-    let array_view = module.broadcast_view(&array, &[2, 3, 3]).unwrap();
-    println!("{}", array_view.contiguous());
-    // [
-    //  [
-    //   [0.0, 1.0, 2.0]
-    //   [0.0, 1.0, 2.0]
-    //   [0.0, 1.0, 2.0]
-    //  ]
-    //  [
-    //   [3.0, 4.0, 5.0]
-    //   [3.0, 4.0, 5.0]
-    //   [3.0, 4.0, 5.0]
-    //  ]
-    // ]
+pub struct ArrOgpuModuleInit {
+    pub heap_size: HeapSize,
+    pub wgpu: WgpuInit,
 }
 ```
 
-#### matmul_2d_view
+`heap_size` functions to set the maximum capacity of the heap.
 ```rust
-use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule };
-fn main() {
-    let module = ArrOgpuModule::default();
-
-    let array_a = ArangeArray::arange(0..12)
-        .to_GpuArray_with_shape(&[4, 3], &module)
-        .unwrap();
-    println!("{}", array_a);
-    // [
-    //  [0.0, 1.0, 2.0]
-    //  [3.0, 4.0, 5.0]
-    //  [6.0, 7.0, 8.0]
-    //  [9.0, 10.0, 11.0]
-    // ]
-
-    let array_b = ArangeArray::arange(0..6)
-        .to_GpuArray_with_shape(&[3, 2], &module)
-        .unwrap();
-    println!("{}", array_b);
-    // [
-    //  [0.0, 1.0]
-    //  [2.0, 3.0]
-    //  [4.0, 5.0]
-    // ]
-
-    let array = module.matmul_2d_view(&array_a, &array_b).unwrap();
-    println!("{}", array);
-    // [
-    //  [10.0, 13.0]
-    //  [28.0, 40.0]
-    //  [46.0, 67.0]
-    //  [64.0, 94.0]
-    // ]
+pub enum HeapSize {
+    Item(u32), // ex: 100 float numbers equals 400 bytes.
+    Byte(u64), // ex: 800 bytes is equal to 200 float numbers.
 }
 ```
 
-#### matmul_nd_view
+`wgpu` serves to initialize wgpu.
 ```rust
-use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule };
-fn main() {
-    let module = ArrOgpuModule::default();
+pub enum WgpuInit {
+    ManualDeviceQueue(Device, Queue), // Deeply create devices and queue
+    ManualInit(ManualInit),
+}
 
-    let array_a = ArangeArray::arange(0..12)
-        .to_GpuArray_with_shape(&[2, 3, 2], &module)
-        .unwrap();
-    println!("{}", array_a);
-    // [
-    //  [
-    //   [0.0, 1.0]
-    //   [2.0, 3.0]
-    //   [4.0, 5.0]
-    //  ]
-    //  [
-    //   [6.0, 7.0]
-    //   [8.0, 9.0]
-    //   [10.0, 11.0]
-    //  ]
-    // ]
+pub struct ManualInit {
+    pub power: Power,
+    pub memory: Memory,
+}
 
-    let array_b = ArangeArray::arange(0..8)
-        .to_GpuArray_with_shape(&[2, 2, 2], &module)
-        .unwrap();
-    println!("{}", array_b);
-    // [
-    //  [
-    //   [0.0, 1.0]
-    //   [2.0, 3.0]
-    //  ]
-    //  [
-    //   [4.0, 5.0]
-    //   [6.0, 7.0]
-    //  ]
-    // ]
+pub enum Power {
+    HighPerformance,
+    LowPower,
+}
 
-    let array = module.matmul_nd_view(&array_a, &array_b).unwrap();
-    println!("{}", array);
-    // [
-    //  [
-    //   [2.0, 3.0]
-    //   [6.0, 11.0]
-    //   [10.0, 19.0]
-    //  ]
-    //  [
-    //   [66.0, 79.0]
-    //   [86.0, 103.0]
-    //   [106.0, 127.0]
-    //  ]
-    // ]
+pub enum Memory {
+    Performance,
+    MemoryUsage,
 }
 ```
 
-#### dot_product_view
-```rust
-use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule };
-fn main() {
-    let module = ArrOgpuModule::default();
 
-    let array_a = ArangeArray::arange(0..20)
-        .to_GpuArray_with_shape(&[20], &module)
-        .unwrap();
-    println!("{}", array_a);
-    // [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0]
-
-    let array_b = ArangeArray::arange(20..40)
-        .to_GpuArray_with_shape(&[20], &module)
-        .unwrap();
-    println!("{}", array_b);
-    // [20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0, 39.0]
-
-    let array = module.dot_product_view(&array_a, &array_b).unwrap();
-    println!("{}", array);
-    // [6270.0]
-}
-```
-
-#### reshape method
-```rust
-use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule };
-fn main() {
-    let module = ArrOgpuModule::default();
-
-    let array = ArangeArray::arange(0..30)
-        .to_GpuArray_with_shape(&[5, 6], &module)
-        .unwrap();
-    println!("{}", array);
-    // [
-    //  [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
-    //  [6.0, 7.0, 8.0, 9.0, 10.0, 11.0]
-    //  [12.0, 13.0, 14.0, 15.0, 16.0, 17.0]
-    //  [18.0, 19.0, 20.0, 21.0, 22.0, 23.0]
-    //  [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
-    // ]
-
-    let array_view = module.reshape(&array, &[5, 2, 3]).unwrap();
-    println!("{}", array_view.contiguous());
-    // [
-    //  [
-    //   [0.0, 1.0, 2.0]
-    //   [3.0, 4.0, 5.0]
-    //  ]
-    //  [
-    //   [6.0, 7.0, 8.0]
-    //   [9.0, 10.0, 11.0]
-    //  ]
-    //  [
-    //   [12.0, 13.0, 14.0]
-    //   [15.0, 16.0, 17.0]
-    //  ]
-    //  [
-    //   [18.0, 19.0, 20.0]
-    //   [21.0, 22.0, 23.0]
-    //  ]
-    //  [
-    //   [24.0, 25.0, 26.0]
-    //   [27.0, 28.0, 29.0]
-    //  ]
-    // ]
-}
-```
-
-#### permute method
+#### Allow Scalar In Element-Wise Operation.
+##### add
 ```rust
 use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule };
 fn main() {
@@ -310,95 +132,311 @@ fn main() {
     //  ]
     // ]
 
-    let array_view = module.permute(&array, &[2, 0, 1]).unwrap();
-    println!("{}", array_view.contiguous());
+    let add = module.add(&array, &10.0).unwrap();
+    println!("{}", add);
     // [
     //  [
-    //   [0.0, 3.0]
-    //   [6.0, 9.0]
+    //   [10.0, 11.0, 12.0]
+    //   [13.0, 14.0, 15.0]
     //  ]
     //  [
-    //   [1.0, 4.0]
-    //   [7.0, 10.0]
+    //   [16.0, 17.0, 18.0]
+    //   [19.0, 20.0, 21.0]
+    //  ]
+    // ]
+
+    // or
+    let scalar = module.array_from_vector(&[5.0], &[1]).unwrap();
+    println!("{}", scalar);
+    // [5.0]
+
+    let add = module.add(&array, &scalar).unwrap();
+    println!("{}", add);
+    // [
+    //  [
+    //   [5.0, 6.0, 7.0]
+    //   [8.0, 9.0, 10.0]
     //  ]
     //  [
-    //   [2.0, 5.0]
-    //   [8.0, 11.0]
+    //   [11.0, 12.0, 13.0]
+    //   [14.0, 15.0, 16.0]
     //  ]
     // ]
 }
 ```
-
-#### is_contiguous() method in ArrayView
-```rust
-use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule, ArrayView, r };
-fn main() {
-    let module = ArrOgpuModule::default();
-
-    let array = ArangeArray::arange(0..6)
-        .to_GpuArray_with_shape(&[2, 3], &module)
-        .unwrap();
-    println!("is_contiguous : {}", array.is_contiguous());
-    println!("{}", array);
-    // is_contiguous : true
-    // [
-    //  [0.0, 1.0, 2.0]
-    //  [3.0, 4.0, 5.0]
-    // ]
-
-    let array_view = module.slicing_view(&array, &[r(..), r(..2)]).unwrap();
-    println!("is_contiguous : {}", array_view.is_contiguous());
-    println!("{}", array_view.contiguous());
-    // is_contiguous : false
-    // [
-    //  [0.0, 1.0]
-    //  [3.0, 4.0]
-    // ]
-}
-```
-
-#### get_heap method for arrayView will refer to the main array heap.
-```rust
-use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule, r };
-
-fn main() {
-    let module = ArrOgpuModule::default();
-
-    let array = ArangeArray::arange(0..6)
-        .to_GpuArray_with_shape(&[2, 3], &module)
-        .unwrap();
-    println!("{:?}", array.get_heap());
-    // [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
-
-    let array_view = module.slicing_view(&array, &[r(..), r(..2)]).unwrap();
-    println!("{:?}", array_view.get_heap());
-    // [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
-}
-```
-
-#### element wise operation which allow GpuArrayView
-- add_view
-- mul_view
-- sub_view
-- div_view
-
+##### sub
 ```rust
 use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule };
-
 fn main() {
     let module = ArrOgpuModule::default();
 
-    let array_a = ArangeArray::arange(0..6)
-        .to_GpuArray_with_shape(&[2, 3], &module)
+    let array = ArangeArray::arange(0..12)
+        .to_GpuArray_with_shape(&[2, 2, 3], &module)
         .unwrap();
+    println!("{}", array);
+    // [
+    //  [
+    //   [0.0, 1.0, 2.0]
+    //   [3.0, 4.0, 5.0]
+    //  ]
+    //  [
+    //   [6.0, 7.0, 8.0]
+    //   [9.0, 10.0, 11.0]
+    //  ]
+    // ]
 
-    let array_b = ArangeArray::arange(0..6)
-        .to_GpuArray_with_shape(&[2, 3], &module)
+    let add = module.sub(&array, &10.0).unwrap();
+    println!("{}", add);
+    // [
+    //  [
+    //   [-10.0, -9.0, -8.0]
+    //   [-7.0, -6.0, -5.0]
+    //  ]
+    //  [
+    //   [-4.0, -3.0, -2.0]
+    //   [-1.0, 0.0, 1.0]
+    //  ]
+    // ]
+
+    // or
+    let scalar = module.array_from_vector(&[5.0], &[1]).unwrap();
+    println!("{}", scalar);
+    // [5.0]
+
+    let add = module.sub(&array, &scalar).unwrap();
+    println!("{}", add);
+    // [
+    //  [
+    //   [-5.0, -4.0, -3.0]
+    //   [-2.0, -1.0, 0.0]
+    //  ]
+    //  [
+    //   [1.0, 2.0, 3.0]
+    //   [4.0, 5.0, 6.0]
+    //  ]
+    // ]
+}
+```
+##### mul
+```rust
+use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule };
+fn main() {
+    let module = ArrOgpuModule::default();
+
+    let array = ArangeArray::arange(0..12)
+        .to_GpuArray_with_shape(&[2, 2, 3], &module)
         .unwrap();
+    println!("{}", array);
+    // [
+    //  [
+    //   [0.0, 1.0, 2.0]
+    //   [3.0, 4.0, 5.0]
+    //  ]
+    //  [
+    //   [6.0, 7.0, 8.0]
+    //   [9.0, 10.0, 11.0]
+    //  ]
+    // ]
 
-    module.add_view(&array_a, &array_b);
-    module.sub_view(&array_a, &array_b);
-    module.mul_view(&array_a, &array_b);
-    module.div_view(&array_a, &array_b);
+    let add = module.mul(&array, &10.0).unwrap();
+    println!("{}", add);
+    // [
+    //  [
+    //   [0.0, 10.0, 20.0]
+    //   [30.0, 40.0, 50.0]
+    //  ]
+    //  [
+    //   [60.0, 70.0, 80.0]
+    //   [90.0, 100.0, 110.0]
+    //  ]
+    // ]
+
+    // or
+    let scalar = module.array_from_vector(&[5.0], &[1]).unwrap();
+    println!("{}", scalar);
+    // [5.0]
+
+    let add = module.mul(&array, &scalar).unwrap();
+    println!("{}", add);
+    // [
+    //  [
+    //   [0.0, 5.0, 10.0]
+    //   [15.0, 20.0, 25.0]
+    //  ]
+    //  [
+    //   [30.0, 35.0, 40.0]
+    //   [45.0, 50.0, 55.0]
+    //  ]
+    // ]
+}
+```
+##### div
+```rust
+use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule };
+fn main() {
+    let module = ArrOgpuModule::default();
+
+    let array = ArangeArray::arange(0..12)
+        .to_GpuArray_with_shape(&[2, 2, 3], &module)
+        .unwrap();
+    println!("{}", array);
+    // [
+    //  [
+    //   [0.0, 1.0, 2.0]
+    //   [3.0, 4.0, 5.0]
+    //  ]
+    //  [
+    //   [6.0, 7.0, 8.0]
+    //   [9.0, 10.0, 11.0]
+    //  ]
+    // ]
+
+    let add = module.div(&array, &10.0).unwrap();
+    println!("{}", add);
+    // [
+    //  [
+    //   [0.0, 0.1, 0.2]
+    //   [0.3, 0.4, 0.5]
+    //  ]
+    //  [
+    //   [0.6, 0.7, 0.8]
+    //   [0.90000004, 1.0, 1.1]
+    //  ]
+    // ]
+
+    // or
+    let scalar = module.array_from_vector(&[5.0], &[1]).unwrap();
+    println!("{}", scalar);
+    // [5.0]
+
+    let add = module.div(&array, &scalar).unwrap();
+    println!("{}", add);
+    // [
+    //  [
+    //   [0.0, 0.2, 0.4]
+    //   [0.6, 0.8, 1.0]
+    //  ]
+    //  [
+    //   [1.2, 1.4, 1.6]
+    //   [1.8000001, 2.0, 2.2]
+    //  ]
+    // ]
+}
+```
+
+#### Sum Method.
+##### sum
+```rust
+use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule };
+fn main() {
+    let module = ArrOgpuModule::default();
+
+    let array = ArangeArray::arange(0..12)
+        .to_GpuArray_with_shape(&[2, 2, 3], &module)
+        .unwrap();
+    println!("{}", array);
+    // [
+    //  [
+    //   [0.0, 1.0, 2.0]
+    //   [3.0, 4.0, 5.0]
+    //  ]
+    //  [
+    //   [6.0, 7.0, 8.0]
+    //   [9.0, 10.0, 11.0]
+    //  ]
+    // ]
+
+    let sum = module.sum(&array).unwrap();
+    println!("{}", sum);
+    // [66.0]
+}
+```
+
+##### sum_axis
+```rust
+use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule };
+fn main() {
+    let module = ArrOgpuModule::default();
+
+    let array = ArangeArray::arange(0..12)
+        .to_GpuArray_with_shape(&[2, 2, 3], &module)
+        .unwrap();
+    println!("{}", array);
+    // [
+    //  [
+    //   [0.0, 1.0, 2.0]
+    //   [3.0, 4.0, 5.0]
+    //  ]
+    //  [
+    //   [6.0, 7.0, 8.0]
+    //   [9.0, 10.0, 11.0]
+    //  ]
+    // ]
+
+    let sum = module.sum_axis(&array, &[0]).unwrap();
+    println!("{}", sum);
+    // [
+    //  [6.0, 8.0, 10.0]
+    //  [12.0, 14.0, 16.0]
+    // ]
+
+    let sum = module.sum_axis(&array, &[0, 1]).unwrap();
+    println!("{}", sum);
+    // [18.0, 22.0, 26.0]
+}
+```
+
+##### sum_axis_keep_dim
+```rust
+use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule };
+fn main() {
+    let module = ArrOgpuModule::default();
+
+    let array = ArangeArray::arange(0..12)
+        .to_GpuArray_with_shape(&[2, 2, 3], &module)
+        .unwrap();
+    println!("{}", array);
+    // [
+    //  [
+    //   [0.0, 1.0, 2.0]
+    //   [3.0, 4.0, 5.0]
+    //  ]
+    //  [
+    //   [6.0, 7.0, 8.0]
+    //   [9.0, 10.0, 11.0]
+    //  ]
+    // ]
+
+    let sum = module.sum_axis_keep_dim(&array, &[0]).unwrap();
+    println!("{}", sum);
+    // [
+    //  [
+    //   [6.0, 8.0, 10.0]
+    //   [12.0, 14.0, 16.0]
+    //  ]
+    // ]
+
+    let sum = module.sum_axis_keep_dim(&array, &[0, 1]).unwrap();
+    println!("{}", sum);
+    // [
+    //  [
+    //   [18.0, 22.0, 26.0]
+    //  ]
+    // ]
+}
+```
+
+#### sin, cos, tan method.
+```rust
+use arr_o_gpu::{ ArangeArray, ArangeIteratorTrait, ArrOgpuModule };
+fn main() {
+    let module = ArrOgpuModule::default();
+
+    let array = ArangeArray::arange(0..12)
+        .to_GpuArray_with_shape(&[2, 2, 3], &module)
+        .unwrap();
+    let sin = module.sin(&array).unwrap();
+    let cos = module.cos(&array).unwrap();
+    let tan = module.tan(&array).unwrap();
 }
 ```

@@ -2,13 +2,13 @@ use std::sync::{ Arc, RwLock };
 
 use wgpu::Buffer;
 
-use crate::{ arr_o_gpu::WgpuInit, Allocator, BindGroupCompound };
+use crate::{ arr_o_gpu::WgpuModule, Allocator, BindGroupCompound };
 
 #[derive(Clone)]
 pub struct ArrOgpuModule {
     pub(crate) allocator: Arc<RwLock<Allocator>>,
     pub(crate) maximum: Arc<u32>,
-    pub(crate) wgpu_init: Arc<RwLock<WgpuInit>>,
+    pub(crate) wgpu_init: Arc<RwLock<WgpuModule>>,
     pub(crate) heap_buffer: Arc<Buffer>,
     pub(crate) heap_binding: Arc<BindGroupCompound>,
     // pub(crate) binding_compounds: Arc<RwLock<Vec<BindGroupCompound>>>,
@@ -24,7 +24,7 @@ impl ArrOgpuModule {
         *self.maximum
     }
 
-    pub fn wgpu_init(&self) -> &Arc<RwLock<WgpuInit>> {
+    pub fn wgpu_init(&self) -> &Arc<RwLock<WgpuModule>> {
         &self.wgpu_init
     }
 
