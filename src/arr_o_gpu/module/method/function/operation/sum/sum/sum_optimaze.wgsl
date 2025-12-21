@@ -54,79 +54,57 @@ var<workgroup> cache: array<f32, 256>;
 @compute @workgroup_size(256, 1, 1)
 fn main(
     @builtin(global_invocation_id) global_id:vec3<u32>,
-    @builtin(local_invocation_id) local_id:vec3<u32>
+    @builtin(local_invocation_id) local_id:vec3<u32>,
+    @builtin(workgroup_id) work_id: vec3<u32>,
 ){
+    heap[512] = 99999.;
     var data_len = pointer.y - pointer.x;
-    if reduction_result[0] != 0.{
-        data_len = u32(reduction_result[0]);
+    var out_reduction_len = (data_len + 512 - 1) / 512;
+
+    // first summition
+    var cache_len = 512u;
+    if data_len < cache_len * (work_id.x + 1){
+        cache_len = cache_len - 512u * work_id.x;
     }
 
-    let out_len = (data_len + 512 - 1) / 512;
-
-    var len_cache = 512u;
-    if len_cache < (global_id.x + 1) * 512{
-        len_cache = data_len - 512 * global_id.x;
-    }
-    
-    // starting compute data
-    // adding first to 256 for fit with cache
+    let total_unit = (data_len + 2 - 1) / 2;
     var sum = 0.;
-    var total_unit = (len_cache + 2 - 1) / 2;
-    if global_id.x < total_unit{
-        if reduction_result[0] == 0.{
-            let start = global_id.x * 2;
-            let end = start + 1;
-            if end < len_cache{
-                sum = heap[start + pointer.x] + heap[end + pointer.x];
-            } else {
-                sum = heap[start + pointer.x];
-            } 
+    if local_id.x < total_unit{
+
+        let start = global_id.x * 2;
+        let end = start + 1;
+        if end < cache_len{
+            sum = heap[pointer.x + start] + heap[pointer.x + end];
         } else {
-            let start = (global_id.x * 2) + 1;
-            let end = start + 1;
-            if end < len_cache{
-                sum = reduction_result[start] + reduction_result[end];
-            } else {
-                sum = reduction_result[start];
-            }
+            sum = heap[pointer.x + start];
         }
     }
 
     workgroupBarrier();
 
-    if global_id.x < total_unit{
+    if local_id.x < total_unit{
         cache[local_id.x] = sum;
     }
-
-    len_cache = total_unit;
 
     workgroupBarrier();
 
     // paralel reduction
-    if len_cache != 1 {
-        var total_unit = (len_cache + 2 - 1) / 2;
-        let reduction_iter = u32(ceil(log2(f32(len_cache))));
-        for (var i = 0u; i < reduction_iter ; i++){
+    if total_unit != 1{
+        var cache_len = total_unit;
+        var total_unit = (cache_len + 2 - 1) / 2;
+        let total_reduction_iter = u32(ceil(log2(f32(cache_len))));
+
+        for (var i = 0u; i < total_reduction_iter; i++){
             var sum = 0.;
             if local_id.x < total_unit{
-                if reduction_result[0] == 0.{
-                    let start = local_id.x * 2;
-                    let end = start + 1;
-
-                    if end < len_cache{
-                        sum = cache[start] + cache[end];
-                    } else {
-                        sum = cache[start];
-                    } 
+                let start = global_id.x * 2;
+                let end = start + 1;
+                if end < cache_len{
+                    sum = cache[start] + cache[end];
                 } else {
-                    let start = local_id.x * 2;
-                    let end = start + 1;
-                    if end < len_cache{
-                        sum = cache[start] + cache[end];
-                    } else {
-                        sum = cache[start];
-                    }
+                    sum = cache[start];
                 }
+
             }
 
             workgroupBarrier();
@@ -137,16 +115,13 @@ fn main(
 
             workgroupBarrier();
 
-            len_cache = total_unit;
-            total_unit = (total_unit + 2 - 1) / 2;
+            cache_len =  total_unit;
+            total_unit = (total_unit +  2 - 1) / 2;
         }
     }
 
+    if local_id.x == 0{
+    heap[513] = cache[0];
 
-    if global_id.x == 0 && out_len == 1{
-        heap[pointer_o.x] = cache[0];
-    } else if global_id.x == 0 {
-        reduction_result[global_id.x + 1] = cache[0];
-        reduction_result[0] = f32(out_len);
     }
 }
