@@ -58,7 +58,7 @@ fn main(@builtin(local_invocation_id) local_id:vec3<u32>){
         // stored data to cache
         let index = i * 256u + local_id.x;
         if index < len_array{
-            cache[local_id.x] = heap[pointer.x + pointing(local_id.x)];
+            cache[local_id.x] = heap[pointer.x + pointing(index)];
         }
         workgroupBarrier();
 
@@ -68,7 +68,7 @@ fn main(@builtin(local_invocation_id) local_id:vec3<u32>){
             len_cache = len_array - 256u * i;
         }
         var total_unit = (len_cache + 2 - 1) / 2;
-        let total_redution = u32(floor(log2(f32(len_cache))));
+        let total_redution = u32(ceil(log2(f32(len_cache))));
         for (var j = 0u; j < total_redution; j++){
             var sum = 0.;
             if local_id.x < total_unit{
