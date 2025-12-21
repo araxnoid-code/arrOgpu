@@ -68,7 +68,8 @@ fn main(@builtin(local_invocation_id) local_id:vec3<u32>){
             len_cache = len_array - 256u * i;
         }
         var total_unit = (len_cache + 2 - 1) / 2;
-        while total_unit != 0 {
+        let total_redution = u32(floor(log2(f32(len_cache))));
+        for (var j = 0u; j < total_redution; j++){
             var sum = 0.;
             if local_id.x < total_unit{
                 let start = local_id.x * 2;
@@ -82,18 +83,14 @@ fn main(@builtin(local_invocation_id) local_id:vec3<u32>){
 
             }
             workgroupBarrier();
-
             if local_id.x < total_unit{
                 cache[local_id.x] = sum;
             }
+
             workgroupBarrier();
 
-            if total_unit != 1{
-                len_cache = total_unit;
-                total_unit = (len_cache + 2 - 1) / 2;
-            } else {
-                total_unit = 0;
-            }
+
+            total_unit = (total_unit + 2 - 1) / 2;
         }
 
         if local_id.x == 0{
