@@ -17,23 +17,21 @@ fn main() {
     // let shape = [2048, 2048];
     // let data = vec![10.0; 4_194_304];
     let module = ArrOgpuModule::init(ArrOgpuModuleInit {
-        heap_size: HeapSize::Item(1000),
+        heap_size: HeapSize::Item(262_756),
         wgpu: WgpuInit::ManualInit(ManualInit {
             memory: Memory::Performance,
             power: Power::HighPerformance,
         }),
     }).unwrap();
 
-    let array = ArangeArray::arange(0..512)
-        .to_GpuArray_with_shape(&[512], &module)
-        .unwrap();
+    let data = vec![10.; 61952];
+    let array = module.array_from_vector(&data, &[61952]).unwrap();
 
     let out = module.sum(&array).unwrap();
 
-    println!("{}", array);
-    println!("{:?}", module.get_heap());
-    // println!("{}", out);
-    println!("{}", (0..512).sum::<i32>())
+    println!("{}", out);
+    println!("{:?}", &module.get_heap()[61953..62500]);
+    println!("{}", data.iter().sum::<f32>())
 
     // let gpu_array = module.array_from_vector(&data, &shape).unwrap();
     // let gpu_array_2 = module.array_from_vector(&vec![10.0; 100_000], &[100_000]).unwrap();
