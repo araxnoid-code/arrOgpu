@@ -107,7 +107,7 @@ fn main(
             }
 
             workgroupBarrier();
-            
+
             if local_id.x < total_unit{
                 cache[local_id.x] = sum;
             }

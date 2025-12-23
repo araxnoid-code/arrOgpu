@@ -74,15 +74,13 @@ fn main(
 
 
     var sum = 0.;
+
     if local_id.x < total_unit{
-        if reduction_result[0] == 0.{
-            heap[61953 + local_id.x] = f32(total_unit);
-        }
 
         if reduction_result[0] == 0.{
             let start = global_id.x * 2;
             let end = start + 1;
-    
+
             if (end - 512 * work_id.x) < cache_len{
                 sum = heap[pointer.x + start] + heap[pointer.x + end];
             } else {
@@ -101,10 +99,9 @@ fn main(
             } else {
                 sum = reduction_result[start + 1];
             }
-            
+
         }
     }
-    // heap[61953 + 61] = f32(999999);
 
     workgroupBarrier();
 
@@ -123,7 +120,7 @@ fn main(
         for (var i = 0u; i < total_reduction_iter; i++){
             var sum = 0.;
             if local_id.x < total_unit_reduction{
-                
+
                 let start = local_id.x * 2;
                 let end = start + 1;
 

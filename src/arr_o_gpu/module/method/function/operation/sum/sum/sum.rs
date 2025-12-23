@@ -1,26 +1,19 @@
 use std::sync::Arc;
 
 use wgpu::{
-    BindGroupDescriptor,
-    BindGroupEntry,
-    BindGroupLayoutDescriptor,
-    BindGroupLayoutEntry,
-    BindingType,
-    BufferBindingType,
-    BufferUsages,
-    CommandEncoderDescriptor,
-    ComputePipelineDescriptor,
-    PipelineCompilationOptions,
-    PipelineLayoutDescriptor,
-    ShaderModuleDescriptor,
-    ShaderStages,
-    wgt::BufferDescriptor,
+    BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor, BindGroupLayoutEntry,
+    BindingType, BufferBindingType, BufferUsages, CommandEncoderDescriptor,
+    ComputePipelineDescriptor, PipelineCompilationOptions, PipelineLayoutDescriptor,
+    ShaderModuleDescriptor, ShaderStages, wgt::BufferDescriptor,
 };
 
-use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArray };
+use crate::{ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArray};
 
 impl ArrOgpuModule {
-    pub fn sum<A>(&self, array: &A) -> Result<GpuArray, ArrOgpuErr> where A: ArrayView {
+    pub fn sum<A>(&self, array: &A) -> Result<GpuArray, ArrOgpuErr>
+    where
+        A: ArrayView,
+    {
         let wgpu = self.wgpu_init.read().unwrap();
         // out meta data
         let shape = vec![1];
@@ -31,30 +24,23 @@ impl ArrOgpuModule {
         // bind group
         let heap_bind = &*self.heap_binding;
         let array_bind = array.binding();
-        let out_bind = self.array_data_binding(
-            &[allocate.1, allocate.2],
-            &shape,
-            &stride,
-            &stride,
-            &0
-        );
+        let out_bind =
+            self.array_data_binding(&[allocate.1, allocate.2], &shape, &stride, &stride, &0);
 
         let reduction_bind_group_layout = wgpu.device.create_bind_group_layout(
             &(BindGroupLayoutDescriptor {
                 label: Some("Create Reduction Result Bind Group Layout"),
-                entries: &[
-                    BindGroupLayoutEntry {
-                        binding: 0,
-                        count: None,
-                        ty: BindingType::Buffer {
-                            ty: BufferBindingType::Storage { read_only: false },
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
-                        visibility: ShaderStages::COMPUTE,
+                entries: &[BindGroupLayoutEntry {
+                    binding: 0,
+                    count: None,
+                    ty: BindingType::Buffer {
+                        ty: BufferBindingType::Storage { read_only: false },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
                     },
-                ],
-            })
+                    visibility: ShaderStages::COMPUTE,
+                }],
+            }),
         );
 
         let mut x = ((array.len() as u32) + 512 - 1) / 512;
@@ -65,20 +51,18 @@ impl ArrOgpuModule {
                 mapped_at_creation: false,
                 usage: BufferUsages::STORAGE,
                 size: size as u64,
-            })
+            }),
         );
 
         let reduction_bind_group = wgpu.device.create_bind_group(
             &(BindGroupDescriptor {
                 label: Some("Create Reduction Result Bind Group"),
                 layout: &reduction_bind_group_layout,
-                entries: &[
-                    BindGroupEntry {
-                        binding: 0,
-                        resource: reduction_res_buffer.as_entire_binding(),
-                    },
-                ],
-            })
+                entries: &[BindGroupEntry {
+                    binding: 0,
+                    resource: reduction_res_buffer.as_entire_binding(),
+                }],
+            }),
         );
 
         // pipeline
@@ -97,7 +81,7 @@ impl ArrOgpuModule {
                     &reduction_bind_group_layout,
                 ],
                 push_constant_ranges: &[],
-            })
+            }),
         );
 
         let pipeline = wgpu.device.create_compute_pipeline(
@@ -108,7 +92,7 @@ impl ArrOgpuModule {
                 compilation_options: PipelineCompilationOptions::default(),
                 entry_point: Some("main"),
                 cache: None,
-            })
+            }),
         );
 
         loop {
@@ -116,7 +100,7 @@ impl ArrOgpuModule {
             let mut encoder = wgpu.device.create_command_encoder(
                 &(CommandEncoderDescriptor {
                     label: Some("Create Encoder For Sum"),
-                })
+                }),
             );
 
             {
@@ -124,7 +108,7 @@ impl ArrOgpuModule {
                     &(wgpu::ComputePassDescriptor {
                         label: Some("Create Begin Compute Pass For Sum"),
                         timestamp_writes: None,
-                    })
+                    }),
                 );
 
                 bcp.set_pipeline(&pipeline);
@@ -145,11 +129,11 @@ impl ArrOgpuModule {
                 break;
             }
             // break;
-        }
-
-        if let Err(err_poll) = wgpu.device.poll(wgpu::wgt::PollType::Wait) {
-            let error = "Add Error, Error While Poll".to_string();
-            return Err(ArrOgpuErr::Poll(error, err_poll));
+            //
+            if let Err(err_poll) = wgpu.device.poll(wgpu::wgt::PollType::Wait) {
+                let error = "Add Error, Error While Poll".to_string();
+                return Err(ArrOgpuErr::Poll(error, err_poll));
+            }
         }
 
         let array = GpuArray {

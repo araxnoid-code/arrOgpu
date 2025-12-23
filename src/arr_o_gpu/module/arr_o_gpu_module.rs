@@ -1,8 +1,8 @@
-use std::sync::{ Arc, RwLock };
+use std::sync::{Arc, RwLock};
 
 use wgpu::Buffer;
 
-use crate::{ arr_o_gpu::WgpuModule, Allocator, BindGroupCompound };
+use crate::{Allocator, BindGroupCompound, arr_o_gpu::WgpuModule};
 
 #[derive(Clone)]
 pub struct ArrOgpuModule {
