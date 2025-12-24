@@ -49,79 +49,113 @@ var<uniform> offset_o: u32;
 var<storage, read_write> reduction_result: array<f32>;
 
 // workgroup
-var<workgroup> cache: array<f32, 256>;
+var<workgroup> cache: array<f32, 8>;
 
-@compute @workgroup_size(256, 1, 1)
+@compute @workgroup_size(8, 1, 1)
 fn main(
-    @builtin(global_invocation_id) global_id:vec3<u32>,
     @builtin(local_invocation_id) local_id:vec3<u32>,
     @builtin(workgroup_id) work_id: vec3<u32>,
 ){
-    heap[512] = 99999.;
+    // heap[8] = 99999.;
     var data_len = pointer.y - pointer.x;
-    var out_reduction_len = (data_len + 512 - 1) / 512;
 
-    // first summition
-    var cache_len = 512u;
-    if data_len < cache_len * (work_id.x + 1){
-        cache_len = cache_len - 512u * work_id.x;
+    var cache_len: u32;
+    if data_len < 16 * (work_id.x + 1){
+        cache_len = data_len - 16 * work_id.x;
+    } else {
+        cache_len = 16;
     }
 
-    let total_unit = (data_len + 2 - 1) / 2;
-    var sum = 0.;
-    if local_id.x < total_unit{
-
-        let start = global_id.x * 2;
+    var sum:f32;
+    if local_id.x < cache_len{
+        let index = local_id.x + 8 * work_id.x;
+        let start = index * 2;
         let end = start + 1;
-        if end < cache_len{
-            sum = heap[pointer.x + start] + heap[pointer.x + end];
+
+        if end < cache_len + 16 * work_id.x{
+            sum = heap[start] + heap[end];
         } else {
-            sum = heap[pointer.x + start];
+            sum = heap[start];
         }
     }
 
     workgroupBarrier();
 
-    if local_id.x < total_unit{
+    if local_id.x < cache_len{
         cache[local_id.x] = sum;
+    } else {
+        cache[local_id.x] = 0.;
     }
 
     workgroupBarrier();
 
     // paralel reduction
-    if total_unit != 1{
-        var cache_len = total_unit;
-        var total_unit = (cache_len + 2 - 1) / 2;
-        let total_reduction_iter = u32(ceil(log2(f32(cache_len))));
+    cache_len = (cache_len + 2 - 1) / 2;
+    // if work_id.x == {
+        heap[23 + work_id.x] = f32(cache_len);
+    // }
+    // let total_step = f32();
 
-        for (var i = 0u; i < total_reduction_iter; i++){
-            var sum = 0.;
-            if local_id.x < total_unit{
-                let start = global_id.x * 2;
-                let end = start + 1;
-                if end < cache_len{
-                    sum = cache[start] + cache[end];
-                } else {
-                    sum = cache[start];
-                }
+    // first summition
+    // var cache_len = 512u;
+    // if data_len < cache_len * (work_id.x + 1){
+    //     cache_len = cache_len - 512u * work_id.x;
+    // }
 
-            }
+    // let total_unit = (data_len + 2 - 1) / 2;
+    // var sum = 0.;
+    // if local_id.x < total_unit{
+    //     let start = global_id.x * 2;
+    //     let end = start + 1;
+    //     if end < cache_len{
+    //         sum = heap[pointer.x + start] + heap[pointer.x + end];
+    //     } else {
+    //         sum = heap[pointer.x + start];
+    //     }
+    // }
 
-            workgroupBarrier();
+    // workgroupBarrier();
 
-            if local_id.x < total_unit{
-                cache[local_id.x] = sum;
-            }
+    // if local_id.x < total_unit{
+    //     cache[local_id.x] = sum;
+    // }
 
-            workgroupBarrier();
+    // workgroupBarrier();
 
-            cache_len =  total_unit;
-            total_unit = (total_unit +  2 - 1) / 2;
-        }
-    }
+    // // paralel reduction
+    // if total_unit != 1{
+    //     var cache_len = total_unit;
+    //     var total_unit = (cache_len + 2 - 1) / 2;
+    //     let total_reduction_iter = u32(ceil(log2(f32(cache_len))));
 
-    if local_id.x == 0{
-    heap[513] = cache[0];
+    //     for (var i = 0u; i < total_reduction_iter; i++){
+    //         var sum = 0.;
+    //         if local_id.x < total_unit{
+    //             let start = global_id.x * 2;
+    //             let end = start + 1;
+    //             if end < cache_len{
+    //                 sum = cache[start] + cache[end];
+    //             } else {
+    //                 sum = cache[start];
+    //             }
 
-    }
+    //         }
+
+    //         workgroupBarrier();
+
+    //         if local_id.x < total_unit{
+    //             cache[local_id.x] = sum;
+    //         }
+
+    //         workgroupBarrier();
+
+    //         cache_len =  total_unit;
+    //         total_unit = (total_unit +  2 - 1) / 2;
+    //     }
+    // }
+
+    // if local_id.x == 0{
+    // heap[513] = cache[0];
+
+    // }
 }
