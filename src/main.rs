@@ -1,15 +1,8 @@
 use std::time::SystemTime;
 
 use arr_o_gpu::{
-    ArangeArray,
-    ArangeIteratorTrait,
-    ArrOgpuModule,
-    ArrOgpuModuleInit,
-    HeapSize,
-    ManualInit,
-    Memory,
-    Power,
-    WgpuInit,
+    ArangeArray, ArangeIteratorTrait, ArrOgpuModule, ArrOgpuModuleInit, HeapSize, ManualInit,
+    Memory, Power, WgpuInit,
 };
 // use ndarray::{ Array1, Array2, Array3 };
 
@@ -22,7 +15,8 @@ fn main() {
             memory: Memory::Performance,
             power: Power::HighPerformance,
         }),
-    }).unwrap();
+    })
+    .unwrap();
 
     let data = vec![10.; 61952];
     let array = module.array_from_vector(&data, &[61952]).unwrap();
@@ -30,7 +24,7 @@ fn main() {
     let out = module.sum(&array).unwrap();
 
     println!("{}", out);
-    println!("{:?}", &module.get_heap()[61953..62500]);
+    // println!("{:?}", &module.get_heap()[61953..62500]);
     println!("{}", data.iter().sum::<f32>())
 
     // let gpu_array = module.array_from_vector(&data, &shape).unwrap();

@@ -95,14 +95,13 @@ impl ArrOgpuModule {
             }),
         );
 
+        // encoder
+        let mut encoder = wgpu.device.create_command_encoder(
+            &(CommandEncoderDescriptor {
+                label: Some("Create Encoder For Sum"),
+            }),
+        );
         loop {
-            // encoder
-            let mut encoder = wgpu.device.create_command_encoder(
-                &(CommandEncoderDescriptor {
-                    label: Some("Create Encoder For Sum"),
-                }),
-            );
-
             {
                 let mut bcp = encoder.begin_compute_pass(
                     &(wgpu::ComputePassDescriptor {
@@ -121,20 +120,14 @@ impl ArrOgpuModule {
                 bcp.dispatch_workgroups(x, 1, 1);
             }
 
-            wgpu.queue.submit(Some(encoder.finish()));
-
             if x > 1 {
                 x = (x + 512 - 1) / 512;
             } else {
                 break;
             }
             // break;
-            //
-            if let Err(err_poll) = wgpu.device.poll(wgpu::wgt::PollType::Wait) {
-                let error = "Add Error, Error While Poll".to_string();
-                return Err(ArrOgpuErr::Poll(error, err_poll));
-            }
         }
+        wgpu.queue.submit(Some(encoder.finish()));
 
         let array = GpuArray {
             module: Arc::new(self.clone()),
