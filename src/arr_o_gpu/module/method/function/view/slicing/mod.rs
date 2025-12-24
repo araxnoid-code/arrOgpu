@@ -1,4 +1,5 @@
 mod slice_range;
+pub use slice_range::{r, *};
 
 // mod slicing;
 
