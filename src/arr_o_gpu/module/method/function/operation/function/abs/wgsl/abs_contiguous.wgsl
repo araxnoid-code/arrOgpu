@@ -44,12 +44,12 @@ var<storage, read> stride_o: array<u32>;
 @group(2) @binding(4)
 var<uniform> offset_o: u32;
 
-@compute @workgroup_size(256, 1, 1);
+@compute @workgroup_size(256, 1, 1)
 fn main(
-    @builtin (global_invocation_id) global_id: vec<u32>
+    @builtin(global_invocation_id) global_id: vec3<u32>,
 ){
     let len = pointer.y - pointer.x;
     if global_id.x < len{
-        heap[pointer_o + global_id.x] = abs(heap[ pointer.x + global_id.x ]);
+        heap[pointer_o.x + global_id.x] = abs(heap[ pointer.x + global_id.x ]);
     }
 }

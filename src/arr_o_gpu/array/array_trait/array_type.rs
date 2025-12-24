@@ -6,11 +6,18 @@ pub enum ArrayType<'a> {
 }
 
 pub trait CheckArrayType<'a> {
-    fn get(&'a self) -> ArrayType<'a>;
+    fn check(&'a self) -> ArrayType<'a>;
+
+    fn get(&'a self) -> &'a dyn ArrayCompute {
+        match self.check() {
+            ArrayType::Contiguous(arr) => arr,
+            ArrayType::View(arr) => arr,
+        }
+    }
 }
 
 impl<'a> CheckArrayType<'a> for GpuArray {
-    fn get(&'a self) -> ArrayType<'a> {
+    fn check(&'a self) -> ArrayType<'a> {
         ArrayType::Contiguous(self)
     }
 }
@@ -19,7 +26,7 @@ impl<'a, A> CheckArrayType<'a> for GpuArrayView<'a, A>
 where
     A: ArrayCompute,
 {
-    fn get(&'a self) -> ArrayType<'a> {
+    fn check(&'a self) -> ArrayType<'a> {
         ArrayType::View(self)
     }
 }
