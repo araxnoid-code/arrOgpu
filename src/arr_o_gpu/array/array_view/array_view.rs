@@ -1,8 +1,11 @@
-use wgpu::{ BindGroup, BindGroupLayout };
+use wgpu::{BindGroup, BindGroupLayout};
 
-use crate::ArrayView;
+use crate::ArrayCompute;
 
-pub struct GpuArrayView<'a, A> where A: ArrayView {
+pub struct GpuArrayView<'a, A>
+where
+    A: ArrayCompute,
+{
     // meta data
     pub(crate) array: &'a A,
     pub(crate) pointer: (u32, u32),

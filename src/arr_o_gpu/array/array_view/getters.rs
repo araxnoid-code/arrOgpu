@@ -1,6 +1,9 @@
-use crate::{ ArrayView, GpuArrayView };
+use crate::{ArrayCompute, GpuArrayView};
 
-impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
+impl<'a, A> GpuArrayView<'a, A>
+where
+    A: ArrayCompute,
+{
     pub fn ref_array(&self) -> &A {
         self.array
     }

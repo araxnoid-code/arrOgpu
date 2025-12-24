@@ -1,19 +1,17 @@
 use std::sync::Arc;
 
 use wgpu::{
-    ComputePassDescriptor,
-    ComputePipelineDescriptor,
-    PipelineCompilationOptions,
-    PipelineLayoutDescriptor,
-    ShaderModuleDescriptor,
-    ShaderSource,
+    ComputePassDescriptor, ComputePipelineDescriptor, PipelineCompilationOptions,
+    PipelineLayoutDescriptor, ShaderModuleDescriptor, ShaderSource,
 };
 
-use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArray };
+use crate::{ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArray};
 
 impl ArrOgpuModule {
     pub fn dot_product<A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
-        where A: ArrayView, B: ArrayView
+    where
+        A: ArrayCompute,
+        B: ArrayCompute,
     {
         let shape_a = array_a.shape();
         let shape_b = array_b.shape();
@@ -24,8 +22,7 @@ impl ArrOgpuModule {
         if shape_a.len() != 1 || shape_b.len() != 1 || length_a != length_b {
             let err = format!(
                 "Array Dot Product Error, Array with shape {:?} and With Shape {:?} Can't Be Operated",
-                shape_a,
-                shape_b
+                shape_a, shape_b
             );
             return Err(ArrOgpuErr::DotProduct(err));
         }
@@ -41,13 +38,8 @@ impl ArrOgpuModule {
         let heap_binding = &self.heap_binding;
         let array_a_binding = array_a.binding();
         let array_b_binding = array_b.binding();
-        let out_binding = self.array_data_binding(
-            &[allocate.1, allocate.2],
-            &shape,
-            &stride,
-            &stride,
-            &0
-        );
+        let out_binding =
+            self.array_data_binding(&[allocate.1, allocate.2], &shape, &stride, &stride, &0);
 
         // // pipeline_layout
         let pipeline_layout = wgpu.device.create_pipeline_layout(
@@ -64,7 +56,7 @@ impl ArrOgpuModule {
                     &out_binding.0,
                 ],
                 push_constant_ranges: &[],
-            })
+            }),
         );
 
         // // pipeline
@@ -80,14 +72,14 @@ impl ArrOgpuModule {
                 entry_point: Some("main"),
                 layout: Some(&pipeline_layout),
                 module: &shader,
-            })
+            }),
         );
 
         // let encoder
         let mut encoder = wgpu.device.create_command_encoder(
             &(wgpu::wgt::CommandEncoderDescriptor {
                 label: Some("Create Encoder For Dot Product"),
-            })
+            }),
         );
 
         {
@@ -96,7 +88,7 @@ impl ArrOgpuModule {
                 &(ComputePassDescriptor {
                     label: Some("Create Begin COmpute Pass For Dot Product"),
                     timestamp_writes: None,
-                })
+                }),
             );
 
             // pipeline

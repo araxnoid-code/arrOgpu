@@ -1,6 +1,6 @@
 use std::{
     fmt::Debug,
-    ops::{ Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive },
+    ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive},
 };
 
 #[derive(Clone)]
@@ -31,6 +31,7 @@ pub fn r<T: SlicingRangeTrait>(range: T) -> SliceRange {
         end: range.end(),
     }
 }
+
 
 pub trait SlicingRangeTrait {
     fn start(&self) -> Option<u32>;

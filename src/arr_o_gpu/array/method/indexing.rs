@@ -1,8 +1,9 @@
-use crate::{ ArrayView, GpuArray, GpuArrayView };
+use crate::{ArrayCompute, GpuArray, GpuArrayView};
 
 impl GpuArray {
     pub fn index<A>(&self, index: &[u32]) -> Result<GpuArrayView<'_, GpuArray>, crate::ArrOgpuErr>
-        where A: ArrayView
+    where
+        A: ArrayCompute,
     {
         self.module.index::<GpuArray>(self, index)
     }

@@ -5,12 +5,10 @@ use wgpu::{
     BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor, BindGroupLayoutEntry,
     BindingType, BufferBindingType, BufferSize, BufferUsages, CommandEncoderDescriptor,
     ComputePipelineDescriptor, PipelineCompilationOptions, PipelineLayoutDescriptor,
-    ShaderModuleDescriptor, ShaderStages,
-    util::{BufferInitDescriptor, DeviceExt},
-    wgt::BufferDescriptor,
+    ShaderModuleDescriptor, ShaderStages, wgt::BufferDescriptor,
 };
 
-use crate::{ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArray};
+use crate::{ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArray};
 
 #[repr(C)]
 #[derive(Clone, Copy, Zeroable, Pod, Debug)]
@@ -22,7 +20,7 @@ struct ReducCounterMetaData {
 impl ArrOgpuModule {
     pub fn sum<A>(&self, array: &A) -> Result<GpuArray, ArrOgpuErr>
     where
-        A: ArrayView,
+        A: ArrayCompute,
     {
         let wgpu = self.wgpu_init.read().unwrap();
         // out meta data
@@ -37,6 +35,7 @@ impl ArrOgpuModule {
         let out_bind =
             self.array_data_binding(&[allocate.1, allocate.2], &shape, &stride, &stride, &0);
 
+        // reduction
         let reduction_bind_group_layout = wgpu.device.create_bind_group_layout(
             &(BindGroupLayoutDescriptor {
                 label: Some("Create Reduction Result Bind Group Layout"),
@@ -75,7 +74,7 @@ impl ArrOgpuModule {
             }),
         );
 
-        // redctuion len
+        // list of output len
         let mut list_out_len = vec![];
         let mut len: u32 = array.len();
         loop {
@@ -251,7 +250,6 @@ impl ArrOgpuModule {
             } else {
                 break;
             }
-            // break;
         }
 
         wgpu.queue.submit(Some(encoder.finish()));

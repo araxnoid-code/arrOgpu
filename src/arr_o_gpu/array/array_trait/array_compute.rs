@@ -1,8 +1,10 @@
-use wgpu::{ BindGroup, BindGroupLayout };
+use std::process::Output;
 
-use crate::{ GpuArray, GpuArrayView };
+use wgpu::{BindGroup, BindGroupLayout, naga::Type};
 
-pub trait ArrayView {
+use crate::{GpuArray, GpuArrayView};
+
+pub trait ArrayCompute {
     fn module(&self) -> &std::sync::Arc<crate::ArrOgpuModule>;
 
     fn pointer_to_arr(&self) -> [u32; 2];
@@ -24,7 +26,7 @@ pub trait ArrayView {
     fn binding(&self) -> &(BindGroupLayout, BindGroup);
 }
 
-impl ArrayView for GpuArray {
+impl ArrayCompute for GpuArray {
     fn module(&self) -> &std::sync::Arc<crate::ArrOgpuModule> {
         &self.module
     }
@@ -66,7 +68,10 @@ impl ArrayView for GpuArray {
     }
 }
 
-impl<'a, A> ArrayView for GpuArrayView<'a, A> where A: ArrayView {
+impl<'a, A> ArrayCompute for GpuArrayView<'a, A>
+where
+    A: ArrayCompute,
+{
     fn module(&self) -> &std::sync::Arc<crate::ArrOgpuModule> {
         self.array.module()
     }
@@ -106,4 +111,8 @@ impl<'a, A> ArrayView for GpuArrayView<'a, A> where A: ArrayView {
     fn binding(&self) -> &(BindGroupLayout, BindGroup) {
         &self.binding
     }
+
+    // fn get_array_type<B>(&self) -> ArrayType<'_, A> {
+    //     ArrayType::ViewArray(self)
+    // }
 }

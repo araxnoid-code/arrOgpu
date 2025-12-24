@@ -1,13 +1,13 @@
-use crate::ArrayView;
+use crate::ArrayCompute;
 
 pub enum MetaDataOption<'a> {
     Skalar(f32),
-    Array(&'a dyn ArrayView),
+    Array(&'a dyn ArrayCompute),
 }
 
 pub enum ElementWiseOption<'a> {
     Skalar(MetaDataOption<'a>),
-    Array(&'a dyn ArrayView),
+    Array(&'a dyn ArrayCompute),
 }
 
 pub trait AbleElementWise {
@@ -20,7 +20,7 @@ impl AbleElementWise for f32 {
     }
 }
 
-impl<A: ArrayView> AbleElementWise for A {
+impl<A: ArrayCompute> AbleElementWise for A {
     fn get(&self) -> ElementWiseOption<'_> {
         let shape = self.shape();
         if shape.len() == 1 && shape[0] == 1 {

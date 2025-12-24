@@ -1,8 +1,14 @@
-use wgpu::{ BufferUsages, wgt::{ BufferDescriptor, CommandEncoderDescriptor } };
+use wgpu::{
+    BufferUsages,
+    wgt::{BufferDescriptor, CommandEncoderDescriptor},
+};
 
-use crate::{ ArrayView, GpuArrayView };
+use crate::{ArrayCompute, GpuArrayView};
 
-impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
+impl<'a, A> GpuArrayView<'a, A>
+where
+    A: ArrayCompute,
+{
     // unsafe
     pub fn get_heap(&self) -> Vec<f32> {
         let module = self.array.module();
@@ -22,13 +28,13 @@ impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
                 size,
                 mapped_at_creation: false,
                 usage: BufferUsages::COPY_DST | BufferUsages::MAP_READ,
-            })
+            }),
         );
 
         let mut encoder = wgpu.device.create_command_encoder(
             &(CommandEncoderDescriptor {
                 label: Some("Create Encoder For get_heap"),
-            })
+            }),
         );
 
         let start = (pointer.0 as u64) * mem;

@@ -1,15 +1,15 @@
 use wgpu::{
-    ComputePassDescriptor,
-    ComputePipelineDescriptor,
-    PipelineLayoutDescriptor,
-    ShaderModuleDescriptor,
-    ShaderSource,
-    wgt::{ CommandEncoderDescriptor, PollType },
+    ComputePassDescriptor, ComputePipelineDescriptor, PipelineLayoutDescriptor,
+    ShaderModuleDescriptor, ShaderSource,
+    wgt::{CommandEncoderDescriptor, PollType},
 };
 
-use crate::{ ArrayView, GpuArray, GpuArrayView, get_stride_from_shape };
+use crate::{ArrayCompute, GpuArray, GpuArrayView, get_stride_from_shape};
 
-impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
+impl<'a, A> GpuArrayView<'a, A>
+where
+    A: ArrayCompute,
+{
     pub fn contiguous(self) -> GpuArray {
         let mut allocator = self.array.module().allocator.write().unwrap();
         let wgpu = self.array.module().wgpu_init.read().unwrap();
@@ -31,9 +31,9 @@ impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
         // bind group
         let heap_binding = &self.array.module().heap_binding;
         let array_bind_group = self.binding();
-        let output_bind_group = self
-            .module()
-            .array_data_binding(&pointer_out, &self.shape, &iters, &iters, &0);
+        let output_bind_group =
+            self.module()
+                .array_data_binding(&pointer_out, &self.shape, &iters, &iters, &0);
 
         // pipeline
         let pipeline_layout = wgpu.device.create_pipeline_layout(
@@ -49,7 +49,7 @@ impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
                     &output_bind_group.0,
                 ],
                 push_constant_ranges: &[],
-            })
+            }),
         );
 
         let shader = wgpu.device.create_shader_module(ShaderModuleDescriptor {
@@ -65,14 +65,14 @@ impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
                 entry_point: Some("main"),
                 layout: Some(&pipeline_layout),
                 module: &shader,
-            })
+            }),
         );
 
         // encoder
         let mut encoder = wgpu.device.create_command_encoder(
             &(CommandEncoderDescriptor {
                 label: Some("Create Encoder For Collect View"),
-            })
+            }),
         );
 
         {
@@ -80,7 +80,7 @@ impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
                 &(ComputePassDescriptor {
                     label: Some("Create Begin Compute Pass For Collect View"),
                     timestamp_writes: None,
-                })
+                }),
             );
 
             bcp.set_pipeline(&pipeline);
@@ -99,9 +99,13 @@ impl<'a, A> GpuArrayView<'a, A> where A: ArrayView {
         wgpu.device.poll(PollType::Wait).unwrap();
 
         let stride = get_stride_from_shape(&shape);
-        let binding = self
-            .module()
-            .array_data_binding(&[allocate.1, allocate.2], &self.shape, &stride, &stride, &0);
+        let binding = self.module().array_data_binding(
+            &[allocate.1, allocate.2],
+            &self.shape,
+            &stride,
+            &stride,
+            &0,
+        );
 
         let array = GpuArray {
             module: self.array.module().clone(),

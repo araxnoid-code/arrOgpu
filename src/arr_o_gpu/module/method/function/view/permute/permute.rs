@@ -1,12 +1,13 @@
-use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArrayView, get_stride_from_shape };
+use crate::{ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArrayView, get_stride_from_shape};
 
 impl ArrOgpuModule {
     pub fn permute<'a, A>(
         &self,
         array: &'a A,
-        permute: &[u32]
+        permute: &[u32],
     ) -> Result<GpuArrayView<'a, A>, ArrOgpuErr>
-        where A: ArrayView
+    where
+        A: ArrayCompute,
     {
         let array_shape = array.shape();
         let array_stride = array.stride();
@@ -14,8 +15,7 @@ impl ArrOgpuModule {
         if array_shape.len() != permute.len() {
             let arr = format!(
                 "Permute Error, Array With Form {:?} Cannot Be Permuted By {:?}",
-                array_shape,
-                permute
+                array_shape, permute
             );
             return Err(ArrOgpuErr::Permute(arr));
         }
@@ -40,14 +40,12 @@ impl ArrOgpuModule {
                     (0, 0)
                 }
             })
-
             .collect::<(Vec<u32>, Vec<u32>)>();
 
         if over {
             let arr = format!(
                 "Permute Error, {:?} Crosses The Array Boundary Of Array {:?}",
-                permute,
-                array_shape
+                permute, array_shape
             );
             return Err(ArrOgpuErr::Permute(arr));
         } else if repeat.0 {
@@ -60,7 +58,7 @@ impl ArrOgpuModule {
             &out_shape.0,
             &get_stride_from_shape(&out_shape.0),
             &out_shape.1,
-            &array.offset()
+            &array.offset(),
         );
 
         let array_view = GpuArrayView {

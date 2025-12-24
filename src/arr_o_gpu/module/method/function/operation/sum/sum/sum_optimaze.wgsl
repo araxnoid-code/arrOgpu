@@ -44,14 +44,15 @@ var<storage, read> stride_o: array<u32>;
 @group(2) @binding(4)
 var<uniform> offset_o: u32;
 
-// //
+// // others
+struct ReducCounter{
+    counter: u32,
+    padding: array<u32, 63>
+}
+
 @group(3) @binding(0)
 var<storage, read_write> reduction_result: array<f32>;
 
-struct ReducCounter{
-    counter: u32,               // 4
-    padding: array<u32, 63>     // 252
-}
 @group(3) @binding(1)
 var<storage, read> reduction_counter: ReducCounter;
 

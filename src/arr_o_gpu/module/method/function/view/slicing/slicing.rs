@@ -1,9 +1,6 @@
 use crate::{
-    ArrOgpuErr,
-    ArrOgpuModule,
-    ArrayView,
-    GpuArrayView,
-    SliceRange,
+    ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArrayView,
+    arr_o_gpu::module::method::function::view::slicing::slice_range::SliceRange,
     get_stride_from_shape,
 };
 
@@ -11,9 +8,10 @@ impl ArrOgpuModule {
     pub fn slicing<'a, A>(
         &self,
         array: &'a A,
-        slice: &[SliceRange]
+        slice: &[SliceRange],
     ) -> Result<GpuArrayView<'a, A>, ArrOgpuErr>
-        where A: ArrayView
+    where
+        A: ArrayCompute,
     {
         if array.shape().len() < slice.len() || slice.len() == 0 {
             let err = format!(
@@ -36,8 +34,7 @@ impl ArrOgpuModule {
                 if start >= end || end > array.shape()[i] {
                     let err = format!(
                         "Array Slicing Error, Error detected for {:?} in slice {:?}",
-                        range,
-                        slice
+                        range, slice
                     );
                     return Err(ArrOgpuErr::Slicing(err));
                 }
@@ -54,7 +51,7 @@ impl ArrOgpuModule {
             &output_shape,
             &get_stride_from_shape(&output_shape),
             array.stride(),
-            &offset
+            &offset,
         );
 
         let array_view = GpuArrayView {

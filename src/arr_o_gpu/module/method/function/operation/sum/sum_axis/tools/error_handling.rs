@@ -1,9 +1,10 @@
 use std::collections::HashSet;
 
-use crate::{ ArrOgpuErr, ArrayView };
+use crate::{ArrOgpuErr, ArrayCompute};
 
 pub(crate) fn error_handling<A>(array_a: &A, axis: &[u32]) -> Result<(), ArrOgpuErr>
-    where A: ArrayView
+where
+    A: ArrayCompute,
 {
     // indexing out of shape
     let shape = array_a.shape();
@@ -27,8 +28,7 @@ pub(crate) fn error_handling<A>(array_a: &A, axis: &[u32]) -> Result<(), ArrOgpu
         if (idx as usize) >= array_dim {
             let error = format!(
                 "Sum Axis Error, The Index On {:?} Is Greater Than The Dimension On Array {:?}",
-                axis,
-                shape
+                axis, shape
             );
             return Err(ArrOgpuErr::SumAxis(error));
         }
@@ -37,7 +37,10 @@ pub(crate) fn error_handling<A>(array_a: &A, axis: &[u32]) -> Result<(), ArrOgpu
         if let None = value.get(&idx) {
             value.insert(idx);
         } else {
-            let error = format!("Sum Axis Error, Found Repeated Indexes On The Axis {:?}", axis);
+            let error = format!(
+                "Sum Axis Error, Found Repeated Indexes On The Axis {:?}",
+                axis
+            );
             return Err(ArrOgpuErr::SumAxis(error));
         }
     }

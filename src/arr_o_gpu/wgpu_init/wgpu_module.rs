@@ -1,19 +1,10 @@
 use pollster::FutureExt;
 use wgpu::{
-    Backends,
-    Device,
-    Features,
-    Instance,
-    InstanceDescriptor,
-    Limits,
-    MemoryHints,
-    PowerPreference,
-    Queue,
-    RequestAdapterOptions,
+    Backends, Device, Features, Instance, InstanceDescriptor, Limits, Queue, RequestAdapterOptions,
     wgt::DeviceDescriptor,
 };
 
-use crate::{ ArrOgpuModuleInit, WgpuInit };
+use crate::{ArrOgpuModuleInit, WgpuInit};
 
 pub struct WgpuModule {
     pub device: Device,
@@ -27,7 +18,7 @@ impl WgpuModule {
             &(InstanceDescriptor {
                 backends: Backends::all(),
                 ..Default::default()
-            })
+            }),
         );
 
         let (device, queue) = match arr_o_gpu_init.wgpu {
@@ -39,7 +30,7 @@ impl WgpuModule {
                             compatible_surface: None,
                             force_fallback_adapter: false,
                             power_preference: manual_init.power.conversion(),
-                        })
+                        }),
                     )
                     .block_on()
                     .unwrap();
@@ -54,7 +45,7 @@ impl WgpuModule {
                                 ..Default::default()
                             },
                             trace: wgpu::Trace::Off,
-                        })
+                        }),
                     )
                     .block_on()
                     .unwrap();

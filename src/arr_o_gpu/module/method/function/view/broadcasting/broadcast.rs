@@ -1,19 +1,19 @@
-use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArrayView, get_stride_from_shape };
+use crate::{ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArrayView, get_stride_from_shape};
 
 impl ArrOgpuModule {
     pub fn broadcast<'a, A>(
         &self,
         array: &'a A,
-        broadcast: &[u32]
+        broadcast: &[u32],
     ) -> Result<GpuArrayView<'a, A>, ArrOgpuErr>
-        where A: ArrayView
+    where
+        A: ArrayCompute,
     {
         let arr_shape = array.shape();
         if broadcast.len() < arr_shape.len() {
             let err = format!(
                 "Array Broadcasting Error, Array {:?} can't Broadcast To {:?}",
-                arr_shape,
-                broadcast
+                arr_shape, broadcast
             );
 
             return Err(ArrOgpuErr::Broadcast(err));
@@ -22,10 +22,10 @@ impl ArrOgpuModule {
         // expend shape
         let diff_range = broadcast.len() - arr_shape.len();
         let (extend_arr_shape, mut out_stride) = if diff_range != 0 {
-            let mut extend = vec![1;diff_range];
+            let mut extend = vec![1; diff_range];
             extend.extend_from_slice(arr_shape);
 
-            let mut stride_extend = vec![0;diff_range];
+            let mut stride_extend = vec![0; diff_range];
             stride_extend.extend_from_slice(array.stride());
             (extend, stride_extend)
         } else {
@@ -42,8 +42,7 @@ impl ArrOgpuModule {
                 } else {
                     let err = format!(
                         "Array Broadcasting Error, Array {:?} can't Broadcast to {:?}",
-                        arr_shape,
-                        broadcast
+                        arr_shape, broadcast
                     );
 
                     return Err(ArrOgpuErr::Broadcast(err));
@@ -57,7 +56,7 @@ impl ArrOgpuModule {
             &out_shape,
             &get_stride_from_shape(&out_shape),
             &out_stride,
-            &array.offset()
+            &array.offset(),
         );
 
         let array_view = GpuArrayView {

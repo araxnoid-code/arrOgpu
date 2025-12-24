@@ -1,29 +1,22 @@
 use std::sync::Arc;
 
 use wgpu::{
-    ComputePassDescriptor,
-    ComputePipelineDescriptor,
-    PipelineCompilationOptions,
-    PipelineLayoutDescriptor,
-    ShaderModuleDescriptor,
-    wgt::CommandEncoderDescriptor,
+    ComputePassDescriptor, ComputePipelineDescriptor, PipelineCompilationOptions,
+    PipelineLayoutDescriptor, ShaderModuleDescriptor, wgt::CommandEncoderDescriptor,
 };
 
 use crate::{
-    ArrOgpuErr,
-    ArrOgpuModule,
-    ArrayView,
-    GpuArray,
+    ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArray,
     arr_o_gpu::module::method::function::operation::sum::sum_axis::tools::{
-        error_handling,
-        others_binding,
+        error_handling, others_binding,
     },
     get_stride_from_shape,
 };
 
 impl ArrOgpuModule {
     pub fn sum_axis<A>(&self, array_a: &A, axis: &[u32]) -> Result<GpuArray, ArrOgpuErr>
-        where A: ArrayView
+    where
+        A: ArrayCompute,
     {
         let mut axis = axis.to_vec();
         axis.sort();
@@ -36,11 +29,9 @@ impl ArrOgpuModule {
         let mut out_shape = array_shape.clone();
 
         if array_shape.len() != axis.len() {
-            axis.iter()
-                .rev()
-                .for_each(|idx| {
-                    out_shape.remove(*idx as usize);
-                });
+            axis.iter().rev().for_each(|idx| {
+                out_shape.remove(*idx as usize);
+            });
         } else {
             out_shape = vec![1];
         }
@@ -52,13 +43,8 @@ impl ArrOgpuModule {
         // binding
         let heap_binding = &self.heap_binding;
         let array_binding = array_a.binding();
-        let out_binding = self.array_data_binding(
-            &[allocate.1, allocate.2],
-            &out_shape,
-            &stride,
-            &stride,
-            &0
-        );
+        let out_binding =
+            self.array_data_binding(&[allocate.1, allocate.2], &out_shape, &stride, &stride, &0);
 
         // wgpu
         let wgpu = self.wgpu_init.read().unwrap();
@@ -88,7 +74,7 @@ impl ArrOgpuModule {
                     &others_binding.0,
                 ],
                 push_constant_ranges: &[],
-            })
+            }),
         );
 
         let pipeline = wgpu.device.create_compute_pipeline(
@@ -99,14 +85,14 @@ impl ArrOgpuModule {
                 compilation_options: PipelineCompilationOptions::default(),
                 entry_point: Some("main"),
                 cache: None,
-            })
+            }),
         );
 
         // encoder
         let mut encoder = wgpu.device.create_command_encoder(
             &(CommandEncoderDescriptor {
                 label: Some("Create Encoder For Sum Axis"),
-            })
+            }),
         );
 
         {
@@ -115,7 +101,7 @@ impl ArrOgpuModule {
                 &(ComputePassDescriptor {
                     label: Some("Create Begin Compute Pass For Sum Axis"),
                     timestamp_writes: None,
-                })
+                }),
             );
 
             // set pipeline

@@ -1,12 +1,13 @@
-use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArrayView, get_stride_from_shape };
+use crate::{ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArrayView, get_stride_from_shape};
 
 impl ArrOgpuModule {
     pub fn reshape<'a, A>(
         &self,
         array: &'a A,
-        shape: &[u32]
+        shape: &[u32],
     ) -> Result<GpuArrayView<'a, A>, ArrOgpuErr>
-        where A: ArrayView
+    where
+        A: ArrayCompute,
     {
         let length_of_new_shape = shape.iter().product::<u32>();
         let len_arr = array.len();
@@ -17,8 +18,7 @@ impl ArrOgpuModule {
         } else if length_of_new_shape != len_arr {
             let err = format!(
                 "Reshape Error, the shape {:?} does not correspond to an array that has length {}",
-                shape,
-                len_arr
+                shape, len_arr
             );
             return Err(ArrOgpuErr::Reshape(err));
         } else if array.offset() != 0 || !array.is_contiguous() {
@@ -33,7 +33,7 @@ impl ArrOgpuModule {
             &shape,
             &stride,
             &stride,
-            &array.offset()
+            &array.offset(),
         );
 
         let array_view = GpuArrayView {

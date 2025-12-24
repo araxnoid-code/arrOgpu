@@ -1,28 +1,15 @@
 use std::sync::Arc;
 
 use wgpu::{
-    BindGroupDescriptor,
-    BindGroupEntry,
-    BindGroupLayout,
-    BindGroupLayoutDescriptor,
-    BindGroupLayoutEntry,
-    BufferBindingType,
-    BufferUsages,
-    ComputePipelineDescriptor,
-    Device,
-    PipelineCompilationOptions,
-    PipelineLayoutDescriptor,
-    ShaderModuleDescriptor,
-    ShaderStages,
-    util::{ BufferInitDescriptor, DeviceExt },
+    BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor,
+    BindGroupLayoutEntry, BufferBindingType, BufferUsages, ComputePipelineDescriptor, Device,
+    PipelineCompilationOptions, PipelineLayoutDescriptor, ShaderModuleDescriptor, ShaderStages,
+    util::{BufferInitDescriptor, DeviceExt},
     wgt::CommandEncoderDescriptor,
 };
 
 use crate::{
-    ArrOgpuErr,
-    ArrOgpuModule,
-    ArrayView,
-    GpuArray,
+    ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArray,
     arr_o_gpu::module::method::function::operation::element_wise::skalar_operation::MetaDataOption,
     get_stride_from_shape,
 };
@@ -31,9 +18,10 @@ impl ArrOgpuModule {
     pub(crate) fn sub_skalar<A>(
         &self,
         array: &A,
-        meta_data_option: MetaDataOption
+        meta_data_option: MetaDataOption,
     ) -> Result<GpuArray, ArrOgpuErr>
-        where A: ArrayView
+    where
+        A: ArrayCompute,
     {
         let wgpu = self.wgpu_init.read().unwrap();
 
@@ -57,22 +45,19 @@ impl ArrOgpuModule {
         };
 
         // // output
-        let out_bind = self.array_data_binding(
-            &[allocate.1, allocate.2],
-            &shape,
-            &stride,
-            &stride,
-            &0
-        );
+        let out_bind =
+            self.array_data_binding(&[allocate.1, allocate.2], &shape, &stride, &stride, &0);
 
         // pipeline
         let shader = wgpu.device.create_shader_module(ShaderModuleDescriptor {
             label: Some("Create Shader Module FOr Add Scalar"),
             source: match meta_data_option {
-                MetaDataOption::Array(_) =>
-                    wgpu::ShaderSource::Wgsl(include_str!("./wgsl/sub_array_skalar.wgsl").into()),
-                MetaDataOption::Skalar(_) =>
-                    wgpu::ShaderSource::Wgsl(include_str!("./wgsl/sub_skalar.wgsl").into()),
+                MetaDataOption::Array(_) => {
+                    wgpu::ShaderSource::Wgsl(include_str!("./wgsl/sub_array_skalar.wgsl").into())
+                }
+                MetaDataOption::Skalar(_) => {
+                    wgpu::ShaderSource::Wgsl(include_str!("./wgsl/sub_skalar.wgsl").into())
+                }
             },
         });
 
@@ -86,7 +71,7 @@ impl ArrOgpuModule {
                     &array_b_bind.0,
                     &out_bind.0,
                 ],
-            })
+            }),
         );
 
         let pipeline = wgpu.device.create_compute_pipeline(
@@ -97,13 +82,13 @@ impl ArrOgpuModule {
                 compilation_options: PipelineCompilationOptions::default(),
                 layout: Some(&pipeline_layout),
                 module: &shader,
-            })
+            }),
         );
 
         let mut encoder = wgpu.device.create_command_encoder(
             &(CommandEncoderDescriptor {
                 label: Some("Create Encoder For Add Scalar"),
-            })
+            }),
         );
 
         {
@@ -111,7 +96,7 @@ impl ArrOgpuModule {
                 &(wgpu::ComputePassDescriptor {
                     label: Some("Create Begin Compute Pass For Add Scalar"),
                     timestamp_writes: None,
-                })
+                }),
             );
 
             bcp.set_pipeline(&pipeline);
@@ -157,26 +142,24 @@ fn scalar_binding(device: &Device, scalar: &f32) -> (BindGroupLayout, wgpu::Bind
             label: Some("Create Buffer Scalar For Add Scalar"),
             usage: BufferUsages::UNIFORM,
             contents: bytemuck::bytes_of(scalar),
-        })
+        }),
     );
 
     // bind_group_layout
     let bind_group_layout = device.create_bind_group_layout(
         &(BindGroupLayoutDescriptor {
             label: Some("Create Bind Group Layout For Add Scalar"),
-            entries: &[
-                BindGroupLayoutEntry {
-                    binding: 0,
-                    count: None,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    visibility: ShaderStages::COMPUTE,
+            entries: &[BindGroupLayoutEntry {
+                binding: 0,
+                count: None,
+                ty: wgpu::BindingType::Buffer {
+                    ty: BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
                 },
-            ],
-        })
+                visibility: ShaderStages::COMPUTE,
+            }],
+        }),
     );
 
     // bind_group
@@ -184,13 +167,11 @@ fn scalar_binding(device: &Device, scalar: &f32) -> (BindGroupLayout, wgpu::Bind
         &(BindGroupDescriptor {
             label: Some("Create Bind Group Layout For Add Scalar"),
             layout: &bind_group_layout,
-            entries: &[
-                BindGroupEntry {
-                    binding: 0,
-                    resource: scalar_buffer.as_entire_binding(),
-                },
-            ],
-        })
+            entries: &[BindGroupEntry {
+                binding: 0,
+                resource: scalar_buffer.as_entire_binding(),
+            }],
+        }),
     );
 
     (bind_group_layout, bind_group)

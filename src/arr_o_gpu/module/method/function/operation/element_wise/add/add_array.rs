@@ -1,25 +1,21 @@
 use std::sync::Arc;
 
 use wgpu::{
-    CommandEncoderDescriptor,
-    ComputePassDescriptor,
-    ComputePipelineDescriptor,
-    PipelineCompilationOptions,
-    PipelineLayoutDescriptor,
-    ShaderModuleDescriptor,
-    ShaderSource,
+    CommandEncoderDescriptor, ComputePassDescriptor, ComputePipelineDescriptor,
+    PipelineCompilationOptions, PipelineLayoutDescriptor, ShaderModuleDescriptor, ShaderSource,
 };
 
-use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArray, get_stride_from_shape };
+use crate::{ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArray, get_stride_from_shape};
 
 impl ArrOgpuModule {
     pub(crate) fn add_array<'a, A, B>(
         &self,
         array_a: &A,
-        array_b: &B
-    )
-        -> Result<GpuArray, ArrOgpuErr>
-        where A: ArrayView, B: ArrayView + ?Sized
+        array_b: &B,
+    ) -> Result<GpuArray, ArrOgpuErr>
+    where
+        A: ArrayCompute,
+        B: ArrayCompute + ?Sized,
     {
         if array_a.shape() != array_b.shape() {
             let err = format!(
@@ -34,13 +30,8 @@ impl ArrOgpuModule {
         let shape = array_a.shape();
         let stride = get_stride_from_shape(&shape);
         let allocate = self.allocator.write().unwrap().pointer_input(len);
-        let out_binding = self.array_data_binding(
-            &[allocate.1, allocate.2],
-            shape,
-            &stride,
-            &stride,
-            &0
-        );
+        let out_binding =
+            self.array_data_binding(&[allocate.1, allocate.2], shape, &stride, &stride, &0);
 
         let wgpu = self.wgpu_init.read().unwrap();
 
@@ -61,7 +52,7 @@ impl ArrOgpuModule {
                     &out_binding.0,
                 ],
                 push_constant_ranges: &[],
-            })
+            }),
         );
 
         let shader = wgpu.device.create_shader_module(ShaderModuleDescriptor {
@@ -76,13 +67,13 @@ impl ArrOgpuModule {
                 compilation_options: PipelineCompilationOptions::default(),
                 entry_point: Some("main"),
                 module: &shader,
-            })
+            }),
         );
 
         let mut encoder = wgpu.device.create_command_encoder(
             &(CommandEncoderDescriptor {
                 label: Some("Create Encoder For Add"),
-            })
+            }),
         );
 
         {
@@ -90,7 +81,7 @@ impl ArrOgpuModule {
                 &(ComputePassDescriptor {
                     label: Some("Create Compute Pass For Add"),
                     timestamp_writes: None,
-                })
+                }),
             );
 
             bcp.set_pipeline(&pipeline);

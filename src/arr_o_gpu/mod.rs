@@ -14,4 +14,4 @@ mod wgpu_init;
 pub use wgpu_init::*;
 
 mod utils;
-pub use utils::*;
+pub(crate) use utils::*;

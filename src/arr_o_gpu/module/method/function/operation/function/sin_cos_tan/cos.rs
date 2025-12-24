@@ -1,16 +1,17 @@
 use std::sync::Arc;
 
 use wgpu::{
-    ComputePassDescriptor,
-    ComputePipelineDescriptor,
-    PipelineLayoutDescriptor,
+    ComputePassDescriptor, ComputePipelineDescriptor, PipelineLayoutDescriptor,
     ShaderModuleDescriptor,
 };
 
-use crate::{ ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArray, get_stride_from_shape };
+use crate::{ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArray, get_stride_from_shape};
 
 impl ArrOgpuModule {
-    pub fn cos<A>(&self, array: &A) -> Result<GpuArray, ArrOgpuErr> where A: ArrayView {
+    pub fn cos<A>(&self, array: &A) -> Result<GpuArray, ArrOgpuErr>
+    where
+        A: ArrayCompute,
+    {
         let wgpu = self.wgpu_init.read().unwrap();
 
         // out meta data
@@ -25,13 +26,8 @@ impl ArrOgpuModule {
         // // array
         let array_bind = array.binding();
         // // out
-        let out_bind = self.array_data_binding(
-            &[allocate.1, allocate.2],
-            shape,
-            &stride,
-            &stride,
-            &0
-        );
+        let out_bind =
+            self.array_data_binding(&[allocate.1, allocate.2], shape, &stride, &stride, &0);
 
         // pipeline
         let pipeline_layout = wgpu.device.create_pipeline_layout(
@@ -39,7 +35,7 @@ impl ArrOgpuModule {
                 label: Some("Create Pipeline Layout For Sin"),
                 bind_group_layouts: &[&heap_bind.binding_group_layouts, &array_bind.0, &out_bind.0],
                 push_constant_ranges: &[],
-            })
+            }),
         );
 
         let shader = wgpu.device.create_shader_module(ShaderModuleDescriptor {
@@ -55,12 +51,14 @@ impl ArrOgpuModule {
                 entry_point: Some("main"),
                 layout: Some(&pipeline_layout),
                 module: &shader,
-            })
+            }),
         );
 
         // encoder
         let mut encoder = wgpu.device.create_command_encoder(
-            &(wgpu::wgt::CommandEncoderDescriptor { label: Some("Create Encoder For Sin") })
+            &(wgpu::wgt::CommandEncoderDescriptor {
+                label: Some("Create Encoder For Sin"),
+            }),
         );
 
         {
@@ -69,7 +67,7 @@ impl ArrOgpuModule {
                 &(ComputePassDescriptor {
                     label: Some("Create Begin Compute Pass For Sin"),
                     timestamp_writes: None,
-                })
+                }),
             );
 
             // set pipeline
