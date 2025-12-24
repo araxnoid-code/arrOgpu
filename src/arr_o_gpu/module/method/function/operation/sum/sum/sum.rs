@@ -1,13 +1,23 @@
 use std::sync::Arc;
 
+use bytemuck::{Pod, Zeroable};
 use wgpu::{
     BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor, BindGroupLayoutEntry,
-    BindingType, BufferBindingType, BufferUsages, CommandEncoderDescriptor,
+    BindingType, BufferBindingType, BufferSize, BufferUsages, CommandEncoderDescriptor,
     ComputePipelineDescriptor, PipelineCompilationOptions, PipelineLayoutDescriptor,
-    ShaderModuleDescriptor, ShaderStages, wgt::BufferDescriptor,
+    ShaderModuleDescriptor, ShaderStages,
+    util::{BufferInitDescriptor, DeviceExt},
+    wgt::BufferDescriptor,
 };
 
 use crate::{ArrOgpuErr, ArrOgpuModule, ArrayView, GpuArray};
+
+#[repr(C)]
+#[derive(Clone, Copy, Zeroable, Pod, Debug)]
+struct ReducCounterMetaData {
+    count: u32,
+    padding: [u32; 63],
+}
 
 impl ArrOgpuModule {
     pub fn sum<A>(&self, array: &A) -> Result<GpuArray, ArrOgpuErr>
@@ -30,21 +40,73 @@ impl ArrOgpuModule {
         let reduction_bind_group_layout = wgpu.device.create_bind_group_layout(
             &(BindGroupLayoutDescriptor {
                 label: Some("Create Reduction Result Bind Group Layout"),
-                entries: &[BindGroupLayoutEntry {
-                    binding: 0,
-                    count: None,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Storage { read_only: false },
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
+                entries: &[
+                    BindGroupLayoutEntry {
+                        binding: 0,
+                        count: None,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Storage { read_only: false },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        visibility: ShaderStages::COMPUTE,
                     },
-                    visibility: ShaderStages::COMPUTE,
-                }],
+                    BindGroupLayoutEntry {
+                        binding: 1,
+                        count: None,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: true,
+                            min_binding_size: None,
+                        },
+                    },
+                    BindGroupLayoutEntry {
+                        binding: 2,
+                        count: None,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: true,
+                            min_binding_size: None,
+                        },
+                    },
+                ],
             }),
         );
 
-        let mut x = ((array.len() as u32) + 16 - 1) / 16;
-        let size = (x + 1) * (std::mem::size_of::<f32>() as u32);
+        // redctuion len
+        let mut list_out_len = vec![];
+        let mut len: u32 = array.len();
+        loop {
+            let new_len: u32 = (len + 511) / 512;
+
+            if new_len == 1 {
+                let out_len = ReducCounterMetaData {
+                    count: 1,
+                    padding: [0; 63],
+                };
+                list_out_len.push(out_len);
+                break;
+            } else {
+                len = new_len;
+                let out_len = ReducCounterMetaData {
+                    count: len,
+                    padding: [0; 63],
+                };
+                list_out_len.push(out_len);
+            }
+        }
+
+        let list_out_len_buffer_window = wgpu.device.create_buffer(&BufferDescriptor {
+            label: Some("Create List Out Len Buffer Window For Sum"),
+            size: list_out_len.len() as u64 * 256,
+            usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
+        let mut x = ((array.len() as u32) + 511) / 512;
+        let size = x * (std::mem::size_of::<f32>() as u32);
         let reduction_res_buffer = wgpu.device.create_buffer(
             &(BufferDescriptor {
                 label: Some("Create Reduction Result Buffer For Sum"),
@@ -54,14 +116,50 @@ impl ArrOgpuModule {
             }),
         );
 
+        let reduc_counter: Vec<ReducCounterMetaData> = vec![
+            ReducCounterMetaData {
+                count: 0,
+                padding: [0; 63],
+            },
+            ReducCounterMetaData {
+                count: 1,
+                padding: [0; 63],
+            },
+        ];
+
+        let reduc_counter_window_buffer = wgpu.device.create_buffer(&BufferDescriptor {
+            label: Some("Create Reduc Counter Window Buffer For Sum"),
+            size: 256 * 2,
+            usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
         let reduction_bind_group = wgpu.device.create_bind_group(
             &(BindGroupDescriptor {
                 label: Some("Create Reduction Result Bind Group"),
                 layout: &reduction_bind_group_layout,
-                entries: &[BindGroupEntry {
-                    binding: 0,
-                    resource: reduction_res_buffer.as_entire_binding(),
-                }],
+                entries: &[
+                    BindGroupEntry {
+                        binding: 0,
+                        resource: reduction_res_buffer.as_entire_binding(),
+                    },
+                    BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                            buffer: &reduc_counter_window_buffer,
+                            offset: 0,
+                            size: BufferSize::new(256),
+                        }),
+                    },
+                    BindGroupEntry {
+                        binding: 2,
+                        resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                            buffer: &list_out_len_buffer_window,
+                            offset: 0,
+                            size: BufferSize::new(256),
+                        }),
+                    },
+                ],
             }),
         );
 
@@ -102,6 +200,21 @@ impl ArrOgpuModule {
             }),
         );
 
+        wgpu.queue.write_buffer(
+            &reduc_counter_window_buffer,
+            0,
+            bytemuck::cast_slice(&reduc_counter),
+        );
+
+        wgpu.queue.write_buffer(
+            &list_out_len_buffer_window,
+            0,
+            bytemuck::cast_slice(&list_out_len),
+        );
+
+        let offsetmetadata = 256;
+        let mut counter = 0;
+        let mut idx = 0;
         loop {
             {
                 let mut bcp = encoder.begin_compute_pass(
@@ -116,18 +229,28 @@ impl ArrOgpuModule {
                 bcp.set_bind_group(0, Some(&heap_bind.binding_groups), &[]);
                 bcp.set_bind_group(1, Some(&array_bind.1), &[]);
                 bcp.set_bind_group(2, Some(&out_bind.1), &[]);
-                bcp.set_bind_group(3, Some(&reduction_bind_group), &[]);
+                bcp.set_bind_group(
+                    3,
+                    Some(&reduction_bind_group),
+                    &[counter * offsetmetadata, offsetmetadata * idx],
+                );
 
-                println!("{}", x);
                 bcp.dispatch_workgroups(x, 1, 1);
             }
 
+            if counter > 0 {
+                idx += 1;
+            }
+
+            if counter == 0 {
+                counter += 1;
+            }
+
             if x > 1 {
-                x = (x + 16 - 1) / 16;
+                x = (x + 511) / 512;
             } else {
                 break;
             }
-            break;
         }
 
         wgpu.queue.submit(Some(encoder.finish()));

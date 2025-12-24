@@ -48,50 +48,56 @@ var<uniform> offset_o: u32;
 @group(3) @binding(0)
 var<storage, read_write> reduction_result: array<f32>;
 
-// workgroup
-var<workgroup> cache: array<f32, 8>;
+struct ReducCounter{
+    counter: u32,               // 4
+    padding: array<u32, 63>     // 252
+}
+@group(3) @binding(1)
+var<storage, read> reduction_counter: ReducCounter;
 
-@compute @workgroup_size(8, 1, 1)
+@group(3) @binding(2)
+var<storage, read> reduction_len: ReducCounter;
+
+// workgroup
+var<workgroup> cache: array<f32, 256>;
+
+@compute @workgroup_size(256, 1, 1)
 fn main(
     @builtin(local_invocation_id) local_id:vec3<u32>,
     @builtin(workgroup_id) work_id: vec3<u32>,
 ){
    var data_len: u32;
-    if reduction_result[0] == 0. {
+    if reduction_counter.counter == 0 {
         data_len = pointer.y - pointer.x;
     } else {
-        data_len = u32(reduction_result[0]);
+        data_len = reduction_len.counter;
     }
 
-    // if reduction_result[0] == 0.{
-        heap[4001 + work_id.x] = f32(reduction_result[0]);
-    // }
-
     var cache_len: u32;
-    if data_len < 16 * (work_id.x + 1){
-        cache_len = data_len - 16 * work_id.x;
+    if data_len < 512 * (work_id.x + 1){
+        cache_len = data_len - 512 * work_id.x;
     } else {
-        cache_len = 16;
+        cache_len = 512;
     }
 
     var sum:f32;
     if local_id.x < cache_len{
-        let index = local_id.x + 8 * work_id.x;
+        let index = local_id.x + 256 * work_id.x;
         let start = index * 2;
         let end = start + 1;
 
 
-        if end < cache_len + 16 * work_id.x{
-            if reduction_result[0] == 0.{
+        if end < cache_len + 512 * work_id.x{
+            if reduction_counter.counter == 0{
                 sum = heap[pointer.x + start] + heap[pointer.x + end];
             } else {
-                sum = reduction_result[start + 1] + reduction_result[end + 1];
+                sum = reduction_result[start] + reduction_result[end];
             }
         } else {
-            if reduction_result[0] == 0.{
+            if reduction_counter.counter == 0{
                 sum = heap[pointer.x + start];
             } else {
-                sum = reduction_result[start + 1];
+                sum = reduction_result[start];
             }
         }
     }
@@ -112,7 +118,7 @@ fn main(
 
     for (var i:u32 = 0; i < total_reduction_iter; i++){
         var sum = 0.;
-        if local_id.x < 4{
+        if local_id.x < 128{
             let start = local_id.x * 2;
             let end = start + 1;
 
@@ -121,19 +127,18 @@ fn main(
 
         workgroupBarrier();
 
-        if local_id.x < 4{
+        if local_id.x < 128{
             cache[local_id.x] = sum;
         }
 
         workgroupBarrier();
     }
 
-    let out_length = (data_len + 15) / 16;
+    let out_length = (data_len + 511) / 512;
     if out_length == 1 && local_id.x == 0{
         heap[pointer_o.x] = cache[0];
 
     } else if local_id.x == 0{
-        reduction_result[0] = f32(out_length);
-        reduction_result[work_id.x + 1] = cache[0];
+        reduction_result[work_id.x] = cache[0];
     }
 }

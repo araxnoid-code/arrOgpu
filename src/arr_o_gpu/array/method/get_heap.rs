@@ -1,6 +1,9 @@
-use std::ops::{ Range, RangeBounds };
+use std::ops::{Range, RangeBounds};
 
-use wgpu::{ wgt::{ BufferDescriptor, CommandEncoderDescriptor, PollType }, BufferUsages, MapMode };
+use wgpu::{
+    BufferUsages, MapMode,
+    wgt::{BufferDescriptor, CommandEncoderDescriptor, PollType},
+};
 
 use crate::GpuArray;
 
@@ -21,13 +24,13 @@ impl GpuArray {
                 mapped_at_creation: false,
                 usage: BufferUsages::MAP_READ | BufferUsages::COPY_DST,
                 size,
-            })
+            }),
         );
 
         let mut encoder = wgpu_init.device.create_command_encoder(
             &(CommandEncoderDescriptor {
                 label: Some("create encoder for get_heap_pointer"),
-            })
+            }),
         );
 
         let start = pointer.0 * mem;
