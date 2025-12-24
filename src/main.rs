@@ -1,15 +1,6 @@
-use std::time::SystemTime;
-
 use arr_o_gpu::{
-    ArangeArray,
-    ArangeIteratorTrait,
-    ArrOgpuModule,
-    ArrOgpuModuleInit,
-    HeapSize,
-    ManualInit,
-    Memory,
-    Power,
-    WgpuInit,
+    ArangeArray, ArangeIteratorTrait, ArrOgpuModule, ArrOgpuModuleInit, HeapSize, ManualInit,
+    Memory, Power, WgpuInit,
 };
 // use ndarray::{ Array1, Array2, Array3 };
 
@@ -19,19 +10,20 @@ fn main() {
     let module = ArrOgpuModule::init(ArrOgpuModuleInit {
         heap_size: HeapSize::Item(1000),
         wgpu: WgpuInit::ManualInit(ManualInit {
-            memory: Memory::Performance,
-            power: Power::HighPerformance,
+            memory: Memory::MemoryUsage,
+            power: Power::LowPower,
         }),
-    }).unwrap();
+    })
+    .unwrap();
 
-    let array = ArangeArray::arange(0..512)
-        .to_GpuArray_with_shape(&[512], &module)
+    let array = ArangeArray::arange(0..23)
+        .to_GpuArray_with_shape(&[23], &module)
         .unwrap();
 
-    let out = module.sum(&array).unwrap();
+    let _out = module.sum(&array).unwrap();
 
-    println!("{}", array);
-    println!("{:?}", module.get_heap());
+    // println!("{}", array);
+    println!("{:?}", &module.get_heap()[23..70]);
     // println!("{}", out);
     println!("{}", (0..512).sum::<i32>())
 
