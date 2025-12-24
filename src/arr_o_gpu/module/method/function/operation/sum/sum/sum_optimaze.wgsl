@@ -56,8 +56,16 @@ fn main(
     @builtin(local_invocation_id) local_id:vec3<u32>,
     @builtin(workgroup_id) work_id: vec3<u32>,
 ){
-    // heap[8] = 99999.;
-    var data_len = pointer.y - pointer.x;
+   var data_len: u32;
+    if reduction_result[0] == 0. {
+        data_len = pointer.y - pointer.x;
+    } else {
+        data_len = u32(reduction_result[0]);
+    }
+
+    // if reduction_result[0] == 0.{
+        heap[4001 + work_id.x] = f32(reduction_result[0]);
+    // }
 
     var cache_len: u32;
     if data_len < 16 * (work_id.x + 1){
@@ -72,17 +80,27 @@ fn main(
         let start = index * 2;
         let end = start + 1;
 
+
         if end < cache_len + 16 * work_id.x{
-            sum = heap[start] + heap[end];
+            if reduction_result[0] == 0.{
+                sum = heap[pointer.x + start] + heap[pointer.x + end];
+            } else {
+                sum = reduction_result[start + 1] + reduction_result[end + 1];
+            }
         } else {
-            sum = heap[start];
+            if reduction_result[0] == 0.{
+                sum = heap[pointer.x + start];
+            } else {
+                sum = reduction_result[start + 1];
+            }
         }
     }
 
     workgroupBarrier();
-
+    cache_len = (cache_len + 2 - 1) / 2;
     if local_id.x < cache_len{
         cache[local_id.x] = sum;
+
     } else {
         cache[local_id.x] = 0.;
     }
@@ -90,72 +108,32 @@ fn main(
     workgroupBarrier();
 
     // paralel reduction
-    cache_len = (cache_len + 2 - 1) / 2;
-    // if work_id.x == {
-        heap[23 + work_id.x] = f32(cache_len);
-    // }
-    // let total_step = f32();
+    let total_reduction_iter = u32(ceil(log2(f32(cache_len))));
 
-    // first summition
-    // var cache_len = 512u;
-    // if data_len < cache_len * (work_id.x + 1){
-    //     cache_len = cache_len - 512u * work_id.x;
-    // }
+    for (var i:u32 = 0; i < total_reduction_iter; i++){
+        var sum = 0.;
+        if local_id.x < 4{
+            let start = local_id.x * 2;
+            let end = start + 1;
 
-    // let total_unit = (data_len + 2 - 1) / 2;
-    // var sum = 0.;
-    // if local_id.x < total_unit{
-    //     let start = global_id.x * 2;
-    //     let end = start + 1;
-    //     if end < cache_len{
-    //         sum = heap[pointer.x + start] + heap[pointer.x + end];
-    //     } else {
-    //         sum = heap[pointer.x + start];
-    //     }
-    // }
+            sum = cache[start] + cache[end];
+        }
 
-    // workgroupBarrier();
+        workgroupBarrier();
 
-    // if local_id.x < total_unit{
-    //     cache[local_id.x] = sum;
-    // }
+        if local_id.x < 4{
+            cache[local_id.x] = sum;
+        }
 
-    // workgroupBarrier();
+        workgroupBarrier();
+    }
 
-    // // paralel reduction
-    // if total_unit != 1{
-    //     var cache_len = total_unit;
-    //     var total_unit = (cache_len + 2 - 1) / 2;
-    //     let total_reduction_iter = u32(ceil(log2(f32(cache_len))));
+    let out_length = (data_len + 15) / 16;
+    if out_length == 1 && local_id.x == 0{
+        heap[pointer_o.x] = cache[0];
 
-    //     for (var i = 0u; i < total_reduction_iter; i++){
-    //         var sum = 0.;
-    //         if local_id.x < total_unit{
-    //             let start = global_id.x * 2;
-    //             let end = start + 1;
-    //             if end < cache_len{
-    //                 sum = cache[start] + cache[end];
-    //             } else {
-    //                 sum = cache[start];
-    //             }
-
-    //         }
-
-    //         workgroupBarrier();
-
-    //         if local_id.x < total_unit{
-    //             cache[local_id.x] = sum;
-    //         }
-
-    //         workgroupBarrier();
-
-    //         cache_len =  total_unit;
-    //         total_unit = (total_unit +  2 - 1) / 2;
-    //     }
-    // }
-
-    // if local_id.x == 0{
-    // heap[513] = cache[0];
-
-    // }
+    } else if local_id.x == 0{
+        reduction_result[0] = f32(out_length);
+        reduction_result[work_id.x + 1] = cache[0];
+    }
 }
