@@ -11,3 +11,4 @@ mod sub;
 // pub use sub::*;
 
 mod skalar_operation;
+pub(crate) use skalar_operation::*;

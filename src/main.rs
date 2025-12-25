@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use arr_o_gpu::{ArangeArray, ArangeIteratorTrait, ArrOgpuModule, r};
 
 fn main() {
@@ -18,6 +20,4 @@ fn main() {
     // module.abs(&array_view);
 
     // let sum = module.sum(&array).unwrap();
-
-    println!("{abs}");
 }
