@@ -53,7 +53,7 @@ impl ArrOgpuModule {
             return Err(ArrOgpuErr::Permute(arr));
         }
 
-        let binding = self.array_data_binding(
+        let binding = self.create_metadata_binding(
             &array.pointer_to_arr(),
             &out_shape.0,
             &get_stride_from_shape(&out_shape.0),

@@ -54,6 +54,13 @@ fn main(
 ){
     let len = pointer.y - pointer.x;
     if global_id.x < len{
-        heap[pointer_o.x + global_id.x] = pow(heap[ pointer.x + global_id.x ], power);
+        let x = heap[ pointer.x + global_id.x ];
+        var result = pow(abs(x), power);
+
+        let is_odd = f32(u32(power) % 2);
+        let negatif_counter = mix(1., sign(x), is_odd);
+        result *= negatif_counter;
+
+        heap[pointer_o.x + global_id.x] = result;
     }
 }

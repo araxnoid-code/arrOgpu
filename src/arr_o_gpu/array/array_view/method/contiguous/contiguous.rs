@@ -33,7 +33,7 @@ where
         let array_bind_group = self.binding();
         let output_bind_group =
             self.module()
-                .array_data_binding(&pointer_out, &self.shape, &iters, &iters, &0);
+                .create_metadata_binding(&pointer_out, &self.shape, &iters, &iters, &0);
 
         // pipeline
         let pipeline_layout = wgpu.device.create_pipeline_layout(
@@ -99,7 +99,7 @@ where
         wgpu.device.poll(PollType::Wait).unwrap();
 
         let stride = get_stride_from_shape(&shape);
-        let binding = self.module().array_data_binding(
+        let binding = self.module().create_metadata_binding(
             &[allocate.1, allocate.2],
             &self.shape,
             &stride,

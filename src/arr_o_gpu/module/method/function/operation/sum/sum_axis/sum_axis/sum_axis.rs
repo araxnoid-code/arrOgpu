@@ -44,7 +44,7 @@ impl ArrOgpuModule {
         let heap_binding = &self.heap_binding;
         let array_binding = array_a.binding();
         let out_binding =
-            self.array_data_binding(&[allocate.1, allocate.2], &out_shape, &stride, &stride, &0);
+            self.create_metadata_binding(&[allocate.1, allocate.2], &out_shape, &stride, &stride, &0);
 
         // wgpu
         let wgpu = self.wgpu_init.read().unwrap();

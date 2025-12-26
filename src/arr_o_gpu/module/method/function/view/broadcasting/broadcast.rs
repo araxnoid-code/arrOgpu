@@ -51,7 +51,7 @@ impl ArrOgpuModule {
         }
 
         let out_shape = broadcast.to_vec();
-        let binding = self.array_data_binding(
+        let binding = self.create_metadata_binding(
             &array.pointer_to_arr(),
             &out_shape,
             &get_stride_from_shape(&out_shape),

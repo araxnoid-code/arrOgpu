@@ -55,7 +55,7 @@ impl ArrOgpuModule {
         let heap_binding = &self.heap_binding;
         let array_a_binding = array_a.binding();
         let array_b_binding = array_b.binding();
-        let out_binding = self.array_data_binding(
+        let out_binding = self.create_metadata_binding(
             &[allocate.1, allocate.2],
             &output_shape,
             &stride,

@@ -48,7 +48,7 @@ impl ArrOgpuModule {
             stride.push(1);
         }
 
-        let binding = self.array_data_binding(
+        let binding = self.create_metadata_binding(
             &array.pointer_to_arr(),
             &new_shape,
             &get_stride_from_shape(&new_shape),

@@ -21,7 +21,7 @@ impl ArrOgpuModule {
         let heap_bind = self.heap_binding();
         let array_bind = array.binding();
         let out_bind =
-            self.array_data_binding(&[allocate.1, allocate.2], &shape, &stride, &stride, &0);
+            self.create_metadata_binding(&[allocate.1, allocate.2], &shape, &stride, &stride, &0);
 
         let wgpu = self.wgpu_init().read().unwrap();
         let pipeline_layout = wgpu

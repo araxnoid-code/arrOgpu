@@ -50,7 +50,7 @@ impl ArrOgpuModule {
         let array_b_binding = array_b.binding();
         // // out
         let out_binding =
-            self.array_data_binding(&[allocate.1, allocate.2], &out_shape, &stride, &stride, &0);
+            self.create_metadata_binding(&[allocate.1, allocate.2], &out_shape, &stride, &stride, &0);
 
         // pipeline
         // // shader

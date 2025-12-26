@@ -28,7 +28,7 @@ impl ArrOgpuModule {
 
         let shape = shape.to_vec();
         let stride = get_stride_from_shape(&shape);
-        let binding = self.array_data_binding(
+        let binding = self.create_metadata_binding(
             &array.pointer_to_arr(),
             &shape,
             &stride,

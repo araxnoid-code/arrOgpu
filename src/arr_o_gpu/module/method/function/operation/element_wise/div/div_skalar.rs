@@ -46,7 +46,7 @@ impl ArrOgpuModule {
 
         // // output
         let out_bind =
-            self.array_data_binding(&[allocate.1, allocate.2], &shape, &stride, &stride, &0);
+            self.create_metadata_binding(&[allocate.1, allocate.2], &shape, &stride, &stride, &0);
 
         // pipeline
         let shader = wgpu.device.create_shader_module(ShaderModuleDescriptor {

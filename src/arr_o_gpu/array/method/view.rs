@@ -1,15 +1,15 @@
-use crate::{ GpuArray, GpuArrayView };
+use crate::{GpuArray, GpuArrayView};
 
 impl GpuArray {
     pub fn view(&self) -> GpuArrayView<'_, GpuArray> {
         let shape = self.shape.clone();
 
-        let binding = self.module.array_data_binding(
+        let binding = self.module.create_metadata_binding(
             &self.pointer_to_arr(),
             &shape,
             &self.stride,
             &self.stride,
-            &0
+            &0,
         );
 
         GpuArrayView {

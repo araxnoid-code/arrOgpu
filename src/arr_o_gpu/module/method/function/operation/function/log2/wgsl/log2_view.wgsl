@@ -50,7 +50,7 @@ fn main(
 ){
     let len = pointer.y - pointer.x;
     if global_id.x < len{
-        heap[pointer_o.x + global_id.x] = log(heap[ pointer.x + indexing(global_id.x) ]);
+        heap[pointer_o.x + global_id.x] = log2(heap[ pointer.x + indexing(global_id.x) ]);
     }
 }
 
