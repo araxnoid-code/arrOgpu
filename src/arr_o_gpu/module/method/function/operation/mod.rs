@@ -1,5 +1,5 @@
 mod element_wise;
-// pub use element_wise::*;
+pub use element_wise::AbleElementWise;
 
 mod matmul;
 // pub use matmul::*;
@@ -11,4 +11,4 @@ mod sum;
 // pub use sum_axis::*;
 
 mod function;
-// pub use function::;
+pub use function::AblePowType;

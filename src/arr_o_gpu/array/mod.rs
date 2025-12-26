@@ -11,3 +11,5 @@ mod method;
 
 mod array_view;
 pub use array_view::*;
+
+mod operation;

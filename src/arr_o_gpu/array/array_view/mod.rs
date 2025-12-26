@@ -7,3 +7,4 @@ pub use view::*;
 mod method;
 
 mod getters;
+mod operation;

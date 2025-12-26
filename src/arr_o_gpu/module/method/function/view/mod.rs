@@ -5,6 +5,6 @@ mod broadcasting;
 mod slicing;
 pub use slicing::*;
 
-mod reshape;
+mod to_shape;
 
 mod permute;

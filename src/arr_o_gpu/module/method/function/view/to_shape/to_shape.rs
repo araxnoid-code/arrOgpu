@@ -1,7 +1,7 @@
 use crate::{ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArrayView, get_stride_from_shape};
 
 impl ArrOgpuModule {
-    pub fn reshape<'a, A>(
+    pub fn to_shape<'a, A>(
         &self,
         array: &'a A,
         shape: &[u32],
