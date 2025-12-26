@@ -45,16 +45,23 @@ var<storage, read> stride_o: array<u32>;
 var<uniform> offset_o: u32;
 
 // power
-@group(2) @binding(4)
+@group(3) @binding(0)
 var<uniform> power: f32;
 
 @compute @workgroup_size(256, 1, 1)
 fn main(
     @builtin (global_invocation_id) global_id: vec3<u32>,
 ){
-    let len = pointer.y - pointer.x;
+    let len = pointer_o.y - pointer_o.x;
     if global_id.x < len{
-        heap[pointer_o.x + global_id.x] = pow(heap[ pointer.x + indexing(global_id.x) ], power);
+        let x = heap[ pointer.x + indexing(global_id.x) ];
+        var result = pow(abs(x), power);
+
+        let is_odd = f32(u32(power) % 2);
+        let negatif_counter = mix(1., sign(x), is_odd);
+        result *= negatif_counter;
+
+        heap[pointer_o.x + global_id.x] = result;
     }
 }
 

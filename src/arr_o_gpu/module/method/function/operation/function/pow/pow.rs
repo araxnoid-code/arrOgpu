@@ -1,16 +1,6 @@
-use std::sync::Arc;
-
-use wgpu::{
-    BindGroupEntry, BindGroupLayoutEntry, BindingType, BufferUsages, Device,
-    PipelineCompilationOptions, ShaderStages, util::DeviceExt,
-};
-
 use crate::{
     ArrOgpuErr, ArrOgpuModule, ArrayCompute, CheckArrayType, GpuArray,
-    arr_o_gpu::module::method::function::operation::{
-        element_wise::MetaDataOption, function::pow::AblePowType,
-    },
-    get_stride_from_shape,
+    arr_o_gpu::module::method::function::operation::function::pow::AblePowType,
 };
 
 impl ArrOgpuModule {

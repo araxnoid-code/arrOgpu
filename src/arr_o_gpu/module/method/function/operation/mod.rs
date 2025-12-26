@@ -11,4 +11,4 @@ mod sum;
 // pub use sum_axis::*;
 
 mod function;
-pub use function::*;
+// pub use function::;

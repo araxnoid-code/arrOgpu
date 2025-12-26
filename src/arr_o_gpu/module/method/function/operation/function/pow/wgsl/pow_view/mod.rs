@@ -29,6 +29,7 @@ impl ArrOgpuModule {
         let array_bind = array.binding();
         let out_bind =
             self.create_metadata_binding(&[allocate.1, allocate.2], shape, &stride, &stride, &0);
+
         let scalar_bind = match pow.get() {
             MetaDataOption::Skalar(scalar) => &self.pow_scalar_bind(&wgpu.device, scalar),
             MetaDataOption::Array(arr) => arr.binding(),
@@ -53,7 +54,7 @@ impl ArrOgpuModule {
                 wgpu.device
                     .create_shader_module(wgpu::ShaderModuleDescriptor {
                         label: Some("Create Shader Module For Pow"),
-                        source: wgpu::ShaderSource::Wgsl(include_str!("./pow_scalar.wgsl").into()),
+                        source: wgpu::ShaderSource::Wgsl(include_str!("./pow_array.wgsl").into()),
                     })
             }
             MetaDataOption::Skalar(_) => {
