@@ -8,7 +8,7 @@ use wgpu::{
     ShaderModuleDescriptor, ShaderStages, wgt::BufferDescriptor,
 };
 
-use crate::{ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArray};
+use crate::{ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, CheckArrayType, GpuArray};
 
 #[repr(C)]
 #[derive(Clone, Copy, Zeroable, Pod, Debug)]
@@ -18,9 +18,9 @@ struct ReducCounterMetaData {
 }
 
 impl ArrOgpuModule {
-    pub fn sum<A>(&self, array: &A) -> Result<GpuArray, ArrOgpuErr>
+    pub fn sum<'a, A>(&self, array: &'a A) -> Result<GpuArray, ArrOgpuErr>
     where
-        A: ArrayCompute,
+        A: ArrayCompute + CheckArrayType<'a>,
     {
         let wgpu = self.wgpu_init.read().unwrap();
         // out meta data
@@ -162,11 +162,18 @@ impl ArrOgpuModule {
             }),
         );
 
-        // pipeline
-        let shader = wgpu.device.create_shader_module(ShaderModuleDescriptor {
-            label: Some("Create Shader Module For Sum"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("./shaders/sum_contiguous.wgsl").into()),
-        });
+        let shader = match array.check() {
+            ArrayType::Contiguous(_) => wgpu.device.create_shader_module(ShaderModuleDescriptor {
+                label: Some("Create Shader Module For Sum"),
+                source: wgpu::ShaderSource::Wgsl(
+                    include_str!("./shaders/sum_contiguous.wgsl").into(),
+                ),
+            }),
+            ArrayType::View(_) => wgpu.device.create_shader_module(ShaderModuleDescriptor {
+                label: Some("Create Shader Module For Sum"),
+                source: wgpu::ShaderSource::Wgsl(include_str!("./shaders/sum_view.wgsl").into()),
+            }),
+        };
 
         let pipeline = wgpu.device.create_pipeline_layout(
             &(PipelineLayoutDescriptor {
