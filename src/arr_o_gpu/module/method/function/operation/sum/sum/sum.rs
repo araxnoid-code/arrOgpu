@@ -165,7 +165,7 @@ impl ArrOgpuModule {
         // pipeline
         let shader = wgpu.device.create_shader_module(ShaderModuleDescriptor {
             label: Some("Create Shader Module For Sum"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("./sum_optimaze.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(include_str!("./shaders/sum_contiguous.wgsl").into()),
         });
 
         let pipeline = wgpu.device.create_pipeline_layout(

@@ -19,12 +19,16 @@ pub enum ArrOgpuErr {
     DotProduct(String),
     SumAxis(String),
 
+    // function
+    Pow(String),
+
     // View
     Indexing(String),
     Broadcast(String),
     Slicing(String),
     Reshape(String),
     Permute(String),
+
     // pool
     Poll(String, PollError),
 }

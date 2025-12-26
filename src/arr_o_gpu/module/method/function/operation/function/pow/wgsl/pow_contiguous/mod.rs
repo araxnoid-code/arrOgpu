@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use wgpu::{
-    BindGroupEntry, BindGroupLayoutEntry, BindingType, BufferUsages, Device,
-    PipelineCompilationOptions, ShaderStages, util::DeviceExt,
+    BindGroup, BindGroupEntry, BindGroupLayout, BindGroupLayoutEntry, BindingType, BufferUsages,
+    Device, PipelineCompilationOptions, ShaderStages, util::DeviceExt,
 };
 
 use crate::{
@@ -32,10 +32,23 @@ impl ArrOgpuModule {
         let array_bind = array.binding();
         let out_bind =
             self.create_metadata_binding(&[allocate.1, allocate.2], shape, &stride, &stride, &0);
-        let scalar_bind = match pow.get() {
-            MetaDataOption::Skalar(scalar) => &self.pow_scalar_bind(&wgpu.device, scalar),
-            MetaDataOption::Array(arr) => arr.binding(),
+
+        let scalar_bind_result: Result<&(BindGroupLayout, BindGroup), ArrOgpuErr> = match pow.get()
+        {
+            MetaDataOption::Skalar(scalar) => Ok(&self.pow_scalar_bind(&wgpu.device, scalar)),
+            MetaDataOption::Array(arr) => {
+                // dim must 1               // must scalar
+                if arr.shape().len() != 0 && arr.shape()[0] != 1 {
+                    let msg = format!(
+                        "Pow Error, The Power Being Operated On Has The Shape {:?}, The Array Must Be A Scalar",
+                        arr.shape()
+                    );
+                    return Err(ArrOgpuErr::Pow(msg));
+                }
+                Ok(arr.binding())
+            }
         };
+        let scalar_bind: &(BindGroupLayout, BindGroup) = scalar_bind_result?;
 
         // pipeline
         let pipeline_layout = wgpu
