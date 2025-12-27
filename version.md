@@ -1,3 +1,25 @@
+# NIGHTLY/0.1.0.4
+- Optimize
+  - Rewrite Sum Compute Shader (wgsl file) to optimize using as many threads as possible.
+
+- Change
+  - Change Trait ArrayView Name to ArrayCompute
+  - Change reshape Method to to_shape
+
+- System
+  - Added CheckArrayType Trait to check if array is contiguous or view.
+  - Trait ContiguousArray and Trait ViewArray (for separate GpuArray and GpuArrayView)
+  - summarizes all operational methods of arrays
+
+- Features
+  - abs
+  - sqrt
+  - log2
+  - pow
+  - Negative Indexing:
+    - index method
+    - slicing method
+
 # NIGHTLY/0.1.0.3
 - Fixed Bug
     - Fixed bug in matmul_nd method.
