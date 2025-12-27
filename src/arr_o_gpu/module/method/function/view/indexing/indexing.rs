@@ -1,21 +1,30 @@
-use crate::{ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArrayView, get_stride_from_shape};
+use crate::{
+    ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArrayView, get_stride_from_shape,
+    negative_indexing_converter,
+};
 
 impl ArrOgpuModule {
     pub fn index<'a, A>(
         &self,
         array: &'a A,
-        index: &[u32],
+        index: &[i32],
     ) -> Result<GpuArrayView<'a, A>, ArrOgpuErr>
     where
         A: ArrayCompute,
     {
-        let dim = array.dim();
+        // negative_converter
+        let index = negative_indexing_converter(index, &array.shape()).map_err(ArrOgpuErr::from)?;
+
         // check dim
-        if index.len() > dim || index.is_empty() {
+        let dim = array.dim();
+        if index.len() > dim {
             let err = format!(
                 "Indexing Out Of Dimension Error, Indexing {:?} but dim of array is {}",
                 index, dim
             );
+            return Err(ArrOgpuErr::Indexing(err));
+        } else if index.is_empty() {
+            let err = format!("Idexing Error, Indexing Is Empty");
             return Err(ArrOgpuErr::Indexing(err));
         }
         // check overflow

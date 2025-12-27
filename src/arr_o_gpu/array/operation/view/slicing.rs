@@ -1,10 +1,15 @@
-use crate::{GpuArray, SliceRange};
+use crate::{
+    ArrOgpuErr, GpuArray, SliceRange, SliceRangeNegativeAble, slice_negative_indexing_converter,
+};
 
 impl GpuArray {
     pub fn slicing(
         &self,
-        slice: &[SliceRange],
+        slice: &[SliceRangeNegativeAble],
     ) -> Result<crate::GpuArrayView<'_, GpuArray>, crate::ArrOgpuErr> {
-        self.module.slicing(self, slice)
+        let slice =
+            slice_negative_indexing_converter(slice, &self.shape).map_err(ArrOgpuErr::from)?;
+
+        self.module.slicing(self, &slice)
     }
 }

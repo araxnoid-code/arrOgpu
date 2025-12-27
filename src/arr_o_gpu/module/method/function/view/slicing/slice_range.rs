@@ -25,14 +25,6 @@ impl Debug for SliceRange {
     }
 }
 
-pub fn r<T: SlicingRangeTrait>(range: T) -> SliceRange {
-    SliceRange {
-        start: range.start(),
-        end: range.end(),
-    }
-}
-
-
 pub trait SlicingRangeTrait {
     fn start(&self) -> Option<u32>;
     fn end(&self) -> Option<u32>;
@@ -94,6 +86,85 @@ impl SlicingRangeTrait for RangeToInclusive<u32> {
     }
 
     fn end(&self) -> Option<u32> {
+        Some(self.end)
+    }
+}
+
+//
+#[derive(Debug)]
+pub struct SliceRangeNegativeAble {
+    pub start: Option<i32>,
+    pub end: Option<i32>,
+}
+
+pub fn r<T: SlicingRangeTraitNegativeAble>(range: T) -> SliceRangeNegativeAble {
+    SliceRangeNegativeAble {
+        start: range.start(),
+        end: range.end(),
+    }
+}
+
+pub trait SlicingRangeTraitNegativeAble {
+    fn start(&self) -> Option<i32>;
+    fn end(&self) -> Option<i32>;
+}
+
+impl SlicingRangeTraitNegativeAble for Range<i32> {
+    fn start(&self) -> Option<i32> {
+        Some(self.start)
+    }
+
+    fn end(&self) -> Option<i32> {
+        Some(self.end)
+    }
+}
+
+impl SlicingRangeTraitNegativeAble for RangeFull {
+    fn start(&self) -> Option<i32> {
+        None
+    }
+
+    fn end(&self) -> Option<i32> {
+        None
+    }
+}
+
+impl SlicingRangeTraitNegativeAble for RangeFrom<i32> {
+    fn start(&self) -> Option<i32> {
+        Some(self.start)
+    }
+
+    fn end(&self) -> Option<i32> {
+        None
+    }
+}
+
+impl SlicingRangeTraitNegativeAble for RangeTo<i32> {
+    fn start(&self) -> Option<i32> {
+        None
+    }
+
+    fn end(&self) -> Option<i32> {
+        Some(self.end)
+    }
+}
+
+impl SlicingRangeTraitNegativeAble for RangeInclusive<i32> {
+    fn start(&self) -> Option<i32> {
+        Some(*self.start())
+    }
+
+    fn end(&self) -> Option<i32> {
+        Some(*self.end())
+    }
+}
+
+impl SlicingRangeTraitNegativeAble for RangeToInclusive<i32> {
+    fn start(&self) -> Option<i32> {
+        None
+    }
+
+    fn end(&self) -> Option<i32> {
         Some(self.end)
     }
 }

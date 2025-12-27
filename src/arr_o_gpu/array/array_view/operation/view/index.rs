@@ -6,7 +6,7 @@ where
 {
     pub fn index(
         &self,
-        index: &[u32],
+        index: &[i32],
     ) -> Result<GpuArrayView<'_, GpuArrayView<'_, A>>, crate::ArrOgpuErr> {
         self.module().index(self, index)
     }

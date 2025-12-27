@@ -1,10 +1,10 @@
-use crate::GpuArray;
+use crate::{ArrOgpuErr, GpuArray, negative_indexing_converter};
 
 impl GpuArray {
     pub fn index(
         &self,
-        index: &[u32],
+        index: &[i32],
     ) -> Result<crate::GpuArrayView<'_, GpuArray>, crate::ArrOgpuErr> {
-        self.module.index(self, index)
+        self.module.index(self, &index)
     }
 }

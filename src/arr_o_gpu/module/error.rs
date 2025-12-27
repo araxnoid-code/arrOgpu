@@ -29,6 +29,9 @@ pub enum ArrOgpuErr {
     Reshape(String),
     Permute(String),
 
+    // tools
+    Negative_Indexing(String),
+
     // pool
     Poll(String, PollError),
 }
