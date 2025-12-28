@@ -91,60 +91,58 @@ fn main(
     @builtin(local_invocation_id) local_id: vec3<u32>,
     @builtin(workgroup_id) work_id: vec3<u32>,
 ){
+    let total_thread = 256u;
+    let total_thread_double = total_thread * 2u;
     let data_len: u32 = u32(mix(f32(pointer_a.y - pointer_a.x), f32(len_reduction.value), f32(reduction_counter.value)));
 
     var cache_len: u32;
-    if data_len < 512 * (work_id.x + 1) {
-        cache_len = data_len - 512 * work_id.x;
+    if data_len < total_thread_double * (work_id.x + 1) {
+        cache_len = data_len - total_thread_double * work_id.x;
     } else {
-        cache_len = 512;
+        cache_len = total_thread_double;
     }
+
 
     let total_unit = (cache_len + 1) / 2;
     var sum = 0.;
     if local_id.x < total_unit{
-        let index = local_id.x + 128 * work_id.x;
+        let index = local_id.x + total_thread * work_id.x;
         let start = index * 2;
         let end = start + 1;
 
-        if end < cache_len{
-            let res_a = heap[pointer_a.x + start] * heap[pointer_b.x + start];
-            let res_b = heap[pointer_a.x + end] * heap[pointer_b.x + end];
-            sum = res_a + res_b;
+
+        if reduction_counter.value == 0{
+            if (local_id.x * 2) + 1 < cache_len{
+                let res_a = heap[pointer_a.x + start] * heap[pointer_b.x + start];
+                let res_b = heap[pointer_a.x + end] * heap[pointer_b.x + end];
+                sum = res_a + res_b;
+            } else {
+                let res = heap[pointer_a.x + start] * heap[pointer_b.x + start];
+                sum = res;
+            }
         } else {
-            let res = heap[pointer_a.x + start] * heap[pointer_b.x + start];
-            sum = res;
+            if (local_id.x * 2) + 1 < cache_len{
+                sum = reduction[start] + reduction[end];
+            } else {
+                sum = reduction[start];
+            }
         }
-    }
 
-    workgroupBarrier();
-
-    if local_id.x < total_unit{
         cache[local_id.x] = sum;
-    } else {
-        cache[local_id.x] = 0.;
     }
-
     workgroupBarrier();
 
-    let total_reduction_step = u32(ceil(log2(f32(cache_len))));
-    for (var i = 0u; i < total_reduction_step; i++){
-        var sum = 0.;
-        if local_id.x < 128{
-            let start = local_id.x * 2;
-            let end = start + 1;
-
-            sum = cache[start] + cache[end];
+    var stride = 1u;
+    while (stride < total_thread){
+        let index = local_id.x * 2 * stride;
+        if index + stride < total_thread {
+            cache[index] += cache[index + stride];
         }
-
-        workgroupBarrier();
-        if local_id.x < 128{
-            cache[local_id.x] = sum;
-        }
+        stride <<= 1u;
         workgroupBarrier();
     }
 
-    let out_len = (data_len + 511) / 512;
+    let out_len = (data_len + total_thread_double - 1) / total_thread_double;
     if out_len == 1 && local_id.x == 0{
         heap[pointer_o.x] = cache[0];
     } else if local_id.x == 0 {

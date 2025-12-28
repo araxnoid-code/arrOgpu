@@ -215,7 +215,7 @@ impl ArrOgpuModule {
             bcp.set_pipeline(&pipeline);
             bcp.set_bind_group(0, Some(&heap_bind.binding_groups), &[]);
             bcp.set_bind_group(1, Some(&array_a_bind.1), &[]);
-            bcp.set_bind_group(2, Some(&array_a_bind.1), &[]);
+            bcp.set_bind_group(2, Some(&array_b_bind.1), &[]);
             bcp.set_bind_group(3, Some(&out_bind.1), &[]);
 
             bcp.set_bind_group(
@@ -239,9 +239,12 @@ impl ArrOgpuModule {
             } else {
                 x = (x + 511) / 512;
             }
+
+            // break;
         }
 
         wgpu.queue.submit(Some(encoder.finish()));
+        wgpu.device.poll(wgpu::wgt::PollType::Wait).unwrap();
 
         let array = GpuArray {
             module: Arc::new(self.clone()),

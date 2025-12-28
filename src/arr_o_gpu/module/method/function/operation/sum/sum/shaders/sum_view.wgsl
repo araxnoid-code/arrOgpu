@@ -101,19 +101,12 @@ fn main(
                 sum = reduction_result[start];
             }
         }
-    }
-
-    workgroupBarrier();
-    cache_len = (cache_len + 2 - 1) / 2;
-    if local_id.x < cache_len{
         cache[local_id.x] = sum;
-    } else {
-        cache[local_id.x] = 0.;
     }
-
     workgroupBarrier();
 
     // paralel reduction
+    cache_len = (cache_len + 2 - 1) / 2;
     let total_reduction_iter = u32(ceil(log2(f32(cache_len))));
 
     for (var i:u32 = 0; i < total_reduction_iter; i++){
