@@ -21,7 +21,7 @@ impl ArrOgpuModule {
 
         if shape_a.len() != 1 || shape_b.len() != 1 || length_a != length_b {
             let err = format!(
-                "Array Dot Product Error, Array with shape {:?} and With Shape {:?} Can't Be Operated",
+                "Dot Product Error, Array with shape {:?} and With Shape {:?} Can't Be Operated",
                 shape_a, shape_b
             );
             return Err(ArrOgpuErr::DotProduct(err));
