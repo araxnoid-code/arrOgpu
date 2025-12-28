@@ -42,6 +42,7 @@ impl WgpuModule {
                             memory_hints: manual_init.memory.conversion(),
                             required_features: Features::empty(),
                             required_limits: Limits {
+                                max_bind_groups: 5,
                                 ..Default::default()
                             },
                             trace: wgpu::Trace::Off,

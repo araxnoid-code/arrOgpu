@@ -1,19 +1,33 @@
-use std::vec;
+use std::{num::NonZero, sync::Arc, vec};
 
 use bytemuck::{Pod, Zeroable};
-use wgpu::BufferUsages;
+use wgpu::{
+    BindGroupEntry, BindGroupLayoutEntry, BindingResource, BindingType, BufferUsages, ShaderStages,
+};
 
-use crate::{ArrOgpuErr, ArrOgpuModule, ArrayCompute};
+use crate::{ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, CheckArrayType, GpuArray};
 
 impl ArrOgpuModule {
-    pub fn dot_product_optimize<A, B>(&self, array_a: &A, array_b: &B) -> Result<(), ArrOgpuErr>
+    pub fn dot_product_optimize<'a, A, B>(
+        &self,
+        array_a: &'a A,
+        array_b: &'a B,
+    ) -> Result<GpuArray, ArrOgpuErr>
     where
-        A: ArrayCompute,
-        B: ArrayCompute,
+        A: ArrayCompute + CheckArrayType<'a>,
+        B: ArrayCompute + CheckArrayType<'a>,
     {
         let shape_a = array_a.shape();
         let shape_b = array_b.shape();
-        if shape_a.len() != 1 && shape_b.len() != 1 {
+
+        // error hendling
+        if let ArrayType::View(_) = array_a.check() {
+            let err = format!("Dot Product Error, dot_product_optimize Not Implemented View Yet");
+            return Err(ArrOgpuErr::DotProduct(err));
+        } else if let ArrayType::View(_) = array_b.check() {
+            let err = format!("Dot Product Error, dot_product_optimize Not Implemented View Yet");
+            return Err(ArrOgpuErr::DotProduct(err));
+        } else if shape_a.len() != 1 && shape_b.len() != 1 {
             let err = format!(
                 "Dot Product Error, Array A with shape {:?} and Array B With Shape {:?} Can't Be Operated",
                 shape_a, shape_b
@@ -49,7 +63,7 @@ impl ArrOgpuModule {
         let window_reduction_counter = wgpu.device.create_buffer(&wgpu::wgt::BufferDescriptor {
             label: Some("Create Window Reduction Counter For Dot Product"),
             size: 256 * 2,
-            usage: BufferUsages::UNIFORM,
+            usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
 
@@ -59,7 +73,7 @@ impl ArrOgpuModule {
         let window_reduction_len = wgpu.device.create_buffer(&wgpu::wgt::BufferDescriptor {
             label: Some("Create Reduction For Dot Product"),
             size: (reduction_len.len() * 256) as u64,
-            usage: BufferUsages::STORAGE,
+            usage: BufferUsages::STORAGE | BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
 
@@ -72,7 +86,174 @@ impl ArrOgpuModule {
             mapped_at_creation: false,
         });
 
-        Ok(())
+        // reduction bind
+        let reduction_bind_layout =
+            wgpu.device
+                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    label: Some("Create Bind Group Layout Reduction For Dot Product"),
+                    entries: &[
+                        BindGroupLayoutEntry {
+                            binding: 0,
+                            count: None,
+                            visibility: ShaderStages::COMPUTE,
+                            ty: BindingType::Buffer {
+                                ty: wgpu::BufferBindingType::Storage { read_only: false },
+                                has_dynamic_offset: false,
+                                min_binding_size: None,
+                            },
+                        },
+                        BindGroupLayoutEntry {
+                            binding: 1,
+                            count: None,
+                            visibility: ShaderStages::COMPUTE,
+                            ty: BindingType::Buffer {
+                                ty: wgpu::BufferBindingType::Storage { read_only: true },
+                                has_dynamic_offset: true,
+                                min_binding_size: None,
+                            },
+                        },
+                        BindGroupLayoutEntry {
+                            binding: 2,
+                            count: None,
+                            visibility: ShaderStages::COMPUTE,
+                            ty: BindingType::Buffer {
+                                ty: wgpu::BufferBindingType::Storage { read_only: true },
+                                has_dynamic_offset: true,
+                                min_binding_size: None,
+                            },
+                        },
+                    ],
+                });
+
+        let reduction_bind = wgpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Create Bind Group Reduction For Dot Produt"),
+            layout: &reduction_bind_layout,
+            entries: &[
+                BindGroupEntry {
+                    binding: 0,
+                    resource: reduction_buffer.as_entire_binding(),
+                },
+                BindGroupEntry {
+                    binding: 1,
+                    resource: BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &window_reduction_counter,
+                        offset: 0,
+                        size: Some(NonZero::new(256).unwrap()),
+                    }),
+                },
+                BindGroupEntry {
+                    binding: 2,
+                    resource: BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &window_reduction_len,
+                        offset: 0,
+                        size: Some(NonZero::new(256).unwrap()),
+                    }),
+                },
+            ],
+        });
+
+        let pipeline_layout = wgpu
+            .device
+            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Create Pipeline Layout For Dot Product"),
+                bind_group_layouts: &[
+                    &heap_bind.binding_group_layouts,
+                    &array_a_bind.0,
+                    &array_b_bind.0,
+                    &out_bind.0,
+                    &reduction_bind_layout,
+                ],
+                push_constant_ranges: &[],
+            });
+
+        let shader = wgpu
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("Create Shaders Module For Dot Product"),
+                source: wgpu::ShaderSource::Wgsl(include_str!("./dot_product_op.wgsl").into()),
+            });
+
+        let pipeline = wgpu
+            .device
+            .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                label: Some("Create Pipeline For Dot Product"),
+                layout: Some(&pipeline_layout),
+                module: &shader,
+                entry_point: Some("main"),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                cache: None,
+            });
+
+        wgpu.queue.write_buffer(
+            &window_reduction_counter,
+            0,
+            bytemuck::cast_slice(&reduction_counter),
+        );
+
+        wgpu.queue.write_buffer(
+            &window_reduction_len,
+            0,
+            bytemuck::cast_slice(&reduction_len),
+        );
+
+        let mut encoder =
+            wgpu.device
+                .create_command_encoder(&wgpu::wgt::CommandEncoderDescriptor {
+                    label: Some("Create Command Encoder For Dot Porduct"),
+                });
+
+        let mut x = out_len;
+        let offset_metadata = 256;
+        let mut counter = 0;
+        let mut len_counter = 0;
+        loop {
+            let mut bcp = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: Some("Create Begin Compute Pass For Dot Product"),
+                timestamp_writes: None,
+            });
+
+            bcp.set_pipeline(&pipeline);
+            bcp.set_bind_group(0, Some(&heap_bind.binding_groups), &[]);
+            bcp.set_bind_group(1, Some(&array_a_bind.1), &[]);
+            bcp.set_bind_group(2, Some(&array_a_bind.1), &[]);
+            bcp.set_bind_group(3, Some(&out_bind.1), &[]);
+
+            bcp.set_bind_group(
+                4,
+                Some(&reduction_bind),
+                &[counter * offset_metadata, len_counter * offset_metadata],
+            );
+
+            bcp.dispatch_workgroups(x, 1, 1);
+
+            if counter > 0 {
+                len_counter += 1;
+            }
+
+            if counter == 0 {
+                counter += 1;
+            }
+
+            if x == 1 {
+                break;
+            } else {
+                x = (x + 511) / 512;
+            }
+        }
+
+        wgpu.queue.submit(Some(encoder.finish()));
+
+        let array = GpuArray {
+            module: Arc::new(self.clone()),
+            length: len as usize,
+            binding: out_bind,
+            pointer: (allocate.1, allocate.2),
+            shape,
+            stride,
+            space_type: allocate.0,
+        };
+
+        Ok(array)
     }
 }
 

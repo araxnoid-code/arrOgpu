@@ -77,11 +77,11 @@ var<storage, read_write> reduction: array<f32>;
 
 // // counter
 @group(4) @binding(1)
-var<uniform> reduction_counter: Counter;
+var<storage, read> reduction_counter: Counter;
 
 // // len
 @group(4) @binding(2)
-var<uniform> len_reduction: Counter;
+var<storage, read> len_reduction: Counter;
 
 // cache
 var<workgroup> cache: array<f32, 256>;
@@ -91,9 +91,9 @@ fn main(
     @builtin(local_invocation_id) local_id: vec3<u32>,
     @builtin(workgroup_id) work_id: vec3<u32>,
 ){
-    let data_len: u32 = mix(pointer_a.y - pointer.x, len_reduction.value, reduction_counter.value);
+    let data_len: u32 = u32(mix(f32(pointer_a.y - pointer_a.x), f32(len_reduction.value), f32(reduction_counter.value)));
 
-    let cache_len: u32;
+    var cache_len: u32;
     if data_len < 512 * (work_id.x + 1) {
         cache_len = data_len - 512 * work_id.x;
     } else {
@@ -120,18 +120,18 @@ fn main(
     workgroupBarrier();
 
     if local_id.x < total_unit{
-        cache[local_id.x] == sum;
+        cache[local_id.x] = sum;
     } else {
-        cache[local_id.x] == 0.;
+        cache[local_id.x] = 0.;
     }
 
     workgroupBarrier();
 
     let total_reduction_step = u32(ceil(log2(f32(cache_len))));
-    for (var i = 0; i < total_reduction_step; i++){
+    for (var i = 0u; i < total_reduction_step; i++){
         var sum = 0.;
         if local_id.x < 128{
-            let start = local_id * 2;
+            let start = local_id.x * 2;
             let end = start + 1;
 
             sum = cache[start] + cache[end];
@@ -139,7 +139,7 @@ fn main(
 
         workgroupBarrier();
         if local_id.x < 128{
-            cache[local_id] = sum;
+            cache[local_id.x] = sum;
         }
         workgroupBarrier();
     }
