@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use wgpu::{ BindGroup, BindGroupLayout };
+use wgpu::{BindGroup, BindGroupLayout};
 
-use crate::{ ArrOgpuModule, SpaceType };
+use crate::{ArrOgpuModule, MetadataCompound, SpaceType};
 
 pub struct GpuArray {
     // module
@@ -17,7 +17,11 @@ pub struct GpuArray {
     // bind_group
     pub(crate) binding: (BindGroupLayout, BindGroup),
 
-    //
+    // build/0.1.0.5
+    pub(crate) metadata_compound: Option<MetadataCompound>,
+    // build/0.1.0.5
+
+    // space_type
     pub(crate) space_type: SpaceType,
 }
 

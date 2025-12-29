@@ -29,7 +29,7 @@ impl ArrOgpuModule {
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Create Pipeline Layout For Sqrt"),
                 bind_group_layouts: &[&heap_bind.binding_group_layouts, &array_bind.0, &out_bind.0],
-                immediate_size:0,
+                immediate_size: 0,
             });
 
         let pipeline = wgpu
@@ -67,6 +67,9 @@ impl ArrOgpuModule {
         wgpu.queue.submit(Some(encoder.finish()));
 
         let array = GpuArray {
+            // build/0.1.0.5
+            metadata_compound: None,
+            // build/0.1.0.5
             module: Arc::new(self.clone()),
             binding: out_bind,
             length: len as usize,

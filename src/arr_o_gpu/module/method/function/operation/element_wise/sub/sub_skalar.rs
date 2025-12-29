@@ -64,7 +64,7 @@ impl ArrOgpuModule {
         let pipeline_layout = wgpu.device.create_pipeline_layout(
             &(PipelineLayoutDescriptor {
                 label: Some("Create Pipeline Layout For Add Scalar"),
-                immediate_size:0,
+                immediate_size: 0,
                 bind_group_layouts: &[
                     &heap_bind.binding_group_layouts,
                     &array_bind.0,
@@ -122,6 +122,9 @@ impl ArrOgpuModule {
         // }
 
         let array = GpuArray {
+            // build/0.1.0.5
+            metadata_compound: None,
+            // build/0.1.0.5
             module: Arc::new(self.clone()),
             pointer: (allocate.1, allocate.2),
             shape: shape.clone(),

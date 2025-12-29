@@ -34,7 +34,7 @@ impl ArrOgpuModule {
             &(PipelineLayoutDescriptor {
                 label: Some("Create Pipeline Layout For Sin"),
                 bind_group_layouts: &[&heap_bind.binding_group_layouts, &array_bind.0, &out_bind.0],
-                immediate_size:0,
+                immediate_size: 0,
             }),
         );
 
@@ -88,6 +88,9 @@ impl ArrOgpuModule {
         // }
 
         let array = GpuArray {
+            // build/0.1.0.5
+            metadata_compound: None,
+            // build/0.1.0.5
             module: Arc::new(self.clone()),
             binding: out_bind,
             length: len as usize,

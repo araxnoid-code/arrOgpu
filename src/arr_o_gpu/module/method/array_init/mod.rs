@@ -1,5 +1,8 @@
 mod array_from_vector;
 
+mod metadata;
+pub use metadata::{ArrayMetadata, MetadataCompound};
+
 mod array_from_arange;
 pub use array_from_arange::*;
 

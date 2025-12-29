@@ -61,7 +61,7 @@ impl ArrOgpuModule {
                     &out_bind.0,
                     &scalar_bind.0,
                 ],
-                immediate_size:0,
+                immediate_size: 0,
             });
 
         let shaders = match pow.get() {
@@ -116,6 +116,9 @@ impl ArrOgpuModule {
         wgpu.queue.submit(Some(encoder.finish()));
 
         let array = GpuArray {
+            // build/0.1.0.5
+            metadata_compound: None,
+            // build/0.1.0.5
             module: Arc::new(self.clone()),
             length: len as usize,
             pointer: (allocate.1, allocate.2),

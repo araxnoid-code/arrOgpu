@@ -78,7 +78,7 @@ impl ArrOgpuModule {
                     &out_binding.0,
                     &others_binding.0,
                 ],
-                immediate_size:0,
+                immediate_size: 0,
             }),
         );
 
@@ -138,6 +138,9 @@ impl ArrOgpuModule {
         // }
 
         let array = GpuArray {
+            // build/0.1.0.5
+            metadata_compound: None,
+            // build/0.1.0.5
             module: Arc::new(self.clone()),
             binding: out_binding,
             length: out_len as usize,

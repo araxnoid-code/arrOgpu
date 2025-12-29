@@ -8,20 +8,20 @@ var<storage, read_write> heap:array<f32>;
 var<uniform> pointer_a: vec2<u32>;
 
 // // shape
-@group(1) @binding(1)
-var<storage, read> shape_a: array<u32>;
+// @group(1) @binding(1)
+// var<storage, read> shape_a: array<u32>;
 
 // // iters
-@group(1) @binding(2)
-var<storage, read> iters_a: array<u32>;
+// @group(1) @binding(2)
+// var<storage, read> iters_a: array<u32>;
 
 // // stride
-@group(1) @binding(3)
-var<storage, read> stride_a: array<u32>;
+// @group(1) @binding(3)
+// var<storage, read> stride_a: array<u32>;
 
 // // offset
-@group(1) @binding(4)
-var<uniform> offset_a: u32;
+// @group(1) @binding(4)
+// var<uniform> offset_a: u32;
 
 // array B
 // // pointer
@@ -29,20 +29,20 @@ var<uniform> offset_a: u32;
 var<uniform> pointer_b: vec2<u32>;
 
 // // shape
-@group(2) @binding(1)
-var<storage, read> shape_b: array<u32>;
+// @group(2) @binding(1)
+// var<storage, read> shape_b: array<u32>;
 
-// // iters
-@group(2) @binding(2)
-var<storage, read> iters_b: array<u32>;
+// // // iters
+// @group(2) @binding(2)
+// var<storage, read> iters_b: array<u32>;
 
-// // stride
-@group(2) @binding(3)
-var<storage, read> stride_b: array<u32>;
+// // // stride
+// @group(2) @binding(3)
+// var<storage, read> stride_b: array<u32>;
 
-// // offset
-@group(2) @binding(4)
-var<uniform> offset_b: u32;
+// // // offset
+// @group(2) @binding(4)
+// var<uniform> offset_b: u32;
 
 // output
 // // pointer
@@ -50,20 +50,20 @@ var<uniform> offset_b: u32;
 var<uniform> pointer_o: vec2<u32>;
 
 // // shape
-@group(3) @binding(1)
-var<storage, read> shape_o: array<u32>;
+// @group(3) @binding(1)
+// var<storage, read> shape_o: array<u32>;
 
-// // iters
-@group(3) @binding(2)
-var<storage, read> iters_o: array<u32>;
+// // // iters
+// @group(3) @binding(2)
+// var<storage, read> iters_o: array<u32>;
 
-// // stride
-@group(3) @binding(3)
-var<storage, read> stride_o: array<u32>;
+// // // stride
+// @group(3) @binding(3)
+// var<storage, read> stride_o: array<u32>;
 
-// // offset
-@group(3) @binding(4)
-var<uniform> offset_o: u32;
+// // // offset
+// @group(3) @binding(4)
+// var<uniform> offset_o: u32;
 
 // reduction
 struct Counter{

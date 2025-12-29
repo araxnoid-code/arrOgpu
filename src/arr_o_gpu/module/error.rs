@@ -31,6 +31,7 @@ pub enum ArrOgpuErr {
 
     // tools
     NegativeIndexing(String),
+    Padding(String),
 
     // pool
     Poll(String, PollError),
