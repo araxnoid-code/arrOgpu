@@ -1,6 +1,4 @@
-use std::process::Output;
-
-use wgpu::{BindGroup, BindGroupLayout, naga::Type};
+use wgpu::{BindGroup, BindGroupLayout};
 
 use crate::{GpuArray, GpuArrayView};
 

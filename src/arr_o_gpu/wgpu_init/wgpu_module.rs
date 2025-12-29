@@ -1,7 +1,7 @@
 use pollster::FutureExt;
 use wgpu::{
-    Backends, Device, Features, Instance, InstanceDescriptor, Limits, Queue, RequestAdapterOptions,
-    wgt::DeviceDescriptor,
+    Backends, Device, ExperimentalFeatures, Features, Instance, InstanceDescriptor, Limits, Queue,
+    RequestAdapterOptions, wgt::DeviceDescriptor,
 };
 
 use crate::{ArrOgpuModuleInit, WgpuInit};
@@ -41,6 +41,7 @@ impl WgpuModule {
                             label: Some("create device and queue"),
                             memory_hints: manual_init.memory.conversion(),
                             required_features: Features::empty(),
+                            experimental_features: ExperimentalFeatures::disabled(),
                             required_limits: Limits {
                                 max_bind_groups: 5,
                                 ..Default::default()

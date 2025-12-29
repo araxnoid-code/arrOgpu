@@ -1,4 +1,4 @@
-use crate::{ArrOgpuErr, GpuArray, negative_indexing_converter};
+use crate::GpuArray;
 
 impl GpuArray {
     pub fn index(

@@ -34,7 +34,7 @@ impl ArrOgpuModule {
             &(PipelineLayoutDescriptor {
                 label: Some("Create Pipeline Layout For Sin"),
                 bind_group_layouts: &[&heap_bind.binding_group_layouts, &array_bind.0, &out_bind.0],
-                push_constant_ranges: &[],
+                immediate_size:0,
             }),
         );
 

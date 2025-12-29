@@ -39,11 +39,16 @@ where
 
         let start = (pointer.0 as u64) * mem;
         encoder.copy_buffer_to_buffer(heap_buffer, start, &copy_buffer, 0, size);
-        wgpu.queue.submit(Some(encoder.finish()));
+        let index = wgpu.queue.submit(Some(encoder.finish()));
 
         let copy_slice = copy_buffer.slice(..);
         copy_slice.map_async(wgpu::MapMode::Read, |e| e.unwrap());
-        wgpu.device.poll(wgpu::wgt::PollType::Wait).unwrap();
+        wgpu.device
+            .poll(wgpu::wgt::PollType::Wait {
+                submission_index: Some(index),
+                timeout: None,
+            })
+            .unwrap();
 
         let copy = copy_slice.get_mapped_range();
         let data: Vec<f32> = bytemuck::cast_slice(&copy).into();

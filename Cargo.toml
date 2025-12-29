@@ -9,9 +9,8 @@ path = "src/lib.rs"
 
 [dependencies]
 bytemuck = "1.23.2"
-ndarray = "0.17.1"
 pollster = "=0.2.4"
-wgpu = "26.0.1"
+wgpu = "28.0.0"
 
 [dependencies.uuid]
 version = "1.18.1"

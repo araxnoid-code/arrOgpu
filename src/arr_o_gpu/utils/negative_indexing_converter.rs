@@ -2,7 +2,7 @@ use crate::{ArrOgpuErr, SliceRange, SliceRangeNegativeAble};
 
 impl From<String> for ArrOgpuErr {
     fn from(value: String) -> Self {
-        Self::Negative_Indexing(value)
+        Self::NegativeIndexing(value)
     }
 }
 

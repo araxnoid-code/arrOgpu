@@ -184,7 +184,7 @@ impl ArrOgpuModule {
                     &out_bind.0,
                     &reduction_bind_group_layout,
                 ],
-                push_constant_ranges: &[],
+                immediate_size: 0,
             }),
         );
 
@@ -259,9 +259,12 @@ impl ArrOgpuModule {
             }
         }
 
-        wgpu.queue.submit(Some(encoder.finish()));
+        let index = wgpu.queue.submit(Some(encoder.finish()));
 
-        if let Err(err_poll) = wgpu.device.poll(wgpu::wgt::PollType::Wait) {
+        if let Err(err_poll) = wgpu.device.poll(wgpu::wgt::PollType::Wait {
+            submission_index: Some(index),
+            timeout: None,
+        }) {
             let error = "Add Error, Error While Poll".to_string();
             return Err(ArrOgpuErr::Poll(error, err_poll));
         }

@@ -163,7 +163,7 @@ impl ArrOgpuModule {
                     &out_bind.0,
                     &reduction_bind_layout,
                 ],
-                push_constant_ranges: &[],
+                immediate_size: 0,
             });
 
         let shader = wgpu
@@ -243,8 +243,13 @@ impl ArrOgpuModule {
             // break;
         }
 
-        wgpu.queue.submit(Some(encoder.finish()));
-        wgpu.device.poll(wgpu::wgt::PollType::Wait).unwrap();
+        let index = wgpu.queue.submit(Some(encoder.finish()));
+        wgpu.device
+            .poll(wgpu::wgt::PollType::Wait {
+                submission_index: Some(index),
+                timeout: None,
+            })
+            .unwrap();
 
         let array = GpuArray {
             module: Arc::new(self.clone()),

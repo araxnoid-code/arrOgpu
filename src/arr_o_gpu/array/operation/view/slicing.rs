@@ -1,5 +1,5 @@
 use crate::{
-    ArrOgpuErr, GpuArray, SliceRange, SliceRangeNegativeAble, slice_negative_indexing_converter,
+    ArrOgpuErr, GpuArray, SliceRangeNegativeAble, slice_negative_indexing_converter,
 };
 
 impl GpuArray {

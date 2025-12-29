@@ -55,7 +55,7 @@ impl ArrOgpuModule {
                     // output
                     &out_binding.0,
                 ],
-                push_constant_ranges: &[],
+                immediate_size: 0,
             }),
         );
 
@@ -103,8 +103,13 @@ impl ArrOgpuModule {
             // dispact
             bcp.dispatch_workgroups(1, 1, 1);
         }
-        wgpu.queue.submit(Some(encoder.finish()));
-        wgpu.device.poll(wgpu::wgt::PollType::Wait).unwrap();
+        let index = wgpu.queue.submit(Some(encoder.finish()));
+        wgpu.device
+            .poll(wgpu::wgt::PollType::Wait {
+                submission_index: Some(index),
+                timeout: None,
+            })
+            .unwrap();
 
         let array = GpuArray {
             module: Arc::new(self.clone()),

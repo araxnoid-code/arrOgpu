@@ -58,7 +58,7 @@ impl ArrOgpuModule {
                     &out_bind.0,
                     &scalar_bind.0,
                 ],
-                push_constant_ranges: &[],
+                immediate_size:0,
             });
 
         let shaders = match pow.get() {

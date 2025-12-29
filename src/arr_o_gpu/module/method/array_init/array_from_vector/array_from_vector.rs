@@ -106,7 +106,7 @@ impl ArrOgpuModule {
                     &self.heap_binding.binding_group_layouts, // heap
                     &binding_layout,
                 ],
-                push_constant_ranges: &[],
+                immediate_size: 0,
             }),
         );
 
@@ -149,9 +149,14 @@ impl ArrOgpuModule {
             bcp.dispatch_workgroups(x, 1, 1);
         }
 
-        wgpu.queue.submit(Some(encoder.finish()));
+        let index = wgpu.queue.submit(Some(encoder.finish()));
 
-        wgpu.device.poll(PollType::Wait).unwrap();
+        wgpu.device
+            .poll(PollType::Wait {
+                submission_index: Some(index),
+                timeout: None,
+            })
+            .unwrap();
 
         let pointer = (pointer[0], pointer[1]);
 

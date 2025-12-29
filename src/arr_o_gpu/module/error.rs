@@ -30,7 +30,7 @@ pub enum ArrOgpuErr {
     Permute(String),
 
     // tools
-    Negative_Indexing(String),
+    NegativeIndexing(String),
 
     // pool
     Poll(String, PollError),

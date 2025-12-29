@@ -84,7 +84,7 @@ impl ArrOgpuModule {
                     // output
                     &out_binding.0,
                 ],
-                push_constant_ranges: &[],
+                immediate_size:0,
             }),
         );
 

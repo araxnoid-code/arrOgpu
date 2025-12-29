@@ -48,7 +48,7 @@ where
                     // output
                     &output_bind_group.0,
                 ],
-                push_constant_ranges: &[],
+                immediate_size: 0,
             }),
         );
 
@@ -95,8 +95,13 @@ where
             bcp.dispatch_workgroups(x, 1, 1);
         }
 
-        wgpu.queue.submit(Some(encoder.finish()));
-        wgpu.device.poll(PollType::Wait).unwrap();
+        let index = wgpu.queue.submit(Some(encoder.finish()));
+        wgpu.device
+            .poll(PollType::Wait {
+                submission_index: Some(index),
+                timeout: None,
+            })
+            .unwrap();
 
         let stride = get_stride_from_shape(&shape);
         let binding = self.module().create_metadata_binding(

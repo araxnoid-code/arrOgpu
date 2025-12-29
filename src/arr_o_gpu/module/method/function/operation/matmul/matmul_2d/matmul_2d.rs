@@ -49,8 +49,13 @@ impl ArrOgpuModule {
         // // array b
         let array_b_binding = array_b.binding();
         // // out
-        let out_binding =
-            self.create_metadata_binding(&[allocate.1, allocate.2], &out_shape, &stride, &stride, &0);
+        let out_binding = self.create_metadata_binding(
+            &[allocate.1, allocate.2],
+            &out_shape,
+            &stride,
+            &stride,
+            &0,
+        );
 
         // pipeline
         // // shader
@@ -73,7 +78,7 @@ impl ArrOgpuModule {
                     // output
                     &out_binding.0,
                 ],
-                push_constant_ranges: &[],
+                immediate_size:0,
             }),
         );
 
