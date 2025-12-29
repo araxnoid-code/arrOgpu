@@ -1,20 +1,12 @@
-use std::sync::{ Arc, RwLock };
+use std::sync::{Arc, RwLock};
 
 use wgpu::{
-    BindGroupDescriptor,
-    BindGroupEntry,
-    BindGroupLayoutEntry,
-    BufferUsages,
-    ShaderStages,
+    BindGroupDescriptor, BindGroupEntry, BindGroupLayoutEntry, BufferUsages, ShaderStages,
     wgt::BufferDescriptor,
 };
 
 use crate::{
-    Allocator,
-    ArrOgpuErr,
-    ArrOgpuModule,
-    BindGroupCompound,
-    WgpuModule,
+    Allocator, ArrOgpuErr, ArrOgpuModule, BindGroupCompound, WgpuModule,
     arr_o_gpu::module::method::initialization::module_init::ArrOgpuModuleInit,
 };
 
@@ -23,15 +15,27 @@ impl ArrOgpuModule {
         let (maksimum, size) = arr_o_gpu_module_init.heap_size.get_size_of_32()?;
         let wgpu = WgpuModule::init(arr_o_gpu_module_init);
 
+        // storage
+        // // heap
         let heap_buffer = wgpu.device.create_buffer(
             &(BufferDescriptor {
                 label: Some("Create Heap For Init"),
                 mapped_at_creation: false,
                 usage: BufferUsages::STORAGE | BufferUsages::COPY_SRC,
                 size,
-            })
+            }),
         );
 
+        // // execute_array_cache
+        let size_cache = 768;
+        let exececute_array_cache_buffer = wgpu.device.create_buffer(&BufferDescriptor {
+            label: Some("Create execute_array_cache For Init"),
+            size: size_cache,
+            usage: BufferUsages::COPY_DST | BufferUsages::STORAGE,
+            mapped_at_creation: false,
+        });
+
+        // bind group
         let bind_group_layout = wgpu.device.create_bind_group_layout(
             &(wgpu::BindGroupLayoutDescriptor {
                 label: Some("Crate Heap Bind Group Layout For Init"),
@@ -46,8 +50,18 @@ impl ArrOgpuModule {
                         },
                         visibility: ShaderStages::COMPUTE,
                     },
+                    BindGroupLayoutEntry {
+                        binding: 1,
+                        count: None,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                    },
                 ],
-            })
+            }),
         );
 
         let bind_group = wgpu.device.create_bind_group(
@@ -59,12 +73,15 @@ impl ArrOgpuModule {
                         binding: 0,
                         resource: heap_buffer.as_entire_binding(),
                     },
+                    BindGroupEntry {
+                        binding: 1,
+                        resource: exececute_array_cache_buffer.as_entire_binding(),
+                    },
                 ],
-            })
+            }),
         );
 
-        let compound = BindGroupCompound {
-            group: 0,
+        let buffer_compound = BindGroupCompound {
             binding_group_layouts: bind_group_layout,
             binding_groups: bind_group,
         };
@@ -73,8 +90,15 @@ impl ArrOgpuModule {
             allocator: Arc::new(RwLock::new(Allocator::init(maksimum))),
             maximum: Arc::new(maksimum),
             wgpu_init: Arc::new(RwLock::new(wgpu)),
-            heap_binding: Arc::new(compound),
+
+            // Module Bind
+            module_bind_group: Arc::new(buffer_compound),
+
+            // Module Buffer
+            // // Heap
             heap_buffer: Arc::new(heap_buffer),
+            // // execute_array_cache
+            execute_array_cache: Arc::new(exececute_array_cache_buffer),
         })
     }
 }

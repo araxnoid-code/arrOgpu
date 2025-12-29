@@ -8,7 +8,7 @@ use crate::{
 };
 
 impl ArrOgpuModule {
-    pub fn create_metadat_compound(
+    pub fn create_metadata_compound(
         &self,
         pointer: [u32; 2],
         len: u32,
@@ -26,6 +26,7 @@ impl ArrOgpuModule {
             shape,
             stride,
             origin_stride,
+            padding: [0; 29],
         };
 
         let wgpu = self.wgpu_init.read().unwrap();
@@ -35,7 +36,7 @@ impl ArrOgpuModule {
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Create Array Metadata, build/0.1.0.5"),
                 contents: bytemuck::bytes_of(&metadata),
-                usage: BufferUsages::UNIFORM,
+                usage: BufferUsages::UNIFORM | BufferUsages::COPY_SRC,
             });
 
         let bind_group_layout =

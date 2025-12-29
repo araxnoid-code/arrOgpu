@@ -5,7 +5,9 @@ use wgpu::{
     BindGroupEntry, BindGroupLayoutEntry, BindingResource, BindingType, BufferUsages, ShaderStages,
 };
 
-use crate::{ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, CheckArrayType, GpuArray};
+use crate::{
+    ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, CheckArrayType, ContiguousArray, GpuArray,
+};
 
 impl ArrOgpuModule {
     pub fn dot_product_optimize<'a, A, B>(
@@ -14,8 +16,8 @@ impl ArrOgpuModule {
         array_b: &'a B,
     ) -> Result<GpuArray, ArrOgpuErr>
     where
-        A: ArrayCompute + CheckArrayType<'a>,
-        B: ArrayCompute + CheckArrayType<'a>,
+        A: ArrayCompute + CheckArrayType<'a> + ContiguousArray,
+        B: ArrayCompute + CheckArrayType<'a> + ContiguousArray,
     {
         let shape_a = array_a.shape();
         let shape_b = array_b.shape();
@@ -201,6 +203,54 @@ impl ArrOgpuModule {
                 .create_command_encoder(&wgpu::wgt::CommandEncoderDescriptor {
                     label: Some("Create Command Encoder For Dot Porduct"),
                 });
+
+        // build/0.1.0.5
+        // metadata compound
+        // execute_array_cache buffer
+        let execute_array_cache_buffer = &self.execute_array_cache;
+
+        // // array a
+        let metadata_a_buffer = array_a.metadata_compound().ok_or(ArrOgpuErr::DotProduct(
+            "Dot Product Error, Metadata Compound Is NONE".to_string(),
+        ))?;
+        encoder.copy_buffer_to_buffer(
+            &metadata_a_buffer.buffer,
+            0,
+            &execute_array_cache_buffer,
+            0,
+            256,
+        );
+
+        // // array b
+        let metadata_b_buffer = array_b.metadata_compound().ok_or(ArrOgpuErr::DotProduct(
+            "Dot Product Error, Metadata Compound Is NONE".to_string(),
+        ))?;
+        encoder.copy_buffer_to_buffer(
+            &metadata_b_buffer.buffer,
+            0,
+            &execute_array_cache_buffer,
+            256,
+            256,
+        );
+
+        // // output
+        let metadata_out = self.create_metadata_compound(
+            [allocate.1, allocate.2],
+            1,
+            1,
+            0,
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        );
+        encoder.copy_buffer_to_buffer(
+            &metadata_out.buffer,
+            0,
+            &execute_array_cache_buffer,
+            512,
+            256,
+        );
+        // build/0.1.0.5
 
         let mut x = out_len;
         let offset_metadata = 256;

@@ -29,7 +29,7 @@ where
         let pointer_out = [allocate.1, allocate.2];
 
         // bind group
-        let heap_binding = &self.array.module().heap_binding;
+        let heap_binding = &self.array.module().module_bind_group;
         let array_bind_group = self.binding();
         let output_bind_group =
             self.module()

@@ -11,6 +11,7 @@ pub struct ArrayMetadata {
     pub(crate) shape: [u32; 10],
     pub(crate) stride: [u32; 10],
     pub(crate) origin_stride: [u32; 10],
+    pub(crate) padding: [u32; 29],
 }
 
 pub struct MetadataCompound {

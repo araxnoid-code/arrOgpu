@@ -111,7 +111,7 @@ impl ArrOgpuModule {
             &(PipelineLayoutDescriptor {
                 label: Some("create pipeline layout for array_init"),
                 bind_group_layouts: &[
-                    &self.heap_binding.binding_group_layouts, // heap
+                    &self.module_bind_group.binding_group_layouts, // heap
                     &binding_layout,
                 ],
                 immediate_size: 0,
@@ -150,7 +150,7 @@ impl ArrOgpuModule {
             bcp.set_pipeline(&pipeline);
 
             // heap
-            bcp.set_bind_group(0, &self.heap_binding.binding_groups, &[]);
+            bcp.set_bind_group(0, &self.module_bind_group.binding_groups, &[]);
 
             bcp.set_bind_group(1, &binding, &[]);
             let x = ((len as f32) / 256.0).ceil() as u32;
@@ -183,7 +183,7 @@ impl ArrOgpuModule {
             )
         })?;
         let origin_stride = stride_padding.clone();
-        let metadata_compound = self.create_metadat_compound(
+        let metadata_compound = self.create_metadata_compound(
             [pointer.0, pointer.1],
             pointer.1 - pointer.0,
             shape.len() as u32,

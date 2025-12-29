@@ -33,7 +33,7 @@ impl ArrOgpuModule {
 
         // binding
         // // heap
-        let heap_bind = &self.heap_binding;
+        let heap_bind = &self.module_bind_group;
 
         // // array
         let array_bind = array.binding();

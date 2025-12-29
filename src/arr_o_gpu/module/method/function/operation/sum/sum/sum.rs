@@ -30,7 +30,7 @@ impl ArrOgpuModule {
         let allocate = self.allocator.write().unwrap().pointer_input(len);
 
         // bind group
-        let heap_bind = &*self.heap_binding;
+        let heap_bind = &*self.module_bind_group;
         let array_bind = array.binding();
         let out_bind =
             self.create_metadata_binding(&[allocate.1, allocate.2], &shape, &stride, &stride, &0);
