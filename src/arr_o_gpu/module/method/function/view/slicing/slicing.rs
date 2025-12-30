@@ -1,7 +1,7 @@
 use crate::{
     ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArrayView,
     arr_o_gpu::module::method::function::view::slicing::slice_range::SliceRange,
-    get_stride_from_shape,
+    get_stride_from_shape, vector_padding,
 };
 
 impl ArrOgpuModule {
@@ -54,6 +54,32 @@ impl ArrOgpuModule {
             &offset,
         );
 
+        let shape_padding: [u32; 10] = vector_padding(output_shape.clone(), 0, 10)
+            .map_err(|err| ArrOgpuErr::Slicing(err))?
+            .try_into()
+            .unwrap();
+
+        let origin_stride_padding: [u32; 10] =
+            vector_padding(get_stride_from_shape(&output_shape), 0, 10)
+                .map_err(|err| ArrOgpuErr::Slicing(err))?
+                .try_into()
+                .unwrap();
+
+        let stride_padding: [u32; 10] = vector_padding(array.stride().clone(), 0, 10)
+            .map_err(|err| ArrOgpuErr::Slicing(err))?
+            .try_into()
+            .unwrap();
+
+        let metadata = self.create_metadata_compound(
+            array.pointer_to_arr(),
+            array.len(),
+            array.dim() as u32,
+            offset,
+            shape_padding,
+            stride_padding,
+            origin_stride_padding,
+        );
+
         let array_view = GpuArrayView {
             array: array,
             offset,
@@ -61,6 +87,7 @@ impl ArrOgpuModule {
             shape: output_shape,
             stride: array.stride().clone(),
             binding: Some(binding),
+            metadata_compound: Some(metadata),
         };
 
         Ok(array_view)

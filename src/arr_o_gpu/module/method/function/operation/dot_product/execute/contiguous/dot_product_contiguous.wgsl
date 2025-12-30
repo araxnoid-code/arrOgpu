@@ -27,10 +27,6 @@ var<storage, read> reduction_counter: Counter;
 @group(1) @binding(2)
 var<storage, read> len_reduction: Counter;
 
-// dummy
-@group(2) @binding(0)
-var<uniform> ntahlah: vec2<u32>;
-
 // cache
 var<workgroup> cache: array<f32, 256>;
 

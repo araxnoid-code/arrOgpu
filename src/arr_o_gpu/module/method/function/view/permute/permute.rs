@@ -1,4 +1,6 @@
-use crate::{ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArrayView, get_stride_from_shape};
+use crate::{
+    ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArrayView, get_stride_from_shape, vector_padding,
+};
 
 impl ArrOgpuModule {
     pub fn permute<'a, A>(
@@ -61,6 +63,32 @@ impl ArrOgpuModule {
             &array.offset(),
         );
 
+        let shape_padding: [u32; 10] = vector_padding(out_shape.0.clone(), 0, 10)
+            .map_err(|err| ArrOgpuErr::Permute(err))?
+            .try_into()
+            .unwrap();
+
+        let origin_stride_padding: [u32; 10] =
+            vector_padding(get_stride_from_shape(&out_shape.0), 0, 10)
+                .map_err(|err| ArrOgpuErr::Permute(err))?
+                .try_into()
+                .unwrap();
+
+        let stride_padding: [u32; 10] = vector_padding(out_shape.1.clone(), 0, 10)
+            .map_err(|err| ArrOgpuErr::Permute(err))?
+            .try_into()
+            .unwrap();
+
+        let metadata = self.create_metadata_compound(
+            array.pointer_to_arr(),
+            array.len(),
+            array.dim() as u32,
+            array.offset(),
+            shape_padding,
+            stride_padding,
+            origin_stride_padding,
+        );
+
         let array_view = GpuArrayView {
             array: array,
             offset: array.offset(),
@@ -68,6 +96,7 @@ impl ArrOgpuModule {
             shape: out_shape.0,
             stride: out_shape.1,
             binding: Some(binding),
+            metadata_compound: Some(metadata),
         };
 
         Ok(array_view)

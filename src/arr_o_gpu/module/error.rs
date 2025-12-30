@@ -26,7 +26,7 @@ pub enum ArrOgpuErr {
     Indexing(String),
     Broadcast(String),
     Slicing(String),
-    Reshape(String),
+    ToShape(String),
     Permute(String),
 
     // tools

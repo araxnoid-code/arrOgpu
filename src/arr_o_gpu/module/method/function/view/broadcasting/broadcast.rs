@@ -1,4 +1,6 @@
-use crate::{ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArrayView, get_stride_from_shape};
+use crate::{
+    ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArrayView, get_stride_from_shape, vector_padding,
+};
 
 impl ArrOgpuModule {
     pub fn broadcast<'a, A>(
@@ -59,6 +61,34 @@ impl ArrOgpuModule {
             &array.offset(),
         );
 
+        // let padding
+        let len = out_shape.iter().product::<u32>();
+        let shape_padding: [u32; 10] = vector_padding(out_shape.clone(), 0, 10)
+            .map_err(|err| ArrOgpuErr::Broadcast(err))?
+            .try_into()
+            .unwrap();
+
+        let origin_stride_padding: [u32; 10] =
+            vector_padding(get_stride_from_shape(&out_shape), 0, 10)
+                .map_err(|err| ArrOgpuErr::Broadcast(err))?
+                .try_into()
+                .unwrap();
+
+        let stride_padding: [u32; 10] = vector_padding(out_stride.clone(), 0, 10)
+            .map_err(|err| ArrOgpuErr::Broadcast(err))?
+            .try_into()
+            .unwrap();
+
+        let metadata = self.create_metadata_compound(
+            array.pointer_to_arr(),
+            len,
+            out_shape.len() as u32,
+            array.offset(),
+            shape_padding,
+            stride_padding,
+            origin_stride_padding,
+        );
+
         let array_view = GpuArrayView {
             array,
             offset: array.offset(),
@@ -66,6 +96,7 @@ impl ArrOgpuModule {
             shape: out_shape,
             stride: out_stride,
             binding: Some(binding),
+            metadata_compound: Some(metadata),
         };
 
         Ok(array_view)

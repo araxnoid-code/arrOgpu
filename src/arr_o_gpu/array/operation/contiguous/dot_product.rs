@@ -1,9 +1,9 @@
-use crate::{ArrayCompute, GpuArray};
+use crate::{ArrayCompute, CheckArrayType, GpuArray};
 
 impl GpuArray {
-    pub fn dot<A>(&self, arr: &A) -> Result<GpuArray, crate::ArrOgpuErr>
+    pub fn dot<'a, A>(&'a self, arr: &'a A) -> Result<GpuArray, crate::ArrOgpuErr>
     where
-        A: ArrayCompute,
+        A: ArrayCompute + CheckArrayType<'a>,
     {
         self.module.dot_product(self, arr)
     }

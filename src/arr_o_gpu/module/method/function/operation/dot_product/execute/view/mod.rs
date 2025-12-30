@@ -5,31 +5,23 @@ use wgpu::{
     BindGroupEntry, BindGroupLayoutEntry, BindingResource, BindingType, BufferUsages, ShaderStages,
 };
 
-use crate::{
-    ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, CheckArrayType, ContiguousArray, GpuArray,
-};
+use crate::{ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArray};
 
 impl ArrOgpuModule {
-    pub fn dot_product_optimize<'a, A, B>(
+    pub(crate) fn dot_product_view<'a, A, B>(
         &self,
         array_a: &'a A,
         array_b: &'a B,
     ) -> Result<GpuArray, ArrOgpuErr>
     where
-        A: ArrayCompute + CheckArrayType<'a> + ContiguousArray,
-        B: ArrayCompute + CheckArrayType<'a> + ContiguousArray,
+        A: ArrayCompute + ?Sized,
+        B: ArrayCompute + ?Sized,
     {
         let shape_a = array_a.shape();
         let shape_b = array_b.shape();
 
         // error hendling
-        if let ArrayType::View(_) = array_a.check() {
-            let err = format!("Dot Product Error, dot_product_optimize Not Implemented View Yet");
-            return Err(ArrOgpuErr::DotProduct(err));
-        } else if let ArrayType::View(_) = array_b.check() {
-            let err = format!("Dot Product Error, dot_product_optimize Not Implemented View Yet");
-            return Err(ArrOgpuErr::DotProduct(err));
-        } else if shape_a.len() != 1 && shape_b.len() != 1 {
+        if shape_a.len() != 1 && shape_b.len() != 1 {
             let err = format!(
                 "Dot Product Error, Array A with shape {:?} and Array B With Shape {:?} Can't Be Operated",
                 shape_a, shape_b
@@ -54,8 +46,6 @@ impl ArrOgpuModule {
 
         // bind
         let heap_bind = self.heap_binding();
-        let out_bind =
-            self.create_metadata_binding(&[allocate.1, allocate.2], &shape, &stride, &stride, &0);
 
         // reduction
         let reduction_counter = create_reduction_counter();
@@ -151,17 +141,11 @@ impl ArrOgpuModule {
             ],
         });
 
-        let array_a_bind = array_a.binding();
-
         let pipeline_layout = wgpu
             .device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Create Pipeline Layout For Dot Product"),
-                bind_group_layouts: &[
-                    &heap_bind.binding_group_layouts,
-                    &reduction_bind_layout,
-                    &array_a_bind.ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?.0,
-                ],
+                bind_group_layouts: &[&heap_bind.binding_group_layouts, &reduction_bind_layout],
                 immediate_size: 0,
             });
 
@@ -169,7 +153,7 @@ impl ArrOgpuModule {
             .device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("Create Shaders Module For Dot Product"),
-                source: wgpu::ShaderSource::Wgsl(include_str!("./dot_product_op.wgsl").into()),
+                source: wgpu::ShaderSource::Wgsl(include_str!("./dot_product_view.wgsl").into()),
             });
 
         let pipeline = wgpu
@@ -209,8 +193,22 @@ impl ArrOgpuModule {
                     label: Some("Create Command Encoder For Dot Porduct"),
                 });
 
-        // build/0.1.0.5
         // metadata compound
+        // //  execute_array_cache
+        let execute_array_cache = &self.execute_array_cache;
+
+        // array_a
+        let metadata_a_buffer = array_a.metadata_compound().ok_or(ArrOgpuErr::DotProduct(
+            "Dot Product Error, Metadata Not Yet Defined For Array A".to_string(),
+        ))?;
+        encoder.copy_buffer_to_buffer(&metadata_a_buffer.buffer, 0, &execute_array_cache, 0, 256);
+
+        // array_b
+        let metadata_b_buffer = array_b.metadata_compound().ok_or(ArrOgpuErr::DotProduct(
+            "Dot Product Error, Metadata Not Yet Defined For Array B".to_string(),
+        ))?;
+        encoder.copy_buffer_to_buffer(&metadata_b_buffer.buffer, 0, &execute_array_cache, 256, 256);
+
         // // output
         let metadata_out = self.create_metadata_compound(
             [allocate.1, allocate.2],
@@ -221,7 +219,6 @@ impl ArrOgpuModule {
             [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         );
-        // build/0.1.0.5
 
         let mut x = out_len;
         let offset_metadata = 256;
@@ -240,12 +237,6 @@ impl ArrOgpuModule {
                 1,
                 Some(&reduction_bind),
                 &[counter * offset_metadata, len_counter * offset_metadata],
-            );
-
-            bcp.set_bind_group(
-                2,
-                &array_a_bind.ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?.1,
-                &[],
             );
 
             bcp.dispatch_workgroups(x, 1, 1);
@@ -280,7 +271,7 @@ impl ArrOgpuModule {
             // build/0.1.0.5
             module: Arc::new(self.clone()),
             length: len as usize,
-            binding: Some(out_bind),
+            binding: None,
             pointer: (allocate.1, allocate.2),
             shape,
             stride,

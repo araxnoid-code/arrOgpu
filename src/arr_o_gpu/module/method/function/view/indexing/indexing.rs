@@ -1,6 +1,6 @@
 use crate::{
     ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArrayView, get_stride_from_shape,
-    negative_indexing_converter,
+    negative_indexing_converter, vector_padding,
 };
 
 impl ArrOgpuModule {
@@ -65,13 +65,40 @@ impl ArrOgpuModule {
             &start,
         );
 
+        let shape_padding: [u32; 10] = vector_padding(new_shape.clone(), 0, 10)
+            .map_err(|err| ArrOgpuErr::Indexing(err))?
+            .try_into()
+            .unwrap();
+
+        let origin_stride_padding: [u32; 10] =
+            vector_padding(get_stride_from_shape(&new_shape), 0, 10)
+                .map_err(|err| ArrOgpuErr::Indexing(err))?
+                .try_into()
+                .unwrap();
+
+        let stride_padding: [u32; 10] = vector_padding(stride.clone(), 0, 10)
+            .map_err(|err| ArrOgpuErr::Indexing(err))?
+            .try_into()
+            .unwrap();
+        let metadata = self.create_metadata_compound(
+            array.pointer_to_arr(),
+            array.len(),
+            array.dim() as u32,
+            start,
+            shape_padding,
+            stride_padding,
+            origin_stride_padding,
+        );
+
         let arr_view = GpuArrayView {
             array,
             pointer: array.pointer(),
             shape: new_shape,
             stride,
             offset: start,
-            binding:Some(binding),
+            binding: Some(binding),
+
+            metadata_compound: Some(metadata),
         };
 
         Ok(arr_view)
