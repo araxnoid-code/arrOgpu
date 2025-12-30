@@ -4,7 +4,7 @@ use wgpu::{
     wgt::{CommandEncoderDescriptor, PollType},
 };
 
-use crate::{ArrayCompute, GpuArray, GpuArrayView, get_stride_from_shape};
+use crate::{ArrOgpuErr, ArrayCompute, GpuArray, GpuArrayView, get_stride_from_shape};
 
 impl<'a, A> GpuArrayView<'a, A>
 where
@@ -44,7 +44,11 @@ where
                     &heap_binding.binding_group_layouts,
                     // array
                     // &bind_group_layout,
-                    &array_bind_group.0,
+                    &array_bind_group
+                        .ok_or(ArrOgpuErr::refactor_err_0_1_0_5())
+                        .unwrap()
+                        .0,
+                    //
                     // output
                     &output_bind_group.0,
                 ],
@@ -87,7 +91,16 @@ where
             // heap
             bcp.set_bind_group(0, Some(&heap_binding.binding_groups), &[]);
             // array
-            bcp.set_bind_group(1, Some(&array_bind_group.1), &[]);
+            bcp.set_bind_group(
+                1,
+                Some(
+                    &array_bind_group
+                        .ok_or(ArrOgpuErr::refactor_err_0_1_0_5())
+                        .unwrap()
+                        .1,
+                ),
+                &[],
+            );
             // output
             bcp.set_bind_group(2, Some(&output_bind_group.1), &[]);
 
@@ -123,7 +136,7 @@ where
             space_type: allocate.0,
             stride,
             shape: self.shape,
-            binding,
+            binding: Some(binding),
         };
 
         array

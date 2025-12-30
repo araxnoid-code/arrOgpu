@@ -1,5 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use wgpu::{BindGroup, BindGroupLayout, Buffer};
+use wgpu::Buffer;
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable, Debug)]
@@ -16,6 +16,4 @@ pub struct ArrayMetadata {
 
 pub struct MetadataCompound {
     pub(crate) buffer: Buffer,
-    pub(crate) bind_group_layout: BindGroupLayout,
-    pub(crate) bind_group: BindGroup,
 }

@@ -49,9 +49,9 @@ impl ArrOgpuModule {
                     // heap
                     &heap_binding.binding_group_layouts,
                     // array a
-                    &array_a_binding.0,
+                    &array_a_binding.ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?.0,
                     // array b
-                    &array_b_binding.0,
+                    &array_b_binding.ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?.0,
                     // output
                     &out_binding.0,
                 ],
@@ -96,8 +96,16 @@ impl ArrOgpuModule {
 
             // group
             bcp.set_bind_group(0, Some(&heap_binding.binding_groups), &[]);
-            bcp.set_bind_group(1, Some(&array_a_binding.1), &[]);
-            bcp.set_bind_group(2, Some(&array_b_binding.1), &[]);
+            bcp.set_bind_group(
+                1,
+                Some(&array_a_binding.ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?.1),
+                &[],
+            );
+            bcp.set_bind_group(
+                2,
+                Some(&array_b_binding.ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?.1),
+                &[],
+            );
             bcp.set_bind_group(3, Some(&out_binding.1), &[]);
 
             // dispact
@@ -121,7 +129,7 @@ impl ArrOgpuModule {
             length: len as usize,
             space_type: allocate.0,
             stride,
-            binding: out_binding,
+            binding: Some(out_binding),
         };
 
         Ok(array)

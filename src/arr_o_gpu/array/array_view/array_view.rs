@@ -14,5 +14,5 @@ where
     pub(crate) offset: u32,
 
     // binding
-    pub(crate) binding: (BindGroupLayout, BindGroup),
+    pub(crate) binding: Option<(BindGroupLayout, BindGroup)>,
 }

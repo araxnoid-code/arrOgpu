@@ -21,7 +21,7 @@ pub trait ArrayCompute {
 
     fn is_contiguous(&self) -> bool;
 
-    fn binding(&self) -> &(BindGroupLayout, BindGroup);
+    fn binding(&self) -> Option<&(BindGroupLayout, BindGroup)>;
 
     fn metadata_compound(&self) -> Option<&MetadataCompound>;
 }
@@ -63,8 +63,8 @@ impl ArrayCompute for GpuArray {
         true
     }
 
-    fn binding(&self) -> &(BindGroupLayout, BindGroup) {
-        &self.binding
+    fn binding(&self) -> Option<&(BindGroupLayout, BindGroup)> {
+        self.binding.as_ref()
     }
 
     fn metadata_compound(&self) -> Option<&MetadataCompound> {
@@ -112,8 +112,8 @@ where
         self.pointer.1 - self.pointer.0 == self.shape.iter().product::<u32>()
     }
 
-    fn binding(&self) -> &(BindGroupLayout, BindGroup) {
-        &self.binding
+    fn binding(&self) -> Option<&(BindGroupLayout, BindGroup)> {
+        self.binding.as_ref()
     }
 
     fn metadata_compound(&self) -> Option<&MetadataCompound> {

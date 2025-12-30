@@ -1,41 +1,13 @@
-// init
-// // metadata
-struct ArrayMetaData{
-	pointer: vec2<u32>,
-	len: u32,
-	offset: u32,
-	dim: u32,
-	shape: array<u32, 10>,
-	stride: array<u32, 10>,
-	origin_stride: array<u32, 10>,
-	padding: array<u32, 29>,
-}
+// override
+override LEN: f32;
+override START_POINTER_A: u32;
+override START_POINTER_B: u32;
+override START_POINTER_OUT: u32;
 
 // module
 // // heap
 @group(0) @binding(0)
 var<storage, read_write> heap:array<f32>;
-
-// // cache
-// // // execute_array_cache
-@group(0) @binding(1)
-var<storage, read> execute_array_cache: array<ArrayMetaData>;
-
-
-// array A
-// // pointer
-@group(1) @binding(0)
-var<uniform> pointer_a: vec2<u32>;
-
-// array B
-// // pointer
-@group(2) @binding(0)
-var<uniform> pointer_b: vec2<u32>;
-
-// output
-// // pointer
-@group(3) @binding(0)
-var<uniform> pointer_o: vec2<u32>;
 
 // reduction
 struct Counter{
@@ -44,16 +16,20 @@ struct Counter{
 }
 
 // // reduction_cache
-@group(4) @binding(0)
+@group(1) @binding(0)
 var<storage, read_write> reduction: array<f32>;
 
 // // counter
-@group(4) @binding(1)
+@group(1) @binding(1)
 var<storage, read> reduction_counter: Counter;
 
 // // len
-@group(4) @binding(2)
+@group(1) @binding(2)
 var<storage, read> len_reduction: Counter;
+
+// dummy
+@group(2) @binding(0)
+var<uniform> ntahlah: vec2<u32>;
 
 // cache
 var<workgroup> cache: array<f32, 256>;
@@ -65,7 +41,7 @@ fn main(
 ){
     let total_thread = 256u;
     let total_thread_double = total_thread * 2u;
-    let data_len: u32 = u32(mix(f32(pointer_a.y - pointer_a.x), f32(len_reduction.value), f32(reduction_counter.value)));
+    let data_len: u32 = u32(mix(LEN, f32(len_reduction.value), f32(reduction_counter.value)));
 
     var cache_len: u32;
     if data_len < total_thread_double * (work_id.x + 1) {
@@ -85,11 +61,11 @@ fn main(
 
         if reduction_counter.value == 0{
             if (local_id.x * 2) + 1 < cache_len{
-                let res_a = heap[pointer_a.x + start] * heap[pointer_b.x + start];
-                let res_b = heap[pointer_a.x + end] * heap[pointer_b.x + end];
+                let res_a = heap[START_POINTER_A + start] * heap[START_POINTER_B + start];
+                let res_b = heap[START_POINTER_A + end] * heap[START_POINTER_B + end];
                 sum = res_a + res_b;
             } else {
-                let res = heap[pointer_a.x + start] * heap[pointer_b.x + start];
+                let res = heap[START_POINTER_A + start] * heap[START_POINTER_B + start];
                 sum = res;
             }
         } else {
@@ -116,7 +92,7 @@ fn main(
 
     let out_len = (data_len + total_thread_double - 1) / total_thread_double;
     if out_len == 1 && local_id.x == 0{
-        heap[pointer_o.x] = cache[0];
+        heap[START_POINTER_OUT] = cache[0];
     } else if local_id.x == 0 {
         reduction[work_id.x] = cache[0];
     }

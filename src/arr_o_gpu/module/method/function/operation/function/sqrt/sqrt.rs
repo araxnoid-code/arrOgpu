@@ -28,7 +28,11 @@ impl ArrOgpuModule {
             .device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Create Pipeline Layout For Sqrt"),
-                bind_group_layouts: &[&heap_bind.binding_group_layouts, &array_bind.0, &out_bind.0],
+                bind_group_layouts: &[
+                    &heap_bind.binding_group_layouts,
+                    &array_bind.ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?.0,
+                    &out_bind.0,
+                ],
                 immediate_size: 0,
             });
 
@@ -57,7 +61,11 @@ impl ArrOgpuModule {
 
             bcp.set_pipeline(&pipeline);
             bcp.set_bind_group(0, Some(&heap_bind.binding_groups), &[]);
-            bcp.set_bind_group(1, Some(&array_bind.1), &[]);
+            bcp.set_bind_group(
+                1,
+                Some(&array_bind.ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?.1),
+                &[],
+            );
             bcp.set_bind_group(2, Some(&out_bind.1), &[]);
 
             let x = (len + 255) / 256;
@@ -71,7 +79,7 @@ impl ArrOgpuModule {
             metadata_compound: None,
             // build/0.1.0.5
             module: Arc::new(self.clone()),
-            binding: out_bind,
+            binding: Some(out_bind),
             length: len as usize,
             pointer: (allocate.1, allocate.2),
             shape,

@@ -35,4 +35,13 @@ pub enum ArrOgpuErr {
 
     // pool
     Poll(String, PollError),
+
+    // Refactor
+    Refactor(String),
+}
+
+impl ArrOgpuErr {
+    pub fn refactor_err_0_1_0_5() -> ArrOgpuErr {
+        ArrOgpuErr::Refactor("Refactor Error | Updating Array MetaData".to_string())
+    }
 }

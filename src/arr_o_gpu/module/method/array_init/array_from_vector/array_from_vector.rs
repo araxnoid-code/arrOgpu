@@ -201,7 +201,7 @@ impl ArrOgpuModule {
             shape: shape.to_vec(),
             stride,
             space_type: space_type,
-            binding: binding,
+            binding: Some(binding),
 
             // build/0.1.0.5
             metadata_compound: Some(metadata_compound),

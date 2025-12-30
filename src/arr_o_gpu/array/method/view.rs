@@ -18,7 +18,7 @@ impl GpuArray {
             stride: self.stride.clone(),
             shape,
             offset: 0,
-            binding,
+            binding: Some(binding),
         }
     }
 }

@@ -71,7 +71,7 @@ impl ArrOgpuModule {
             shape: new_shape,
             stride,
             offset: start,
-            binding,
+            binding:Some(binding),
         };
 
         Ok(arr_view)

@@ -60,7 +60,7 @@ impl ArrOgpuModule {
             pointer: array.pointer(),
             shape: output_shape,
             stride: array.stride().clone(),
-            binding,
+            binding: Some(binding),
         };
 
         Ok(array_view)

@@ -42,10 +42,10 @@ impl ArrOgpuModule {
                     );
                     return Err(ArrOgpuErr::Pow(msg));
                 }
-                Ok(arr.binding())
+                Ok(arr.binding().ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?)
             }
         };
-        let scalar_bind: &(BindGroupLayout, BindGroup) = scalar_bind_result?;
+        let scalar_bind = scalar_bind_result?;
 
         // pipeline
         let pipeline_layout = wgpu
@@ -54,7 +54,7 @@ impl ArrOgpuModule {
                 label: Some("Create Pipeline Layout For Pow"),
                 bind_group_layouts: &[
                     &heap_bind.binding_group_layouts,
-                    &array_bind.0,
+                    &array_bind.ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?.0,
                     &out_bind.0,
                     &scalar_bind.0,
                 ],
@@ -102,7 +102,11 @@ impl ArrOgpuModule {
 
             bcp.set_pipeline(&pipeline);
             bcp.set_bind_group(0, Some(&heap_bind.binding_groups), &[]);
-            bcp.set_bind_group(1, Some(&array_bind.1), &[]);
+            bcp.set_bind_group(
+                1,
+                Some(&array_bind.ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?.1),
+                &[],
+            );
             bcp.set_bind_group(2, Some(&out_bind.1), &[]);
             bcp.set_bind_group(3, Some(&scalar_bind.1), &[]);
 
@@ -119,7 +123,7 @@ impl ArrOgpuModule {
             module: Arc::new(self.clone()),
             length: len as usize,
             pointer: (allocate.1, allocate.2),
-            binding: out_bind,
+            binding: Some(out_bind),
             shape: shape.clone(),
             space_type: allocate.0,
             stride,

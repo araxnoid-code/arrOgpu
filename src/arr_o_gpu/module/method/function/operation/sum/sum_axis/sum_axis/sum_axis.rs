@@ -74,7 +74,7 @@ impl ArrOgpuModule {
                 label: Some("Create Pipeline For Sum Axis"),
                 bind_group_layouts: &[
                     &heap_binding.binding_group_layouts,
-                    &array_binding.0,
+                    &array_binding.ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?.0,
                     &out_binding.0,
                     &others_binding.0,
                 ],
@@ -117,7 +117,11 @@ impl ArrOgpuModule {
             bcp.set_bind_group(0, Some(&heap_binding.binding_groups), &[]);
 
             // // array
-            bcp.set_bind_group(1, Some(&array_binding.1), &[]);
+            bcp.set_bind_group(
+                1,
+                Some(&array_binding.ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?.1),
+                &[],
+            );
 
             // // out
             bcp.set_bind_group(2, Some(&out_binding.1), &[]);
@@ -142,7 +146,7 @@ impl ArrOgpuModule {
             metadata_compound: None,
             // build/0.1.0.5
             module: Arc::new(self.clone()),
-            binding: out_binding,
+            binding: Some(out_binding),
             length: out_len as usize,
             pointer: (allocate.1, allocate.2),
             space_type: allocate.0,

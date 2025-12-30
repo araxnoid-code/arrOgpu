@@ -67,7 +67,7 @@ impl ArrOgpuModule {
             pointer: array.pointer(),
             shape: out_shape.0,
             stride: out_shape.1,
-            binding,
+            binding: Some(binding),
         };
 
         Ok(array_view)

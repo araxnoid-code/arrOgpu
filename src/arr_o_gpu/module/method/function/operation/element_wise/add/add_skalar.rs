@@ -40,7 +40,7 @@ impl ArrOgpuModule {
 
         // // array b
         let array_b_bind = match &meta_data_option {
-            MetaDataOption::Array(arr) => arr.binding(),
+            MetaDataOption::Array(arr) => arr.binding().ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?,
             MetaDataOption::Skalar(scalar) => &scalar_binding(&wgpu.device, scalar),
         };
 
@@ -67,7 +67,7 @@ impl ArrOgpuModule {
                 immediate_size: 0,
                 bind_group_layouts: &[
                     &heap_bind.binding_group_layouts,
-                    &array_bind.0,
+                    &array_bind.ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?.0,
                     &array_b_bind.0,
                     &out_bind.0,
                 ],
@@ -104,7 +104,11 @@ impl ArrOgpuModule {
             // 0
             bcp.set_bind_group(0, Some(&heap_bind.binding_groups), &[]);
             // 1
-            bcp.set_bind_group(1, Some(&array_bind.1), &[]);
+            bcp.set_bind_group(
+                1,
+                Some(&array_bind.ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?.1),
+                &[],
+            );
             // 2
             bcp.set_bind_group(2, Some(&array_b_bind.1), &[]);
             // 3
@@ -131,7 +135,7 @@ impl ArrOgpuModule {
             stride,
             space_type: allocate.0,
             length: len as usize,
-            binding: out_bind,
+            binding: Some(out_bind),
         };
 
         Ok(array)

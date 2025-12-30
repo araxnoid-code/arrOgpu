@@ -54,13 +54,10 @@ impl ArrOgpuModule {
 
         // bind
         let heap_bind = self.heap_binding();
-        let array_a_bind = array_a.binding();
-        let array_b_bind = array_b.binding();
         let out_bind =
             self.create_metadata_binding(&[allocate.1, allocate.2], &shape, &stride, &stride, &0);
 
         // reduction
-        // // reduction_counter
         let reduction_counter = create_reduction_counter();
         let window_reduction_counter = wgpu.device.create_buffer(&wgpu::wgt::BufferDescriptor {
             label: Some("Create Window Reduction Counter For Dot Product"),
@@ -154,16 +151,16 @@ impl ArrOgpuModule {
             ],
         });
 
+        let array_a_bind = array_a.binding();
+
         let pipeline_layout = wgpu
             .device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Create Pipeline Layout For Dot Product"),
                 bind_group_layouts: &[
                     &heap_bind.binding_group_layouts,
-                    &array_a_bind.0,
-                    &array_b_bind.0,
-                    &out_bind.0,
                     &reduction_bind_layout,
+                    &array_a_bind.ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?.0,
                 ],
                 immediate_size: 0,
             });
@@ -182,7 +179,15 @@ impl ArrOgpuModule {
                 layout: Some(&pipeline_layout),
                 module: &shader,
                 entry_point: Some("main"),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                compilation_options: wgpu::PipelineCompilationOptions {
+                    constants: &[
+                        ("LEN", array_a.len() as f64),
+                        ("START_POINTER_A", array_a.pointer().0 as f64),
+                        ("START_POINTER_B", array_b.pointer().0 as f64),
+                        ("START_POINTER_OUT", allocate.1 as f64),
+                    ],
+                    zero_initialize_workgroup_memory: true,
+                },
                 cache: None,
             });
 
@@ -206,33 +211,6 @@ impl ArrOgpuModule {
 
         // build/0.1.0.5
         // metadata compound
-        // execute_array_cache buffer
-        let execute_array_cache_buffer = &self.execute_array_cache;
-
-        // // array a
-        let metadata_a_buffer = array_a.metadata_compound().ok_or(ArrOgpuErr::DotProduct(
-            "Dot Product Error, Metadata Compound Is NONE".to_string(),
-        ))?;
-        encoder.copy_buffer_to_buffer(
-            &metadata_a_buffer.buffer,
-            0,
-            &execute_array_cache_buffer,
-            0,
-            256,
-        );
-
-        // // array b
-        let metadata_b_buffer = array_b.metadata_compound().ok_or(ArrOgpuErr::DotProduct(
-            "Dot Product Error, Metadata Compound Is NONE".to_string(),
-        ))?;
-        encoder.copy_buffer_to_buffer(
-            &metadata_b_buffer.buffer,
-            0,
-            &execute_array_cache_buffer,
-            256,
-            256,
-        );
-
         // // output
         let metadata_out = self.create_metadata_compound(
             [allocate.1, allocate.2],
@@ -242,13 +220,6 @@ impl ArrOgpuModule {
             [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        );
-        encoder.copy_buffer_to_buffer(
-            &metadata_out.buffer,
-            0,
-            &execute_array_cache_buffer,
-            512,
-            256,
         );
         // build/0.1.0.5
 
@@ -264,14 +235,17 @@ impl ArrOgpuModule {
 
             bcp.set_pipeline(&pipeline);
             bcp.set_bind_group(0, Some(&heap_bind.binding_groups), &[]);
-            bcp.set_bind_group(1, Some(&array_a_bind.1), &[]);
-            bcp.set_bind_group(2, Some(&array_b_bind.1), &[]);
-            bcp.set_bind_group(3, Some(&out_bind.1), &[]);
 
             bcp.set_bind_group(
-                4,
+                1,
                 Some(&reduction_bind),
                 &[counter * offset_metadata, len_counter * offset_metadata],
+            );
+
+            bcp.set_bind_group(
+                2,
+                &array_a_bind.ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?.1,
+                &[],
             );
 
             bcp.dispatch_workgroups(x, 1, 1);
@@ -289,8 +263,6 @@ impl ArrOgpuModule {
             } else {
                 x = (x + 511) / 512;
             }
-
-            // break;
         }
 
         let index = wgpu.queue.submit(Some(encoder.finish()));
@@ -301,13 +273,14 @@ impl ArrOgpuModule {
             })
             .unwrap();
 
+        // Ok(())
         let array = GpuArray {
             // build/0.1.0.5
-            metadata_compound: None,
+            metadata_compound: Some(metadata_out),
             // build/0.1.0.5
             module: Arc::new(self.clone()),
             length: len as usize,
-            binding: out_bind,
+            binding: Some(out_bind),
             pointer: (allocate.1, allocate.2),
             shape,
             stride,

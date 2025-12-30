@@ -43,7 +43,6 @@ impl WgpuModule {
                             required_features: Features::empty(),
                             experimental_features: ExperimentalFeatures::disabled(),
                             required_limits: Limits {
-                                max_bind_groups: 5,
                                 ..Default::default()
                             },
                             trace: wgpu::Trace::Off,

@@ -15,7 +15,7 @@ pub struct GpuArray {
     pub(crate) stride: Vec<u32>,
 
     // bind_group
-    pub(crate) binding: (BindGroupLayout, BindGroup),
+    pub(crate) binding: Option<(BindGroupLayout, BindGroup)>,
 
     // build/0.1.0.5
     pub(crate) metadata_compound: Option<MetadataCompound>,
