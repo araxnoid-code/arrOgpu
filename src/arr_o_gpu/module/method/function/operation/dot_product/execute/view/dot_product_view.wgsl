@@ -78,7 +78,7 @@ fn main(
                 let res_b = heap[START_POINTER_A + indexing_a(end)]  * heap[START_POINTER_B + indexing_b(end)];
                 sum = res_a + res_b;
             } else {
-                let res = heap[START_POINTER_A + indexing_a(start)] * heap[START_POINTER_B + indexing_b(end)];
+                let res = heap[START_POINTER_A + indexing_a(start)] * heap[START_POINTER_B + indexing_b(start)];
                 sum = res;
             }
         } else {
