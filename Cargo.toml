@@ -7,11 +7,21 @@ edition = "2024"
 name = "arr_o_gpu"
 path = "src/lib.rs"
 
+[features]
+default = ["vulkan", "dx12", "metal", "gles", "webgpu"]
+
+vulkan   = ["wgpu/vulkan"]
+dx12     = ["wgpu/dx12"]
+metal    = ["wgpu/metal"]
+gles     = ["wgpu/gles"]
+webgpu   = ["wgpu/webgpu"]
+
 [dependencies]
 bytemuck = "1.23.2"
 ndarray = "0.17.1"
 pollster = "=0.2.4"
-wgpu = "28.0.0"
+# wgpu = "28.0.0"
+wgpu = { version = "28.0.0", default-features = false, features = ["wgsl"] }
 
 [dependencies.uuid]
 version = "1.18.1"
