@@ -28,6 +28,7 @@ pub enum ArrOgpuErr {
     Slicing(String),
     ToShape(String),
     Permute(String),
+    Contiguous(String),
 
     // tools
     NegativeIndexing(String),

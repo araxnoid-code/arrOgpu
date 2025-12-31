@@ -17,6 +17,7 @@ impl ArrOgpuModule {
         A: ArrayCompute + ?Sized,
         B: ArrayCompute + ?Sized,
     {
+        // array_b.metadata_compound().unwrap();
         let shape_a = array_a.shape();
         let shape_b = array_b.shape();
 
@@ -194,20 +195,20 @@ impl ArrOgpuModule {
                 });
 
         // metadata compound
-        // //  execute_array_cache
-        let execute_array_cache = &self.execute_array_cache;
+        // //  execute_cache
+        let execute_cache = &self.execute_cache;
 
         // array_a
         let metadata_a_buffer = array_a.metadata_compound().ok_or(ArrOgpuErr::DotProduct(
             "Dot Product Error, Metadata Not Yet Defined For Array A".to_string(),
         ))?;
-        encoder.copy_buffer_to_buffer(&metadata_a_buffer.buffer, 0, &execute_array_cache, 0, 256);
+        encoder.copy_buffer_to_buffer(&metadata_a_buffer.buffer, 0, &execute_cache, 0, 256);
 
         // array_b
         let metadata_b_buffer = array_b.metadata_compound().ok_or(ArrOgpuErr::DotProduct(
             "Dot Product Error, Metadata Not Yet Defined For Array B".to_string(),
         ))?;
-        encoder.copy_buffer_to_buffer(&metadata_b_buffer.buffer, 0, &execute_array_cache, 256, 256);
+        encoder.copy_buffer_to_buffer(&metadata_b_buffer.buffer, 0, &execute_cache, 256, 256);
 
         // // output
         let metadata_out = self.create_metadata_compound(

@@ -1,5 +1,7 @@
 // override
-override LEN: f32;
+override LEN: u32;
+override START_POINTER_A: u32;
+override START_POINTER_B: u32;
 override START_POINTER_OUT: u32;
 
 // INIT
@@ -11,7 +13,7 @@ struct ArrayMetadata{
 	shape: array<u32, 10>,
 	stride: array<u32, 10>,
 	origin_stride: array<u32, 10>,
-
+	padding: array<u32, 29>,
 }
 
 // module
@@ -19,8 +21,9 @@ struct ArrayMetadata{
 @group(0) @binding(0)
 var<storage, read_write> heap:array<f32>;
 
-// // execute_array_cache
-var<storage, read> execute_array_cache: array<ArrayMetadata, 3>;
+// // execute_cache
+@group(0) @binding(1)
+var<storage, read> execute_cache: array<ArrayMetadata, 3>;
 
 // reduction
 struct Counter{
@@ -72,7 +75,7 @@ fn main(
         if reduction_counter.value == 0{
             if (local_id.x * 2) + 1 < cache_len{
                 let res_a = heap[START_POINTER_A + indexing_a(start) ] * heap[START_POINTER_B + indexing_b(start)];
-                let res_b = heap[START_POINTER_A + indexing_a(end]  * heap[START_POINTER_B + indexing_b(end)];
+                let res_b = heap[START_POINTER_A + indexing_a(end)]  * heap[START_POINTER_B + indexing_b(end)];
                 sum = res_a + res_b;
             } else {
                 let res = heap[START_POINTER_A + indexing_a(start)] * heap[START_POINTER_B + indexing_b(end)];
@@ -109,23 +112,23 @@ fn main(
 }
 
 fn indexing_a(x:u32) -> u32{
-    let array = execute_array_cache[0];
-    let dim = array.dim;
-    var index = array.offset;
+    let arr = execute_cache[0];
+    let dim = arr.dim;
+    var index = arr.offset;
     for (var i = 0u; i < dim; i++){
-        let permute = (x / array.origin_stride[i]) % array.shape[i];
-        index = (permute * array.stride[i]);
+        let permute = (x / arr.origin_stride[i]) % arr.shape[i];
+        index += (permute * arr.stride[i]);
     }
     return index;
 }
 
 fn indexing_b(x:u32) -> u32{
-    let array = execute_array_cache[1];
-    let dim = array.dim;
-    var index = array.offset;
+    let arr = execute_cache[1];
+    let dim = arr.dim;
+    var index = arr.offset;
     for (var i = 0u; i < dim; i++){
-        let permute = (x / array.origin_stride[i]) % array.shape[i];
-        index = (permute * array.stride[i]);
+        let permute = (x / arr.origin_stride[i]) % arr.shape[i];
+        index += (permute * arr.stride[i]);
     }
     return index;
 }

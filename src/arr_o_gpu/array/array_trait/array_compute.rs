@@ -117,6 +117,6 @@ where
     }
 
     fn metadata_compound(&self) -> Option<&MetadataCompound> {
-        None
+        self.metadata_compound.as_ref()
     }
 }

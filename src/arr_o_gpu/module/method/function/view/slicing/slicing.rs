@@ -54,6 +54,8 @@ impl ArrOgpuModule {
             &offset,
         );
 
+        //
+        let len = output_shape.iter().product::<u32>();
         let shape_padding: [u32; 10] = vector_padding(output_shape.clone(), 0, 10)
             .map_err(|err| ArrOgpuErr::Slicing(err))?
             .try_into()
@@ -72,8 +74,8 @@ impl ArrOgpuModule {
 
         let metadata = self.create_metadata_compound(
             array.pointer_to_arr(),
-            array.len(),
-            array.dim() as u32,
+            len,
+            output_shape.len() as u32,
             offset,
             shape_padding,
             stride_padding,
