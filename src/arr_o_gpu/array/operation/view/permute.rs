@@ -5,6 +5,6 @@ impl GpuArray {
         &self,
         permute: &[u32],
     ) -> Result<crate::GpuArrayView<'_, GpuArray>, crate::ArrOgpuErr> {
-        self.module.permute(self, permute)
+        self.module().permute(self, permute)
     }
 }

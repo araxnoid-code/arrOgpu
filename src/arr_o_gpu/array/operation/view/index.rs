@@ -5,6 +5,6 @@ impl GpuArray {
         &self,
         index: &[i32],
     ) -> Result<crate::GpuArrayView<'_, GpuArray>, crate::ArrOgpuErr> {
-        self.module.index(self, &index)
+        self.module().index(self, &index)
     }
 }

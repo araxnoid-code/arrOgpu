@@ -28,7 +28,7 @@ pub trait ArrayCompute {
 
 impl ArrayCompute for GpuArray {
     fn module(&self) -> &std::sync::Arc<crate::ArrOgpuModule> {
-        &self.module
+        self.module()
     }
 
     fn pointer_to_arr(&self) -> [u32; 2] {
@@ -48,7 +48,7 @@ impl ArrayCompute for GpuArray {
     }
 
     fn pointer(&self) -> (u32, u32) {
-        self.pointer
+        self.pointer()
     }
 
     fn offset(&self) -> u32 {
@@ -56,7 +56,7 @@ impl ArrayCompute for GpuArray {
     }
 
     fn len(&self) -> u32 {
-        self.length as u32
+        self.len() as u32
     }
 
     fn is_contiguous(&self) -> bool {
@@ -64,11 +64,11 @@ impl ArrayCompute for GpuArray {
     }
 
     fn binding(&self) -> Option<&(BindGroupLayout, BindGroup)> {
-        self.binding.as_ref()
+        self.binding()
     }
 
     fn metadata_compound(&self) -> Option<&MetadataCompound> {
-        self.metadata_compound.as_ref()
+        self.metadata_compound()
     }
 }
 

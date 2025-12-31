@@ -2,13 +2,13 @@ use crate::{ArrOgpuErr, GpuArray, GpuArrayView, vector_padding};
 
 impl GpuArray {
     pub fn view(&self) -> Result<GpuArrayView<'_, GpuArray>, ArrOgpuErr> {
-        let shape = self.shape.clone();
+        let shape = self.shape().clone();
 
-        let binding = self.module.create_metadata_binding(
+        let binding = self.module().create_metadata_binding(
             &self.pointer_to_arr(),
             &shape,
-            &self.stride,
-            &self.stride,
+            &self.stride(),
+            &self.stride(),
             &0,
         );
 
@@ -34,8 +34,8 @@ impl GpuArray {
 
         Ok(GpuArrayView {
             array: self,
-            pointer: self.pointer,
-            stride: self.stride.clone(),
+            pointer: self.pointer(),
+            stride: self.stride().clone(),
             shape,
             offset: 0,
             binding: Some(binding),

@@ -5,6 +5,6 @@ impl GpuArray {
     where
         A: ArrayCompute + CheckArrayType<'a>,
     {
-        self.module.dot_product(self, arr)
+        self.module().dot_product(self, arr)
     }
 }

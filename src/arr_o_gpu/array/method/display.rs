@@ -5,7 +5,7 @@ use crate::GpuArray;
 impl Display for GpuArray {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut output = String::new();
-        let shape = &self.shape;
+        let shape = &self.shape();
         let vector = self.get_heap();
         recursion(&mut output, shape, &vector, 0, &mut "".to_string());
 

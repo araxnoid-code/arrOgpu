@@ -7,11 +7,11 @@ use crate::GpuArray;
 
 impl GpuArray {
     pub fn get_heap(&self) -> Vec<f32> {
-        let module = &self.module;
+        let module = &self.module();
         let wgpu_init = &module.wgpu_init.read().unwrap();
         let heap_buffer = &module.heap_buffer;
 
-        let pointer = self.pointer;
+        let pointer = self.pointer();
         let len = pointer.1 - pointer.0;
         let mem = std::mem::size_of::<f32>() as u32;
         let size = (mem * len) as u64;

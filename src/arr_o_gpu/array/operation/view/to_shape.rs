@@ -5,6 +5,6 @@ impl GpuArray {
         &self,
         shape: &[u32],
     ) -> Result<crate::GpuArrayView<'_, GpuArray>, crate::ArrOgpuErr> {
-        self.module.to_shape(self, shape)
+        self.module().to_shape(self, shape)
     }
 }

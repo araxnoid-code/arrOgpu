@@ -5,27 +5,27 @@ impl GpuArray {
     where
         A: AbleElementWise,
     {
-        self.module.add(self, arr)
+        self.module().add(self, arr)
     }
 
     pub fn sub<A>(&self, arr: &A) -> Result<GpuArray, crate::ArrOgpuErr>
     where
         A: AbleElementWise,
     {
-        self.module.sub(self, arr)
+        self.module().sub(self, arr)
     }
 
     pub fn mul<A>(&self, arr: &A) -> Result<GpuArray, crate::ArrOgpuErr>
     where
         A: AbleElementWise,
     {
-        self.module.mul(self, arr)
+        self.module().mul(self, arr)
     }
 
     pub fn div<A>(&self, arr: &A) -> Result<GpuArray, crate::ArrOgpuErr>
     where
         A: AbleElementWise,
     {
-        self.module.div(self, arr)
+        self.module().div(self, arr)
     }
 }

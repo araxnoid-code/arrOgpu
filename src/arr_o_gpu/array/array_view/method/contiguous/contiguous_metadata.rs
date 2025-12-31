@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
 use wgpu::{
-    ComputePassDescriptor, ComputePipelineDescriptor, PipelineLayoutDescriptor,
-    ShaderModuleDescriptor, ShaderSource,
-    wgt::{CommandEncoderDescriptor, PollType},
+    ComputePipelineDescriptor, PipelineLayoutDescriptor, ShaderModuleDescriptor, ShaderSource,
 };
 
 use crate::{
@@ -85,11 +83,11 @@ where
             });
 
         // encoder
-        let mut encoder = wgpu
-            .device
-            .create_command_encoder(&CommandEncoderDescriptor {
-                label: Some("Create Encoder For Contiguous"),
-            });
+        let mut encoder =
+            wgpu.device
+                .create_command_encoder(&wgpu::wgt::CommandEncoderDescriptor {
+                    label: Some("Create Encoder For Contiguous"),
+                });
 
         // // set metadata
         // // // execute_cache
@@ -99,7 +97,7 @@ where
         encoder.copy_buffer_to_buffer(&array_metadata.buffer, 0, &execute_cache, 0, 256);
 
         {
-            let mut begin_compute_pass = encoder.begin_compute_pass(&ComputePassDescriptor {
+            let mut begin_compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                 label: Some("Create Begin Compute Pass"),
                 timestamp_writes: None,
             });
@@ -114,7 +112,7 @@ where
         wgpu.queue.submit(Some(encoder.finish()));
 
         let array = GpuArray {
-            module: module,
+            module,
             binding: None,
             length: len as usize,
             metadata_compound: Some(output_metadata),

@@ -5,6 +5,6 @@ impl GpuArray {
     where
         P: AblePowType,
     {
-        self.module.pow(self, power)
+        self.module().pow(self, power)
     }
 }

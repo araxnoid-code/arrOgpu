@@ -26,8 +26,8 @@ pub struct GpuArray {
 }
 
 impl GpuArray {
-    pub fn module(&self) -> &ArrOgpuModule {
-        &*self.module
+    pub fn module(&self) -> &Arc<ArrOgpuModule> {
+        &self.module
     }
 
     pub fn pointer(&self) -> (u32, u32) {
@@ -56,5 +56,13 @@ impl GpuArray {
 
     pub fn pointer_to_arr(&self) -> [u32; 2] {
         [self.pointer.0 as u32, self.pointer.1 as u32]
+    }
+
+    pub fn binding(&self) -> Option<&(BindGroupLayout, BindGroup)> {
+        self.binding.as_ref()
+    }
+
+    pub fn metadata_compound(&self) -> Option<&MetadataCompound> {
+        self.metadata_compound.as_ref()
     }
 }
