@@ -29,11 +29,11 @@ where
         // output_metadata_buffer
         let pointer_arr = [allocate.1, allocate.2];
         let dim = shape.len();
-        let padding_shape: [u32; 10] = vector_padding(shape.clone(), 0, 10)
+        let padding_shape: [u32; 12] = vector_padding(shape.clone(), 0, 12)
             .map_err(|err| ArrOgpuErr::Contiguous(err))?
             .try_into()
             .unwrap();
-        let padding_origin_stride: [u32; 10] = vector_padding(stride.clone(), 0, 10)
+        let padding_origin_stride: [u32; 12] = vector_padding(stride.clone(), 0, 12)
             .map_err(|err| ArrOgpuErr::Contiguous(err))?
             .try_into()
             .unwrap();

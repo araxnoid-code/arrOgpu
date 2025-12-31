@@ -31,7 +31,7 @@ impl ArrOgpuModule {
         let exececute_array_cache_buffer = wgpu.device.create_buffer(&BufferDescriptor {
             label: Some("Create execute_array_cache For Init"),
             size: size_cache,
-            usage: BufferUsages::COPY_DST | BufferUsages::STORAGE,
+            usage: BufferUsages::COPY_DST | BufferUsages::UNIFORM,
             mapped_at_creation: false,
         });
 
@@ -55,7 +55,7 @@ impl ArrOgpuModule {
                         count: None,
                         visibility: ShaderStages::COMPUTE,
                         ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            ty: wgpu::BufferBindingType::Uniform,
                             has_dynamic_offset: false,
                             min_binding_size: None,
                         },

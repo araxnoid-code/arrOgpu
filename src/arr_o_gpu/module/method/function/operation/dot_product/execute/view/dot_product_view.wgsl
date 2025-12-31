@@ -6,15 +6,25 @@ override START_POINTER_OUT: u32;
 
 // INIT
 struct ArrayMetadata{
-	pointer: vec2<u32>,
-	len: u32,
-	offset: u32,
-	dim: u32,
-	shape: array<u32, 10>,
-	stride: array<u32, 10>,
-	origin_stride: array<u32, 10>,
-	padding: array<u32, 29>,
+	pointer: vec2<u32>, // 8
+	len: u32, // 4
+	offset: u32, // 4
+	dim: u32, // 4
+	padding0: u32, // 4
+	padding1: u32, // 4
+	padding2: u32, // 4
+	shape: array<vec4<u32>, 3>, // 48
+	stride: array<vec4<u32>, 3>, // 48
+	origin_stride: array<vec4<u32>, 3>, // 48
+	padding3: array<vec4<u32>, 5>,
 }
+
+struct ExecuteArgs{
+    arg0: ArrayMetadata,
+    arg1: ArrayMetadata,
+    arg2: ArrayMetadata,
+}
+
 
 // module
 // // heap
@@ -23,7 +33,7 @@ var<storage, read_write> heap:array<f32>;
 
 // // execute_cache
 @group(0) @binding(1)
-var<storage, read> execute_cache: array<ArrayMetadata, 3>;
+var<uniform> execute_args: ExecuteArgs;
 
 // reduction
 struct Counter{
@@ -112,23 +122,27 @@ fn main(
 }
 
 fn indexing_a(x:u32) -> u32{
-    let arr = execute_cache[0];
+    let arr = execute_args.arg0;
     let dim = arr.dim;
     var index = arr.offset;
     for (var i = 0u; i < dim; i++){
-        let permute = (x / arr.origin_stride[i]) % arr.shape[i];
-        index += (permute * arr.stride[i]);
+        let permute = (x / array_access(i, arr.origin_stride)) %  array_access(i, arr.shape);
+        index += (permute * array_access(i, arr.stride));
     }
     return index;
 }
 
 fn indexing_b(x:u32) -> u32{
-    let arr = execute_cache[1];
+    let arr = execute_args.arg1;
     let dim = arr.dim;
     var index = arr.offset;
     for (var i = 0u; i < dim; i++){
-        let permute = (x / arr.origin_stride[i]) % arr.shape[i];
-        index += (permute * arr.stride[i]);
+        let permute = (x / array_access(i, arr.origin_stride)) %  array_access(i, arr.shape);
+        index += (permute * array_access(i, arr.stride));
     }
     return index;
+}
+
+fn array_access(index:u32, arr: array<vec4<u32>, 3>) -> u32{
+    return arr[index >> 2][index & 3];
 }

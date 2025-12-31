@@ -12,19 +12,22 @@ impl ArrOgpuModule {
         len: u32,
         dim: u32,
         offset: u32,
-        shape: [u32; 10],
-        stride: [u32; 10],
-        origin_stride: [u32; 10],
+        shape: [u32; 12],
+        stride: [u32; 12],
+        origin_stride: [u32; 12],
     ) -> MetadataCompound {
         let metadata = ArrayMetadata {
             pointer,
             len,
-            dim,
             offset,
+            dim,
+            padding_0: 0,
+            padding_1: 0,
+            padding_2: 0,
             shape,
             stride,
             origin_stride,
-            padding: [0; 29],
+            padding_3: [0; 20],
         };
 
         let wgpu = self.wgpu_init.read().unwrap();

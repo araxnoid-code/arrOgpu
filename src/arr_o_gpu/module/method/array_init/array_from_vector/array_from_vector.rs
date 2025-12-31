@@ -166,15 +166,15 @@ impl ArrOgpuModule {
             self.create_metadata_binding(&[pointer.0, pointer.1], &shape, &stride, &stride, &0);
 
         // build/0.1.0.5
-        let shape_padding: [u32; 10] = (vector_padding(shape.to_vec(), 0, 10)
+        let shape_padding: [u32; 12] = (vector_padding(shape.to_vec(), 0, 12)
             .map_err(ArrOgpuErr::from)?)
         .try_into()
         .map_err(|_| {
             ArrOgpuErr::Padding(
-                "Padding Error, Conversion Shape Padding To [u32; 10] Failed".to_string(),
+                "Padding Error, Conversion Shape Padding To [u32; 12] Failed".to_string(),
             )
         })?;
-        let stride_padding: [u32; 10] = (vector_padding(stride.to_vec(), 0, 10)
+        let stride_padding: [u32; 12] = (vector_padding(stride.to_vec(), 0, 12)
             .map_err(ArrOgpuErr::from)?)
         .try_into()
         .map_err(|_| {

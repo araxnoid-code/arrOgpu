@@ -12,12 +12,12 @@ impl GpuArray {
             &0,
         );
 
-        let padding_shape: [u32; 10] = (vector_padding(shape.clone(), 0, 10)
+        let padding_shape: [u32; 12] = (vector_padding(shape.clone(), 0, 12)
             .map_err(|err| ArrOgpuErr::Padding(err))?)
         .try_into()
         .unwrap();
 
-        let padding_stride: [u32; 10] = vector_padding(self.stride().clone(), 0, 10)
+        let padding_stride: [u32; 12] = vector_padding(self.stride().clone(), 0, 12)
             .map_err(|err| ArrOgpuErr::Padding(err))?
             .try_into()
             .unwrap();

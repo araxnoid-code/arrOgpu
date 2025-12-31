@@ -38,12 +38,12 @@ impl ArrOgpuModule {
             &array.offset(),
         );
 
-        let shape_padding: [u32; 10] = vector_padding(shape.clone(), 0, 10)
+        let shape_padding: [u32; 12] = vector_padding(shape.clone(), 0, 12)
             .map_err(|err| ArrOgpuErr::ToShape(err))?
             .try_into()
             .unwrap();
 
-        let stride_padding: [u32; 10] = vector_padding(stride.clone(), 0, 10)
+        let stride_padding: [u32; 12] = vector_padding(stride.clone(), 0, 12)
             .map_err(|err| ArrOgpuErr::ToShape(err))?
             .try_into()
             .unwrap();
