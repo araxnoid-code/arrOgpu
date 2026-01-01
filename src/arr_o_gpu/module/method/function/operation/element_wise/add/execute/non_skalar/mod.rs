@@ -1,3 +1,4 @@
+mod add_metadata;
 use std::sync::Arc;
 
 use wgpu::{

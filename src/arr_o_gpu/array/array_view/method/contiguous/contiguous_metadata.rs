@@ -91,7 +91,7 @@ where
 
         // // set metadata
         // // // execute_cache
-        let execute_cache = &module.execute_cache;
+        let execute_cache = &module.execute_args;
         // // // metadata a
         let array_metadata = self.metadata_compound.unwrap();
         encoder.copy_buffer_to_buffer(&array_metadata.buffer, 0, &execute_cache, 0, 256);

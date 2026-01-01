@@ -1,4 +1,4 @@
-use crate::ArrayCompute;
+use crate::{ArrayCompute, CheckArrayType};
 
 pub enum MetaDataOption<'a> {
     Skalar(f32),
@@ -11,17 +11,17 @@ pub enum ElementWiseOption<'a> {
 }
 
 pub trait AbleElementWise {
-    fn get(&self) -> ElementWiseOption<'_>;
+    fn get_eble_element_wise(&self) -> ElementWiseOption<'_>;
 }
 
 impl AbleElementWise for f32 {
-    fn get(&self) -> ElementWiseOption<'_> {
+    fn get_eble_element_wise(&self) -> ElementWiseOption<'_> {
         ElementWiseOption::Skalar(MetaDataOption::Skalar(*self))
     }
 }
 
-impl<A: ArrayCompute> AbleElementWise for A {
-    fn get(&self) -> ElementWiseOption<'_> {
+impl<'a, A: ArrayCompute> AbleElementWise for A {
+    fn get_eble_element_wise(&self) -> ElementWiseOption<'_> {
         let shape = self.shape();
         if shape.len() == 1 && shape[0] == 1 {
             ElementWiseOption::Skalar(MetaDataOption::Array(self))

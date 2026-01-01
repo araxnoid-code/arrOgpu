@@ -1,6 +1,6 @@
 use wgpu::{BindGroup, BindGroupLayout};
 
-use crate::{GpuArray, GpuArrayView, MetadataCompound};
+use crate::{ArrayType, CheckArrayType, GpuArray, GpuArrayView, MetadataCompound};
 
 pub trait ArrayCompute {
     fn module(&self) -> &std::sync::Arc<crate::ArrOgpuModule>;
@@ -24,6 +24,8 @@ pub trait ArrayCompute {
     fn binding(&self) -> Option<&(BindGroupLayout, BindGroup)>;
 
     fn metadata_compound(&self) -> Option<&MetadataCompound>;
+
+    fn check_contiguous_or_view(&self) -> ArrayType;
 }
 
 impl ArrayCompute for GpuArray {
@@ -69,6 +71,10 @@ impl ArrayCompute for GpuArray {
 
     fn metadata_compound(&self) -> Option<&MetadataCompound> {
         self.metadata_compound()
+    }
+
+    fn check_contiguous_or_view(&self) -> ArrayType {
+        self.check()
     }
 }
 
@@ -118,5 +124,9 @@ where
 
     fn metadata_compound(&self) -> Option<&MetadataCompound> {
         self.metadata_compound.as_ref()
+    }
+
+    fn check_contiguous_or_view(&self) -> ArrayType {
+        self.check()
     }
 }

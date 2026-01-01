@@ -196,7 +196,7 @@ impl ArrOgpuModule {
 
         // metadata compound
         // //  execute_cache
-        let execute_cache = &self.execute_cache;
+        let execute_cache = &self.execute_args;
 
         // array_a
         let metadata_a_buffer = array_a.metadata_compound().ok_or(ArrOgpuErr::DotProduct(

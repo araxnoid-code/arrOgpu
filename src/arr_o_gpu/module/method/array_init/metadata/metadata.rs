@@ -16,36 +16,16 @@ pub struct ArrayMetadata {
     pub(crate) padding_2: u32, // 4
     //
     //
-    pub(crate) shape: [u32; 12],         // 48
-    pub(crate) stride: [u32; 12],        // 48
-    pub(crate) origin_stride: [u32; 12], // 48
+    pub(crate) shape: [u32; 8],    // 32
+    pub(crate) stride: [u32; 8],   // 32
+    pub(crate) o_stride: [u32; 8], // 32
     //
+    pub(crate) m_n_shape: [u32; 8],
+    pub(crate) m_n_o_stride: [u32; 8],
     //
-    pub(crate) padding_3: [u32; 20],
+    pub(crate) padding_3: [u32; 16],
 }
 
 pub struct MetadataCompound {
     pub(crate) buffer: Buffer,
 }
-
-// struct ArrayMetadata{
-//     // --- //
-// 	pointer: vec2<u32>, // 8
-// 	len: u32, // 4
-// 	offset: u32, // 4
-// 	// --- //
-
-// 	// --- //
-// 	dim: u32, // 4
-// 	padding0: u32, // 4
-// 	padding1: u32, // 4
-// 	padding2: u32, // 4
-// 	// --- //
-
-// 	shape: array<vec4<u32>, 3>, // 48
-// 	stride: array<vec4<u32>, 3>, // 48
-// 	origin_stride: array<vec4<u32>, 3>, // 48
-
-// 	// padding
-// 	padding: array<vec4<u32>, 5>,
-// }

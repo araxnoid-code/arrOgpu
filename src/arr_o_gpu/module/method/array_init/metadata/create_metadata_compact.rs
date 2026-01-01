@@ -10,24 +10,38 @@ impl ArrOgpuModule {
         &self,
         pointer: [u32; 2],
         len: u32,
-        dim: u32,
         offset: u32,
+        dim: u32,
         shape: [u32; 12],
         stride: [u32; 12],
-        origin_stride: [u32; 12],
+        o_stride: [u32; 12],
     ) -> MetadataCompound {
+        let shape: [u32; 8] = shape[..8].try_into().unwrap();
+        let stride: [u32; 8] = stride[..8].try_into().unwrap();
+        let o_stride = o_stride[..8].try_into().unwrap();
+
         let metadata = ArrayMetadata {
             pointer,
             len,
+
             offset,
+            //
+
+            //
             dim,
             padding_0: 0,
             padding_1: 0,
             padding_2: 0,
+            //
+            //
+            m_n_shape: get_magic_number(&shape, dim),
+            m_n_o_stride: get_magic_number(&stride, dim),
+            //
+            //
             shape,
             stride,
-            origin_stride,
-            padding_3: [0; 20],
+            o_stride,
+            padding_3: [0; 16],
         };
 
         let wgpu = self.wgpu_init.read().unwrap();
@@ -46,4 +60,19 @@ impl ArrOgpuModule {
 
         metadata_compound
     }
+}
+
+fn get_magic_number(array: &[u32; 8], dim: u32) -> [u32; 8] {
+    let bit32: f64 = (1u64 << 32) as f64;
+    (0..8)
+        .map(|i| {
+            if i < dim {
+                (bit32 / array[i as usize] as f64).ceil() as u32
+            } else {
+                0
+            }
+        })
+        .collect::<Vec<u32>>()
+        .try_into()
+        .unwrap()
 }

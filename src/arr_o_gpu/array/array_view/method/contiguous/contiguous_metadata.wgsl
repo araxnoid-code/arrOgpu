@@ -1,24 +1,18 @@
 // init
 struct ArrayMetadata{
-    // --- //
 	pointer: vec2<u32>, // 8
 	len: u32, // 4
 	offset: u32, // 4
-	// --- //
-
-	// --- //
 	dim: u32, // 4
 	padding0: u32, // 4
 	padding1: u32, // 4
 	padding2: u32, // 4
-	// --- //
-
-	shape: array<vec4<u32>, 3>, // 48
-	stride: array<vec4<u32>, 3>, // 48
-	origin_stride: array<vec4<u32>, 3>, // 48
-
-	// padding
-	padding3: array<vec4<u32>, 5>,
+	shape: array<vec4<u32>, 2>, // 32
+	stride: array<vec4<u32>, 2>, // 32
+	o_stride: array<vec4<u32>, 2>, // 32
+	m_n_shape: array<vec4<u32>, 2>, // 32
+	m_n_o_stride: array<vec4<u32>, 2>, // 32
+	padding3: array<vec4<u32>, 4>,
 }
 
 struct ExecuteArgs{
@@ -56,12 +50,12 @@ fn main(
 fn indexing(x: u32) -> u32{
     var index = OFFSET;
     for (var i = 0u; i < DIM; i++){
-        let permute = (x / array_access(i, execute_args.arg0.origin_stride)) % array_access(i, execute_args.arg0.shape);
+        let permute = x / array_access(i, execute_args.arg0.o_stride) % array_access(i, execute_args.arg0.shape);
         index += (permute * array_access(i, execute_args.arg0.stride));
     }
     return index;
 }
 
-fn array_access(index:u32, arr: array<vec4<u32>, 3>) -> u32{
+fn array_access(index:u32, arr: array<vec4<u32>, 2>) -> u32{
     return arr[index >> 2][index & 3];
 }

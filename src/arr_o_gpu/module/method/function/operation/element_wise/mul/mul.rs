@@ -11,7 +11,7 @@ impl ArrOgpuModule {
         A: ArrayCompute,
         B: AbleElementWise,
     {
-        match array_b.get() {
+        match array_b.get_eble_element_wise() {
             ElementWiseOption::Array(array) => {
                 return self.mul_array(array_a, array);
             }

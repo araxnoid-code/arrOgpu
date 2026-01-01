@@ -17,15 +17,15 @@ impl ArrayMetadata {
         self.dim
     }
 
-    pub fn shape(&self) -> [u32; 12] {
+    pub fn shape(&self) -> [u32; 8] {
         self.shape
     }
 
-    pub fn stride(&self) -> [u32; 12] {
+    pub fn stride(&self) -> [u32; 8] {
         self.stride
     }
 
-    pub fn origin_stride(&self) -> [u32; 12] {
-        self.origin_stride
+    pub fn origin_stride(&self) -> [u32; 8] {
+        self.o_stride
     }
 }

@@ -98,7 +98,7 @@ impl ArrOgpuModule {
             // // Heap
             heap_buffer: Arc::new(heap_buffer),
             // // execute_array_cache
-            execute_cache: Arc::new(exececute_array_cache_buffer),
+            execute_args: Arc::new(exececute_array_cache_buffer),
         })
     }
 }
