@@ -35,9 +35,7 @@ impl ArrOgpuModule {
                 return self.add_array_metadata(array_a, array);
             }
             ElementWiseOption::Skalar(meta_data_option) => {
-                return Err(ArrOgpuErr::Add(
-                    "Add Error, Scalar Operation Not Supported Yet".to_string(),
-                ));
+                return self.add_skalar_metadata(array_a, meta_data_option);
             }
         }
     }

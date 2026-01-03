@@ -67,18 +67,18 @@ impl ArrOgpuModule {
 
         //
         let len = new_shape.iter().product::<u32>();
-        let shape_padding: [u32; 12] = vector_padding(new_shape.clone(), 0, 12)
+        let shape_padding: [u32; 8] = vector_padding(new_shape.clone(), 0, 8)
             .map_err(|err| ArrOgpuErr::Indexing(err))?
             .try_into()
             .unwrap();
 
-        let origin_stride_padding: [u32; 12] =
-            vector_padding(get_stride_from_shape(&new_shape), 0, 12)
+        let origin_stride_padding: [u32; 8] =
+            vector_padding(get_stride_from_shape(&new_shape), 0, 8)
                 .map_err(|err| ArrOgpuErr::Indexing(err))?
                 .try_into()
                 .unwrap();
 
-        let stride_padding: [u32; 12] = vector_padding(stride.clone(), 0, 12)
+        let stride_padding: [u32; 8] = vector_padding(stride.clone(), 0, 8)
             .map_err(|err| ArrOgpuErr::Indexing(err))?
             .try_into()
             .unwrap();

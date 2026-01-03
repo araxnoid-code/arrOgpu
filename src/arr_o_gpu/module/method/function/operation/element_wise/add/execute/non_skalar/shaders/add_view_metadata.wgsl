@@ -21,15 +21,6 @@ struct ExecuteArgs{
     arg2: ArrayMetadata,
 }
 
-// override
-override LEN: u32;
-override DIM: u32;
-override START_POINTER_A: u32;
-override START_POINTER_B: u32;
-override START_POINTER_O: u32;
-override OFFSET_A: u32;
-override OFFSET_B: u32;
-
 // Module
 // // heap
 @group(0) @binding(0)
@@ -42,17 +33,18 @@ var <uniform> execute_args: ExecuteArgs;
 fn main(
     @builtin (global_invocation_id) global_id: vec3<u32>,
 ){
-    if global_id.x < LEN{
-        heap[START_POINTER_O + global_id.x] = heap[START_POINTER_A + indexing_a(global_id.x)] + heap[START_POINTER_B + indexing_b(global_id.x)];
+    if global_id.x < execute_args.arg0.len{
+    heap[execute_args.arg2.pointer.x + global_id.x] = heap[execute_args.arg0.pointer.x + indexing_a(global_id.x)] + heap[execute_args.arg1.pointer.x + indexing_b(global_id.x)];
     }
 }
 
 fn indexing_a(x: u32) -> u32{
-    var idx = OFFSET_A;
+    var idx = execute_args.arg0.offset;
+    let dim = execute_args.arg0.dim;
     let shape = execute_args.arg0.shape;
     let o_stride = execute_args.arg0.o_stride;
     let stride = execute_args.arg0.stride;
-    for (var i = 0u; i < DIM; i++){
+    for (var i = 0u; i < dim; i++){
         let permute = ( x / arr_access(i, o_stride) ) % arr_access(i, shape);
         idx += (permute * arr_access(i, stride));
     }
@@ -60,11 +52,12 @@ fn indexing_a(x: u32) -> u32{
 }
 
 fn indexing_b(x: u32) -> u32{
-    var idx = OFFSET_B;
+    var idx = execute_args.arg1.offset;
+    let dim = execute_args.arg1.dim;
     let shape = execute_args.arg1.shape;
     let o_stride = execute_args.arg1.o_stride;
     let stride = execute_args.arg1.stride;
-    for (var i = 0u; i < DIM; i++){
+    for (var i = 0u; i < dim; i++){
         let permute = ( x / arr_access(i, o_stride) ) % arr_access(i, shape);
         idx += (permute * arr_access(i, stride));
     }

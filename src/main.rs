@@ -1,4 +1,4 @@
-use arr_o_gpu::{ArangeArray, ArangeIteratorTrait, ArrOgpuModule, r};
+use arr_o_gpu::{ArangeArray, ArangeIteratorTrait, ArrOgpuModule, ArrayCompute, r};
 
 fn main() {
     let module = ArrOgpuModule::default();
@@ -9,9 +9,9 @@ fn main() {
     let array_b = ArangeArray::arange(0..12).to_GpuArray(&module).unwrap();
     println!("{}", array_b);
 
-    let c = module
-        .add_metadata(&array_a, &array_b.view().unwrap())
-        .unwrap();
+    let view = array_a.view().unwrap();
+
+    let c = module.add_metadata(&view, &array_b).unwrap();
     println!("{}", c);
-    // println!("{:?}", &module.get_heap()[38..50])
+    println!("{:?}", &module.get_heap()[37..75])
 }

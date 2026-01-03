@@ -1,4 +1,5 @@
 use std::sync::Arc;
+mod add_metadata;
 
 use wgpu::{
     BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor,

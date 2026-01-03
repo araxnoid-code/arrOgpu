@@ -10,11 +10,11 @@ impl ArrOgpuModule {
         &self,
         pointer: [u32; 2],
         len: u32,
-        offset: u32,
         dim: u32,
-        shape: [u32; 12],
-        stride: [u32; 12],
-        o_stride: [u32; 12],
+        offset: u32,
+        shape: [u32; 8],
+        stride: [u32; 8],
+        o_stride: [u32; 8],
     ) -> MetadataCompound {
         let shape: [u32; 8] = shape[..8].try_into().unwrap();
         let stride: [u32; 8] = stride[..8].try_into().unwrap();

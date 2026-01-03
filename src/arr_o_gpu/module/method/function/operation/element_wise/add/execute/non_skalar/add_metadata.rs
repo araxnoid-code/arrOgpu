@@ -17,6 +17,15 @@ impl ArrOgpuModule {
         A: ArrayCompute + CheckArrayType<'a>,
         B: ArrayCompute + ?Sized,
     {
+        if array_a.shape() != array_b.shape() {
+            let err = format!(
+                "Array Add Error, Shape Of A is {:?} but adding with Shape Of B is {:?}",
+                array_a.shape(),
+                array_b.shape()
+            );
+            return Err(ArrOgpuErr::Add(err));
+        }
+
         let wgpu = self.wgpu_init.read().unwrap();
         // metadata output
         let len = array_a.len();
@@ -26,9 +35,9 @@ impl ArrOgpuModule {
         let stride = get_stride_from_shape(&shape);
         let allocate = self.allocator.write().unwrap().pointer_input(len);
 
-        let shape_padding: [u32; 12] = vector_padding(shape.clone(), 0, 12)?.try_into().unwrap();
-        let origin_stride_padding: [u32; 12] =
-            vector_padding(stride.clone(), 0, 12)?.try_into().unwrap();
+        let shape_padding: [u32; 8] = vector_padding(shape.clone(), 0, 8)?.try_into().unwrap();
+        let origin_stride_padding: [u32; 8] =
+            vector_padding(stride.clone(), 0, 8)?.try_into().unwrap();
         let output_metadata = self.create_metadata_compound(
             [allocate.1, allocate.2],
             len,
@@ -49,7 +58,7 @@ impl ArrOgpuModule {
         let pipeline_layout = wgpu
             .device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("Create Pipeline For Add"),
+                label: Some("Create Pipeline Layout For Add"),
                 bind_group_layouts: &[&heap_bind.binding_group_layouts],
                 immediate_size: 0,
             });
@@ -62,19 +71,25 @@ impl ArrOgpuModule {
                 module: &shaders,
                 entry_point: Some("main"),
                 compilation_options: wgpu::PipelineCompilationOptions {
-                    constants: &*get_override(array_a, array_b, allocate.1 as f64),
+                    constants: &[],
                     zero_initialize_workgroup_memory: false,
                 },
                 cache: None,
             });
 
-        let mut encoder =
-            wgpu.device
-                .create_command_encoder(&wgpu::wgt::CommandEncoderDescriptor {
-                    label: Some("Create Encoder For Add"),
-                });
+        let mut encoder = wgpu
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Create Encoder For Add"),
+            });
 
-        set_execute_args(&mut encoder, &self.execute_args, array_a, array_b)?;
+        set_execute_args(
+            &mut encoder,
+            &self.execute_args,
+            array_a,
+            array_b,
+            &output_metadata.buffer,
+        )?;
 
         {
             let mut begin_compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
@@ -131,6 +146,7 @@ fn set_execute_args<'a, A, B>(
     execute_cache: &Arc<Buffer>,
     array_a: &'a A,
     array_b: &'a B,
+    metadata_o_buffer: &Buffer,
 ) -> Result<(), ArrOgpuErr>
 where
     A: ArrayCompute,
@@ -148,44 +164,17 @@ where
         array_a.check_contiguous_or_view(),
         array_b.check_contiguous_or_view(),
     ) {
-        (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => (),
+        (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => {
+            encoder.copy_buffer_to_buffer(&buffer_a.buffer, 0, execute_cache, 0, 32);
+            encoder.copy_buffer_to_buffer(&buffer_b.buffer, 0, execute_cache, 32, 32);
+            encoder.copy_buffer_to_buffer(&metadata_o_buffer, 0, execute_cache, 64, 32);
+        }
         _ => {
             encoder.copy_buffer_to_buffer(&buffer_a.buffer, 0, execute_cache, 0, 256);
             encoder.copy_buffer_to_buffer(&buffer_b.buffer, 0, execute_cache, 256, 256);
+            encoder.copy_buffer_to_buffer(&metadata_o_buffer, 0, execute_cache, 512, 256);
         }
     }
 
     Ok(())
-}
-
-pub fn get_override<'a, A, B>(
-    array_a: &'a A,
-    array_b: &'a B,
-    start_pointer_o: f64,
-) -> Box<[(&'a str, f64)]>
-where
-    A: ArrayCompute,
-    B: ArrayCompute + ?Sized,
-{
-    match (
-        array_a.check_contiguous_or_view(),
-        array_b.check_contiguous_or_view(),
-    ) {
-        (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => Box::new([
-            ("LEN", array_a.len() as f64),
-            ("START_POINTER_A", array_a.pointer().0 as f64),
-            ("START_POINTER_B", array_b.pointer().0 as f64),
-            ("START_POINTER_O", start_pointer_o),
-        ]),
-
-        _ => Box::new([
-            ("LEN", array_a.len() as f64),
-            ("DIM", array_a.dim() as f64),
-            ("START_POINTER_A", array_a.pointer().0 as f64),
-            ("START_POINTER_B", array_b.pointer().0 as f64),
-            ("START_POINTER_O", start_pointer_o),
-            ("OFFSET_A", array_a.offset() as f64),
-            ("OFFSET_B", array_b.offset() as f64),
-        ]),
-    }
 }
