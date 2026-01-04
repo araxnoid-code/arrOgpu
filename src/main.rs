@@ -9,10 +9,7 @@ fn main() {
 
     let array_b = ArangeArray::arange(20..40).to_GpuArray(&module).unwrap();
 
-    let c = module
-        .add_metadata(&view, &array_b.index(&[7]).unwrap())
-        .unwrap();
+    let c = module.add(&view, &array_b.index(&[7]).unwrap()).unwrap();
     println!("{}", view.contiguous());
     println!("{}", c);
-    // println!("{:?}", &module.get_heap()[37..75])
 }

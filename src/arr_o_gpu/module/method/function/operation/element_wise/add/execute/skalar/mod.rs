@@ -1,18 +1,12 @@
 use std::sync::Arc;
-mod add_metadata;
 
-use wgpu::{
-    BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor,
-    BindGroupLayoutEntry, BufferBindingType, BufferUsages, ComputePipelineDescriptor, Device,
-    PipelineCompilationOptions, PipelineLayoutDescriptor, ShaderModuleDescriptor, ShaderStages,
-    util::{BufferInitDescriptor, DeviceExt},
-    wgt::CommandEncoderDescriptor,
-};
+use bytemuck::{Pod, Zeroable};
+use wgpu::{Buffer, BufferUsages, CommandEncoder, Device, util::DeviceExt};
 
 use crate::{
-    ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArray,
+    ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, GpuArray,
     arr_o_gpu::module::method::function::operation::element_wise::skalar_operation::MetaDataOption,
-    get_stride_from_shape,
+    get_stride_from_shape, vector_padding,
 };
 
 impl ArrOgpuModule {
@@ -25,162 +19,164 @@ impl ArrOgpuModule {
         A: ArrayCompute,
     {
         let wgpu = self.wgpu_init.read().unwrap();
-
         // output metadata
-        let shape = array.shape();
         let len = array.len();
+        let dim = array.dim();
+        let offset = 0;
+        let shape = array.shape().clone();
         let stride = get_stride_from_shape(&shape);
-        let allocate = self.allocator_write().pointer_input(len);
+        let allocate = self.allocator.write().unwrap().pointer_input(len);
 
-        // binding
-        // // heap
-        let heap_bind = &self.module_bind_group;
+        let shape_padding: [u32; 8] = vector_padding(shape.clone(), 0, 8)?.try_into().unwrap();
+        let origin_stride_padding: [u32; 8] =
+            vector_padding(stride.clone(), 0, 8)?.try_into().unwrap();
+        let output_metadata = self.create_metadata_compound(
+            [allocate.1, allocate.2],
+            len,
+            dim as u32,
+            offset,
+            shape_padding,
+            origin_stride_padding,
+            origin_stride_padding,
+        );
 
-        // // array
-        let array_bind = array.binding();
+        // heap
+        let heap_bind = self.heap_binding();
 
-        // // array b
-        let array_b_bind = match &meta_data_option {
-            MetaDataOption::Array(arr) => arr.binding().ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?,
-            MetaDataOption::Skalar(scalar) => &scalar_binding(&wgpu.device, scalar),
-        };
+        let shaders = wgpu
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("Create Shaders Module For Add"),
+                source: wgpu::ShaderSource::Wgsl(match array.check_contiguous_or_view() {
+                    ArrayType::Contiguous(_) => {
+                        include_str!("./shaders/add_skalar_contiguous.wgsl").into()
+                    }
+                    ArrayType::View(_) => include_str!("./shaders/add_skalar_view.wgsl").into(),
+                }),
+            });
 
-        // // output
-        let out_bind =
-            self.create_metadata_binding(&[allocate.1, allocate.2], &shape, &stride, &stride, &0);
-
-        // pipeline
-        let shader = wgpu.device.create_shader_module(ShaderModuleDescriptor {
-            label: Some("Create Shader Module FOr Add Scalar"),
-            source: match meta_data_option {
-                MetaDataOption::Array(_) => {
-                    wgpu::ShaderSource::Wgsl(include_str!("./shaders/add_array_skalar.wgsl").into())
-                }
-                MetaDataOption::Skalar(_) => {
-                    wgpu::ShaderSource::Wgsl(include_str!("./shaders/add_skalar.wgsl").into())
-                }
-            },
-        });
-
-        let pipeline_layout = wgpu.device.create_pipeline_layout(
-            &(PipelineLayoutDescriptor {
-                label: Some("Create Pipeline Layout For Add Scalar"),
+        let pipeline_layout = wgpu
+            .device
+            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Create Pipeline Layout For Add"),
+                bind_group_layouts: &[&heap_bind.binding_group_layouts],
                 immediate_size: 0,
-                bind_group_layouts: &[
-                    &heap_bind.binding_group_layouts,
-                    &array_bind.ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?.0,
-                    &array_b_bind.0,
-                    &out_bind.0,
-                ],
-            }),
-        );
+            });
 
-        let pipeline = wgpu.device.create_compute_pipeline(
-            &(ComputePipelineDescriptor {
-                label: Some("Create Pipeline For Add Scalar"),
-                cache: None,
-                entry_point: Some("main"),
-                compilation_options: PipelineCompilationOptions::default(),
+        let pipeline = wgpu
+            .device
+            .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                label: Some("Create Pipeline Layout For Add"),
                 layout: Some(&pipeline_layout),
-                module: &shader,
-            }),
-        );
+                module: &shaders,
+                entry_point: Some("main"),
+                compilation_options: wgpu::PipelineCompilationOptions {
+                    constants: &[],
+                    zero_initialize_workgroup_memory: false,
+                },
+                cache: None,
+            });
 
-        let mut encoder = wgpu.device.create_command_encoder(
-            &(CommandEncoderDescriptor {
-                label: Some("Create Encoder For Add Scalar"),
-            }),
-        );
+        let mut encoder = wgpu
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Create Encoder For Add"),
+            });
+
+        set_cache(
+            self,
+            &wgpu.device,
+            &mut encoder,
+            array,
+            &output_metadata.buffer,
+            &meta_data_option,
+        )?;
 
         {
-            let mut bcp = encoder.begin_compute_pass(
-                &(wgpu::ComputePassDescriptor {
-                    label: Some("Create Begin Compute Pass For Add Scalar"),
-                    timestamp_writes: None,
-                }),
-            );
+            let mut begin_compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: Some("Create Begin Compute Pass For Add"),
+                timestamp_writes: None,
+            });
 
-            bcp.set_pipeline(&pipeline);
-
-            // 0
-            bcp.set_bind_group(0, Some(&heap_bind.binding_groups), &[]);
-            // 1
-            bcp.set_bind_group(
-                1,
-                Some(&array_bind.ok_or(ArrOgpuErr::refactor_err_0_1_0_5())?.1),
-                &[],
-            );
-            // 2
-            bcp.set_bind_group(2, Some(&array_b_bind.1), &[]);
-            // 3
-            bcp.set_bind_group(3, Some(&out_bind.1), &[]);
-
-            let x = (len + 256 - 1) / 256;
-            bcp.dispatch_workgroups(x, 1, 1);
+            begin_compute_pass.set_pipeline(&pipeline);
+            begin_compute_pass.set_bind_group(0, Some(&heap_bind.binding_groups), &[]);
+            let x = (len + 255) >> 8;
+            begin_compute_pass.dispatch_workgroups(x, 1, 1);
         }
 
         wgpu.queue.submit(Some(encoder.finish()));
 
-        // if let Err(poll_err) = wgpu.device.poll(wgpu::wgt::PollType::Wait) {
-        //     let error = "Add Error, Error While Poll".to_string();
-        //     return Err(ArrOgpuErr::Poll(error, poll_err));
-        // }
-
         let array = GpuArray {
-            // build/0.1.0.5
-            metadata_compound: None,
-            // build/0.1.0.5
             module: Arc::new(self.clone()),
-            pointer: (allocate.1, allocate.2),
-            shape: shape.clone(),
-            stride,
-            space_type: allocate.0,
             length: len as usize,
-            binding: Some(out_bind),
+            binding: None,
+            metadata_compound: Some(output_metadata),
+            pointer: (allocate.1, allocate.2),
+            shape,
+            space_type: allocate.0,
+            stride,
         };
 
         Ok(array)
     }
 }
 
-fn scalar_binding(device: &Device, scalar: &f32) -> (BindGroupLayout, wgpu::BindGroup) {
-    // buffer
-    let scalar_buffer = device.create_buffer_init(
-        &(BufferInitDescriptor {
-            label: Some("Create Buffer Scalar For Add Scalar"),
-            usage: BufferUsages::UNIFORM,
-            contents: bytemuck::bytes_of(scalar),
-        }),
-    );
+fn set_cache<A>(
+    module: &ArrOgpuModule,
+    device: &Device,
+    encoder: &mut CommandEncoder,
+    array: &A,
+    out_metadata_buffer: &Buffer,
+    option: &MetaDataOption,
+) -> Result<(), ArrOgpuErr>
+where
+    A: ArrayCompute,
+{
+    let execute_args = &module.execute_args;
+    let static_cache = &module.static_cache;
 
-    // bind_group_layout
-    let bind_group_layout = device.create_bind_group_layout(
-        &(BindGroupLayoutDescriptor {
-            label: Some("Create Bind Group Layout For Add Scalar"),
-            entries: &[BindGroupLayoutEntry {
-                binding: 0,
-                count: None,
-                ty: wgpu::BindingType::Buffer {
-                    ty: BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                visibility: ShaderStages::COMPUTE,
-            }],
-        }),
-    );
+    let array_a_metadata_buffer = array.metadata_compound().ok_or(ArrOgpuErr::Add(
+        "Add Error, Metadata Not Yet Defined For Array A".to_string(),
+    ))?;
 
-    // bind_group
-    let bind_group = device.create_bind_group(
-        &(BindGroupDescriptor {
-            label: Some("Create Bind Group Layout For Add Scalar"),
-            layout: &bind_group_layout,
-            entries: &[BindGroupEntry {
-                binding: 0,
-                resource: scalar_buffer.as_entire_binding(),
-            }],
-        }),
-    );
+    let size = if let ArrayType::Contiguous(_) = array.check_contiguous_or_view() {
+        32
+    } else {
+        256
+    };
 
-    (bind_group_layout, bind_group)
+    encoder.copy_buffer_to_buffer(&array_a_metadata_buffer.buffer, 0, &execute_args, 0, size);
+    encoder.copy_buffer_to_buffer(out_metadata_buffer, 0, &execute_args, size, size);
+
+    let (counter, scalar, index) = match option {
+        MetaDataOption::Array(arr) => {
+            let scalar_index = arr.pointer().0 + arr.offset();
+            (1, 0., scalar_index)
+        }
+        MetaDataOption::Skalar(scalar) => (0, *scalar, 0),
+    };
+
+    let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("Create Static Interface Buffer For Add"),
+        contents: bytemuck::bytes_of(&StaticInterface {
+            counter,
+            scalar,
+            index,
+            padding: 0,
+        }),
+        usage: BufferUsages::COPY_SRC,
+    });
+
+    encoder.copy_buffer_to_buffer(&buffer, 0, &static_cache, 0, 16);
+
+    Ok(())
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Zeroable, Pod)]
+struct StaticInterface {
+    counter: u32,
+    scalar: f32,
+    index: u32,
+    padding: u32,
 }
