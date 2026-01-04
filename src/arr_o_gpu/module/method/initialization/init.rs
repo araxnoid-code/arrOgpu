@@ -28,8 +28,17 @@ impl ArrOgpuModule {
 
         // // execute_array_cache
         let size_cache = 768;
-        let exececute_array_cache_buffer = wgpu.device.create_buffer(&BufferDescriptor {
-            label: Some("Create execute_array_cache For Init"),
+        let exececute_args_buffer = wgpu.device.create_buffer(&BufferDescriptor {
+            label: Some("Create execute args cache For Init"),
+            size: size_cache,
+            usage: BufferUsages::COPY_DST | BufferUsages::UNIFORM,
+            mapped_at_creation: false,
+        });
+
+        // // static_cache
+        let size_cache = 32;
+        let static_cache = wgpu.device.create_buffer(&BufferDescriptor {
+            label: Some("Create Static Cache"),
             size: size_cache,
             usage: BufferUsages::COPY_DST | BufferUsages::UNIFORM,
             mapped_at_creation: false,
@@ -60,6 +69,16 @@ impl ArrOgpuModule {
                             min_binding_size: None,
                         },
                     },
+                    BindGroupLayoutEntry {
+                        binding: 2,
+                        count: None,
+                        visibility: ShaderStages::COMPUTE,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                    },
                 ],
             }),
         );
@@ -75,7 +94,11 @@ impl ArrOgpuModule {
                     },
                     BindGroupEntry {
                         binding: 1,
-                        resource: exececute_array_cache_buffer.as_entire_binding(),
+                        resource: exececute_args_buffer.as_entire_binding(),
+                    },
+                    BindGroupEntry {
+                        binding: 2,
+                        resource: static_cache.as_entire_binding(),
                     },
                 ],
             }),
@@ -98,7 +121,9 @@ impl ArrOgpuModule {
             // // Heap
             heap_buffer: Arc::new(heap_buffer),
             // // execute_array_cache
-            execute_args: Arc::new(exececute_array_cache_buffer),
+            execute_args: Arc::new(exececute_args_buffer),
+            // // static
+            static_cache: Arc::new(static_cache),
         })
     }
 }

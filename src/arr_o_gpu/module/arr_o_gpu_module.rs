@@ -18,6 +18,8 @@ pub struct ArrOgpuModule {
     pub(crate) heap_buffer: Arc<Buffer>,
     // // execute_array_cache
     pub(crate) execute_args: Arc<Buffer>,
+    // // execute_array_cache
+    pub(crate) static_cache: Arc<Buffer>,
 }
 
 // basic

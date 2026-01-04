@@ -1,5 +1,8 @@
 use std::sync::Arc;
 
+use bytemuck::{Pod, Zeroable};
+use wgpu::{Buffer, BufferUsages, CommandEncoder, Device, util::DeviceExt};
+
 use crate::{
     ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, GpuArray,
     arr_o_gpu::module::method::function::operation::element_wise::skalar_operation::MetaDataOption,
@@ -15,11 +18,6 @@ impl ArrOgpuModule {
     where
         A: ArrayCompute,
     {
-        if let ArrayType::View(_) = array.check_contiguous_or_view() {
-            let error = "Add ERROR, View Array Not Supported Yet For Scalar Operation".to_string();
-            return Err(ArrOgpuErr::Add(error));
-        }
-
         let wgpu = self.wgpu_init.read().unwrap();
         // output metadata
         let len = array.len();
@@ -49,9 +47,14 @@ impl ArrOgpuModule {
             .device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("Create Shaders Module For Add"),
-                source: wgpu::ShaderSource::Wgsl(
-                    include_str!("./shaders/add_skalar_contiguous_metadata.wgsl").into(),
-                ),
+                source: wgpu::ShaderSource::Wgsl(match array.check_contiguous_or_view() {
+                    ArrayType::Contiguous(_) => {
+                        include_str!("./shaders/add_skalar_contiguous_metadata.wgsl").into()
+                    }
+                    ArrayType::View(_) => {
+                        include_str!("./shaders/add_skalar_view_metadata.wgsl").into()
+                    }
+                }),
             });
 
         let pipeline_layout = wgpu
@@ -70,7 +73,7 @@ impl ArrOgpuModule {
                 module: &shaders,
                 entry_point: Some("main"),
                 compilation_options: wgpu::PipelineCompilationOptions {
-                    constants: &get_override(array, &meta_data_option, allocate.1 as f64),
+                    constants: &[],
                     zero_initialize_workgroup_memory: false,
                 },
                 cache: None,
@@ -81,6 +84,15 @@ impl ArrOgpuModule {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Create Encoder For Add"),
             });
+
+        set_cache(
+            self,
+            &wgpu.device,
+            &mut encoder,
+            array,
+            &output_metadata.buffer,
+            &meta_data_option,
+        )?;
 
         {
             let mut begin_compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
@@ -111,25 +123,62 @@ impl ArrOgpuModule {
     }
 }
 
-fn get_override<'a, A>(
+fn set_cache<A>(
+    module: &ArrOgpuModule,
+    device: &Device,
+    encoder: &mut CommandEncoder,
     array: &A,
-    meta_data_option: &MetaDataOption,
-    start_pointer_o: f64,
-) -> [(&'a str, f64); 6]
+    out_metadata_buffer: &Buffer,
+    option: &MetaDataOption,
+) -> Result<(), ArrOgpuErr>
 where
     A: ArrayCompute,
 {
-    let (scalar_index, scalar, scalar_counter) = match meta_data_option {
-        MetaDataOption::Array(arr) => ((arr.offset() + arr.pointer().0) as f64, 0., 1.),
-        MetaDataOption::Skalar(scalar) => (0., *scalar as f64, 0.),
+    let execute_args = &module.execute_args;
+    let static_cache = &module.static_cache;
+
+    let array_a_metadata_buffer = array.metadata_compound().ok_or(ArrOgpuErr::Add(
+        "Add Error, Metadata Not Yet Defined For Array A".to_string(),
+    ))?;
+
+    let size = if let ArrayType::Contiguous(_) = array.check_contiguous_or_view() {
+        32
+    } else {
+        256
     };
 
-    [
-        ("LEN", array.len() as f64),
-        ("START_POINTER", array.pointer().0 as f64),
-        ("START_POINTER_O", start_pointer_o),
-        ("SCALAR_INDEX", scalar_index),
-        ("SCALAR", scalar),
-        ("SCALAR_COUNTER", scalar_counter),
-    ]
+    encoder.copy_buffer_to_buffer(&array_a_metadata_buffer.buffer, 0, &execute_args, 0, size);
+    encoder.copy_buffer_to_buffer(out_metadata_buffer, 0, &execute_args, size, size);
+
+    let (counter, scalar, index) = match option {
+        MetaDataOption::Array(arr) => {
+            let scalar_index = arr.pointer().0 + arr.offset();
+            (1, 0., scalar_index)
+        }
+        MetaDataOption::Skalar(scalar) => (0, *scalar, 0),
+    };
+
+    let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("Create Static Interface Buffer For Add"),
+        contents: bytemuck::bytes_of(&StaticInterface {
+            counter,
+            scalar,
+            index,
+            padding: 0,
+        }),
+        usage: BufferUsages::COPY_SRC,
+    });
+
+    encoder.copy_buffer_to_buffer(&buffer, 0, &static_cache, 0, 16);
+
+    Ok(())
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Zeroable, Pod)]
+struct StaticInterface {
+    counter: u32,
+    scalar: f32,
+    index: u32,
+    padding: u32,
 }

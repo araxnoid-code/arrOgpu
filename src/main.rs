@@ -5,13 +5,14 @@ fn main() {
 
     let array_a = ArangeArray::arange(0..12).to_GpuArray(&module).unwrap();
     println!("{}", array_a);
-
-    let array_b = ArangeArray::arange(0..12).to_GpuArray(&module).unwrap();
-    println!("{}", array_b);
-
     let view = array_a.view().unwrap();
 
-    let c = module.add_metadata(&view, &array_b).unwrap();
+    let array_b = ArangeArray::arange(20..40).to_GpuArray(&module).unwrap();
+
+    let c = module
+        .add_metadata(&view, &array_b.index(&[7]).unwrap())
+        .unwrap();
+    println!("{}", view.contiguous());
     println!("{}", c);
-    println!("{:?}", &module.get_heap()[37..75])
+    // println!("{:?}", &module.get_heap()[37..75])
 }
