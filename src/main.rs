@@ -33,7 +33,7 @@ fn main() {
         speed += tock - tick;
     }
 
-    println!(" rata rata metode lama {} ms", speed as f64 / times as f64);
+    println!(" rata rata metode baru {} ms", speed as f64 / times as f64);
 
     let times = 120;
     let mut speed_cache = 0;
@@ -46,7 +46,7 @@ fn main() {
             .unwrap()
             .as_millis();
 
-        module.add(&array, &array).unwrap();
+        module.sub(&array, &10.).unwrap();
 
         let tock = std::time::SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -57,10 +57,10 @@ fn main() {
     }
 
     println!(
-        " rata rata metode baru {} ms",
+        " rata rata metode lama {} ms",
         speed_cache as f64 / times as f64
     );
 
-    let peningkatan = (speed as f64 - speed_cache as f64) / speed as f64;
+    let peningkatan = (speed_cache as f64 - speed as f64) / speed as f64;
     println!(" persentase peningkatan {}%", peningkatan * 100.0);
 }

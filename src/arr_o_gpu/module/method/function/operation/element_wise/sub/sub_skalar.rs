@@ -120,6 +120,12 @@ impl ArrOgpuModule {
 
         wgpu.queue.submit(Some(encoder.finish()));
 
+        // wgpu.device
+        //     .poll(wgpu::wgt::PollType::Wait {
+        //         submission_index: Some(idx),
+        //         timeout: None,
+        //     })
+        //     .unwrap();
         // if let Err(poll_err) = wgpu.device.poll(wgpu::wgt::PollType::Wait) {
         //     let error = "Add Error, Error While Poll".to_string();
         //     return Err(ArrOgpuErr::Poll(error, poll_err));

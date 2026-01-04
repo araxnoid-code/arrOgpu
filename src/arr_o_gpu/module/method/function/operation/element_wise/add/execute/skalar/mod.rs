@@ -66,16 +66,18 @@ impl ArrOgpuModule {
         let read = self.pipeline_cache.read().unwrap();
         let pipeline = match array.check_contiguous_or_view() {
             ArrayType::Contiguous(_) => {
-                if let Some(pipeline) = read.get("pipeline_scalar_contiguous") {
+                if let Some(pipeline) = read.get("pipeline_add_scalar_contiguous") {
                     PipelineCompound::PipelineCache(pipeline)
                 } else {
+                    drop(read);
                     PipelineCompound::Pipeline(set_pipeline(&wgpu.device, &pipeline_layout, array))
                 }
             }
             ArrayType::View(_) => {
-                if let Some(pipeline) = read.get("pipeline_scalar_view") {
+                if let Some(pipeline) = read.get("pipeline_add_scalar_view") {
                     PipelineCompound::PipelineCache(pipeline)
                 } else {
+                    drop(read);
                     PipelineCompound::Pipeline(set_pipeline(&wgpu.device, &pipeline_layout, array))
                 }
             }
@@ -109,6 +111,17 @@ impl ArrOgpuModule {
         }
         wgpu.queue.submit(Some(encoder.finish()));
 
+        // wgpu.device
+        //     .poll(wgpu::wgt::PollType::Wait {
+        //         submission_index: Some(idx),
+        //         timeout: None,
+        //     })
+        //     .unwrap();
+
+        if let PipelineCompound::Pipeline(pipeline) = pipeline {
+            set_pipeline_cache(self, array, pipeline);
+        }
+
         let array = GpuArray {
             module: Arc::new(self.clone()),
             length: len as usize,
@@ -122,6 +135,19 @@ impl ArrOgpuModule {
 
         Ok(array)
     }
+}
+
+fn set_pipeline_cache<A>(module: &ArrOgpuModule, array: &A, pipeline: ComputePipeline)
+where
+    A: ArrayCompute,
+{
+    let mut write = module.pipeline_cache.write().unwrap();
+    let key = match array.check_contiguous_or_view() {
+        ArrayType::Contiguous(_) => "pipeline_add_scalar_contiguous",
+        ArrayType::View(_) => "pipeline_add_scalar_view",
+    };
+
+    write.insert(key, pipeline);
 }
 
 fn set_cache<A>(
