@@ -1,11 +1,34 @@
 use std::sync::Arc;
 
-use wgpu::{Buffer, CommandEncoder, Device, ShaderModule};
+use wgpu::{
+    Buffer, CommandEncoder, ComputePass, ComputePipeline, Device, PipelineLayout, ShaderModule,
+};
 
 use crate::{
     ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, CheckArrayType, GpuArray,
     get_stride_from_shape, vector_padding,
 };
+
+pub enum SavingPipeline<'a> {
+    PipelineCache(&'a ComputePipeline),
+    Pipeline(ComputePipeline),
+}
+
+impl<'a> SavingPipeline<'a> {
+    pub fn set_pipeline(&self, begin_compute_pass: &mut ComputePass) {
+        match self {
+            Self::PipelineCache(cache) => begin_compute_pass.set_pipeline(cache),
+            Self::Pipeline(pipeline) => begin_compute_pass.set_pipeline(pipeline),
+        }
+    }
+
+    pub fn saving_cache(self, key: &'static str, module: &ArrOgpuModule) {
+        let mut write = module.pipeline_cache.write().unwrap();
+        if let Self::Pipeline(pipeline) = self {
+            write.insert(key, pipeline);
+        }
+    }
+}
 
 impl ArrOgpuModule {
     pub(crate) fn add_array<'a, A, B>(
@@ -53,8 +76,6 @@ impl ArrOgpuModule {
         let heap_bind = &self.heap_binding();
 
         // pipeline
-        let shaders = set_shaders(&wgpu.device, array_a, array_b);
-
         let pipeline_layout = wgpu
             .device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -63,19 +84,39 @@ impl ArrOgpuModule {
                 immediate_size: 0,
             });
 
-        let pipeline = wgpu
-            .device
-            .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-                label: Some("Create Pipeline For Add"),
-                layout: Some(&pipeline_layout),
-                module: &shaders,
-                entry_point: Some("main"),
-                compilation_options: wgpu::PipelineCompilationOptions {
-                    constants: &[],
-                    zero_initialize_workgroup_memory: false,
-                },
-                cache: None,
-            });
+        let read = self.pipeline_cache.read().unwrap();
+        let pipeline = match (
+            array_a.check_contiguous_or_view(),
+            array_b.check_contiguous_or_view(),
+        ) {
+            (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => {
+                if let Some(pipeline) = read.get("pipeline_non_scalar_contiguous") {
+                    SavingPipeline::PipelineCache(pipeline)
+                } else {
+                    drop(read);
+                    SavingPipeline::Pipeline(set_pipeline(
+                        &wgpu.device,
+                        array_a,
+                        array_b,
+                        &pipeline_layout,
+                    ))
+                }
+            }
+
+            _ => {
+                if let Some(pipeline) = read.get("pipeline_non_scalar_view") {
+                    SavingPipeline::PipelineCache(pipeline)
+                } else {
+                    drop(read);
+                    SavingPipeline::Pipeline(set_pipeline(
+                        &wgpu.device,
+                        array_a,
+                        array_b,
+                        &pipeline_layout,
+                    ))
+                }
+            }
+        };
 
         let mut encoder = wgpu
             .device
@@ -97,13 +138,18 @@ impl ArrOgpuModule {
                 timestamp_writes: None,
             });
 
-            begin_compute_pass.set_pipeline(&pipeline);
+            pipeline.set_pipeline(&mut begin_compute_pass);
+            // begin_compute_pass.set_pipeline(&pipeline);
             begin_compute_pass.set_bind_group(0, Some(&heap_bind.binding_groups), &[]);
             let x = (len + 255) >> 8;
             begin_compute_pass.dispatch_workgroups(x, 1, 1);
         }
 
         wgpu.queue.submit(Some(encoder.finish()));
+
+        if let SavingPipeline::Pipeline(pipeline) = pipeline {
+            save_pipeline(self, pipeline, array_a, array_b);
+        }
 
         let array = GpuArray {
             module: Arc::new(self.clone()),
@@ -118,6 +164,52 @@ impl ArrOgpuModule {
 
         Ok(array)
     }
+}
+
+fn save_pipeline<'a, A, B>(
+    module: &ArrOgpuModule,
+    pipeline: ComputePipeline,
+    array_a: &'a A,
+    array_b: &'a B,
+) where
+    A: ArrayCompute,
+    B: ArrayCompute + ?Sized,
+{
+    let mut write = module.pipeline_cache.write().unwrap();
+    match (
+        array_a.check_contiguous_or_view(),
+        array_b.check_contiguous_or_view(),
+    ) {
+        (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => {
+            write.insert("pipeline_non_scalar_contiguous", pipeline);
+        }
+        _ => {
+            write.insert("pipeline_non_scalar_view", pipeline);
+        }
+    };
+}
+
+fn set_pipeline<'a, A, B>(
+    device: &Device,
+    array_a: &'a A,
+    array_b: &'a B,
+    pipeline_layout: &PipelineLayout,
+) -> ComputePipeline
+where
+    A: ArrayCompute,
+    B: ArrayCompute + ?Sized,
+{
+    device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+        label: Some("Create Pipeline For Add"),
+        layout: Some(&pipeline_layout),
+        module: &set_shaders(&device, array_a, array_b),
+        entry_point: Some("main"),
+        compilation_options: wgpu::PipelineCompilationOptions {
+            constants: &[],
+            zero_initialize_workgroup_memory: false,
+        },
+        cache: None,
+    })
 }
 
 fn set_shaders<'a, A, B>(device: &Device, array_a: &'a A, array_b: &'a B) -> ShaderModule

@@ -1,4 +1,4 @@
-use crate::{ArrayCompute, CheckArrayType};
+use crate::ArrayCompute;
 
 pub enum MetaDataOption<'a> {
     Skalar(f32),

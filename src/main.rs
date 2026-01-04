@@ -5,11 +5,12 @@ fn main() {
 
     let array_a = ArangeArray::arange(0..12).to_GpuArray(&module).unwrap();
     println!("{}", array_a);
-    let view = array_a.view().unwrap();
+    // let view = array_a.view().unwrap();
 
-    let array_b = ArangeArray::arange(20..40).to_GpuArray(&module).unwrap();
+    let array_b = ArangeArray::arange(12..24).to_GpuArray(&module).unwrap();
+    println!("{}", array_b);
 
-    let c = module.add(&view, &array_b.index(&[7]).unwrap()).unwrap();
-    println!("{}", view.contiguous());
+    let c = module.add(&array_b, &array_a).unwrap();
+    // println!("{}", view.contiguous());
     println!("{}", c);
 }

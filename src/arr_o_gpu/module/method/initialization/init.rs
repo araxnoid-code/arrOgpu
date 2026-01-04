@@ -1,4 +1,7 @@
-use std::sync::{Arc, RwLock};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 
 use wgpu::{
     BindGroupDescriptor, BindGroupEntry, BindGroupLayoutEntry, BufferUsages, ShaderStages,
@@ -116,6 +119,10 @@ impl ArrOgpuModule {
 
             // Module Bind
             module_bind_group: Arc::new(buffer_compound),
+
+            // cache
+            // // pipeline
+            pipeline_cache: Arc::new(RwLock::new(HashMap::new())),
 
             // Module Buffer
             // // Heap

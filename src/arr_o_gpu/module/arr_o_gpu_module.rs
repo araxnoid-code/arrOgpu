@@ -1,6 +1,9 @@
-use std::sync::{Arc, RwLock};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 
-use wgpu::Buffer;
+use wgpu::{Buffer, ComputePipeline};
 
 use crate::{Allocator, BindGroupCompound, arr_o_gpu::WgpuModule};
 
@@ -12,6 +15,10 @@ pub struct ArrOgpuModule {
 
     // Module Bind
     pub(crate) module_bind_group: Arc<BindGroupCompound>,
+
+    // cache
+    // // pipeline
+    pub(crate) pipeline_cache: Arc<RwLock<HashMap<&'static str, ComputePipeline>>>,
 
     // Module Buffer
     // // heap
