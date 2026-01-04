@@ -1,13 +1,25 @@
 use std::sync::Arc;
 
 use bytemuck::{Pod, Zeroable};
-use wgpu::{Buffer, BufferUsages, CommandEncoder, Device, util::DeviceExt};
+use wgpu::{
+    Buffer, BufferUsages, CommandEncoder, ComputePipeline, Device, PipelineLayout, ShaderModule,
+    util::DeviceExt,
+};
 
 use crate::{
-    ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, GpuArray,
+    ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, GpuArray, PipelineCompound,
     arr_o_gpu::module::method::function::operation::element_wise::skalar_operation::MetaDataOption,
     get_stride_from_shape, vector_padding,
 };
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Zeroable, Pod)]
+struct StaticInterface {
+    counter: u32,
+    scalar: f32,
+    index: u32,
+    padding: u32,
+}
 
 impl ArrOgpuModule {
     pub(crate) fn add_skalar<A>(
@@ -43,18 +55,6 @@ impl ArrOgpuModule {
         // heap
         let heap_bind = self.heap_binding();
 
-        let shaders = wgpu
-            .device
-            .create_shader_module(wgpu::ShaderModuleDescriptor {
-                label: Some("Create Shaders Module For Add"),
-                source: wgpu::ShaderSource::Wgsl(match array.check_contiguous_or_view() {
-                    ArrayType::Contiguous(_) => {
-                        include_str!("./shaders/add_skalar_contiguous.wgsl").into()
-                    }
-                    ArrayType::View(_) => include_str!("./shaders/add_skalar_view.wgsl").into(),
-                }),
-            });
-
         let pipeline_layout = wgpu
             .device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -63,19 +63,23 @@ impl ArrOgpuModule {
                 immediate_size: 0,
             });
 
-        let pipeline = wgpu
-            .device
-            .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-                label: Some("Create Pipeline Layout For Add"),
-                layout: Some(&pipeline_layout),
-                module: &shaders,
-                entry_point: Some("main"),
-                compilation_options: wgpu::PipelineCompilationOptions {
-                    constants: &[],
-                    zero_initialize_workgroup_memory: false,
-                },
-                cache: None,
-            });
+        let read = self.pipeline_cache.read().unwrap();
+        let pipeline = match array.check_contiguous_or_view() {
+            ArrayType::Contiguous(_) => {
+                if let Some(pipeline) = read.get("pipeline_scalar_contiguous") {
+                    PipelineCompound::PipelineCache(pipeline)
+                } else {
+                    PipelineCompound::Pipeline(set_pipeline(&wgpu.device, &pipeline_layout, array))
+                }
+            }
+            ArrayType::View(_) => {
+                if let Some(pipeline) = read.get("pipeline_scalar_view") {
+                    PipelineCompound::PipelineCache(pipeline)
+                } else {
+                    PipelineCompound::Pipeline(set_pipeline(&wgpu.device, &pipeline_layout, array))
+                }
+            }
+        };
 
         let mut encoder = wgpu
             .device
@@ -98,12 +102,11 @@ impl ArrOgpuModule {
                 timestamp_writes: None,
             });
 
-            begin_compute_pass.set_pipeline(&pipeline);
+            pipeline.set_pipeline(&mut begin_compute_pass);
             begin_compute_pass.set_bind_group(0, Some(&heap_bind.binding_groups), &[]);
             let x = (len + 255) >> 8;
             begin_compute_pass.dispatch_workgroups(x, 1, 1);
         }
-
         wgpu.queue.submit(Some(encoder.finish()));
 
         let array = GpuArray {
@@ -172,11 +175,32 @@ where
     Ok(())
 }
 
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Zeroable, Pod)]
-struct StaticInterface {
-    counter: u32,
-    scalar: f32,
-    index: u32,
-    padding: u32,
+fn set_pipeline<A>(device: &Device, pipeline_layout: &PipelineLayout, array: &A) -> ComputePipeline
+where
+    A: ArrayCompute,
+{
+    device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+        label: Some("Create Pipeline Layout For Add"),
+        layout: Some(&pipeline_layout),
+        module: &set_shaders(&device, array),
+        entry_point: Some("main"),
+        compilation_options: wgpu::PipelineCompilationOptions {
+            constants: &[],
+            zero_initialize_workgroup_memory: false,
+        },
+        cache: None,
+    })
+}
+
+fn set_shaders<A>(device: &Device, array: &A) -> ShaderModule
+where
+    A: ArrayCompute,
+{
+    device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("Create Shaders Module For Add"),
+        source: wgpu::ShaderSource::Wgsl(match array.check_contiguous_or_view() {
+            ArrayType::Contiguous(_) => include_str!("./shaders/add_skalar_contiguous.wgsl").into(),
+            ArrayType::View(_) => include_str!("./shaders/add_skalar_view.wgsl").into(),
+        }),
+    })
 }

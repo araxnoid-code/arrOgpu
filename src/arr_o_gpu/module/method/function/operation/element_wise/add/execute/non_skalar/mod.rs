@@ -1,34 +1,11 @@
 use std::sync::Arc;
 
-use wgpu::{
-    Buffer, CommandEncoder, ComputePass, ComputePipeline, Device, PipelineLayout, ShaderModule,
-};
+use wgpu::{Buffer, CommandEncoder, ComputePipeline, Device, PipelineLayout, ShaderModule};
 
 use crate::{
-    ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, CheckArrayType, GpuArray,
+    ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, CheckArrayType, GpuArray, PipelineCompound,
     get_stride_from_shape, vector_padding,
 };
-
-pub enum SavingPipeline<'a> {
-    PipelineCache(&'a ComputePipeline),
-    Pipeline(ComputePipeline),
-}
-
-impl<'a> SavingPipeline<'a> {
-    pub fn set_pipeline(&self, begin_compute_pass: &mut ComputePass) {
-        match self {
-            Self::PipelineCache(cache) => begin_compute_pass.set_pipeline(cache),
-            Self::Pipeline(pipeline) => begin_compute_pass.set_pipeline(pipeline),
-        }
-    }
-
-    pub fn saving_cache(self, key: &'static str, module: &ArrOgpuModule) {
-        let mut write = module.pipeline_cache.write().unwrap();
-        if let Self::Pipeline(pipeline) = self {
-            write.insert(key, pipeline);
-        }
-    }
-}
 
 impl ArrOgpuModule {
     pub(crate) fn add_array<'a, A, B>(
@@ -91,10 +68,10 @@ impl ArrOgpuModule {
         ) {
             (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => {
                 if let Some(pipeline) = read.get("pipeline_non_scalar_contiguous") {
-                    SavingPipeline::PipelineCache(pipeline)
+                    PipelineCompound::PipelineCache(pipeline)
                 } else {
                     drop(read);
-                    SavingPipeline::Pipeline(set_pipeline(
+                    PipelineCompound::Pipeline(set_pipeline(
                         &wgpu.device,
                         array_a,
                         array_b,
@@ -105,10 +82,10 @@ impl ArrOgpuModule {
 
             _ => {
                 if let Some(pipeline) = read.get("pipeline_non_scalar_view") {
-                    SavingPipeline::PipelineCache(pipeline)
+                    PipelineCompound::PipelineCache(pipeline)
                 } else {
                     drop(read);
-                    SavingPipeline::Pipeline(set_pipeline(
+                    PipelineCompound::Pipeline(set_pipeline(
                         &wgpu.device,
                         array_a,
                         array_b,
@@ -147,7 +124,7 @@ impl ArrOgpuModule {
 
         wgpu.queue.submit(Some(encoder.finish()));
 
-        if let SavingPipeline::Pipeline(pipeline) = pipeline {
+        if let PipelineCompound::Pipeline(pipeline) = pipeline {
             save_pipeline(self, pipeline, array_a, array_b);
         }
 
