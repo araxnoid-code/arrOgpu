@@ -1,6 +1,8 @@
 mod module;
 pub use module::*;
 
+mod compute_shaders;
+
 mod array;
 pub use array::*;
 

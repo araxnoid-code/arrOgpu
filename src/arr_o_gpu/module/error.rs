@@ -21,6 +21,7 @@ pub enum ArrOgpuErr {
 
     // function
     Pow(String),
+    Abs(String),
 
     // View
     Indexing(String),

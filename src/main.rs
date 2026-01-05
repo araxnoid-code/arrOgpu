@@ -3,35 +3,11 @@ use arr_o_gpu::{ArangeArray, ArangeIteratorTrait, ArrOgpuModule};
 fn main() {
     let module = ArrOgpuModule::default();
 
-    let array_a = ArangeArray::arange(0..12)
-        .to_GpuArray_with_shape(&[3, 4], &module)
+    let array = module
+        .array_from_vector(&[0., 1., -9., -8., 20., -1., 30., -29.], &[2, 4])
         .unwrap();
-    println!("array a");
-    println!("{}", array_a);
+    println!("{}", array);
 
-    let array_b = ArangeArray::arange(12..24)
-        .to_GpuArray_with_shape(&[3, 4], &module)
-        .unwrap();
-    println!("array b");
-    println!("{}", array_b);
-
-    let result = array_a.mul(&3.).unwrap();
-    println!("result");
-    println!("{}", result);
-
-    let array_c = ArangeArray::arange(20..44)
-        .to_GpuArray_with_shape(&[2, 3, 4], &module)
-        .unwrap();
-    println!("array c");
-    println!("{}", array_c);
-
-    let array_d = ArangeArray::arange(100..124)
-        .to_GpuArray_with_shape(&[2, 3, 4], &module)
-        .unwrap();
-    println!("array d");
-    println!("{}", array_d);
-
-    let result = array_c.mul(&array_d).unwrap();
-    println!("result");
+    let result = module.abs_metadata(&array.view().unwrap()).unwrap();
     println!("{}", result);
 }
