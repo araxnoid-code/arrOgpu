@@ -112,6 +112,14 @@ impl ArrOgpuModule {
             binding_groups: bind_group,
         };
 
+        let common_pipeline_layout =
+            wgpu.device
+                .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                    label: Some("Create Common Pipeline Layout"),
+                    bind_group_layouts: &[&buffer_compound.binding_group_layouts],
+                    immediate_size: 0,
+                });
+
         Ok(Self {
             allocator: Arc::new(RwLock::new(Allocator::init(maksimum))),
             maximum: Arc::new(maksimum),
@@ -123,6 +131,7 @@ impl ArrOgpuModule {
             // cache
             // // pipeline
             pipeline_cache: Arc::new(RwLock::new(HashMap::new())),
+            common_pipeline_layout: Arc::new(common_pipeline_layout),
 
             // Module Buffer
             // // Heap

@@ -53,43 +53,39 @@ impl ArrOgpuModule {
         let heap_bind = &self.heap_binding();
 
         // pipeline
-        let pipeline_layout = wgpu
-            .device
-            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("Create Pipeline Layout For Add"),
-                bind_group_layouts: &[&heap_bind.binding_group_layouts],
-                immediate_size: 0,
-            });
-
         let read = self.pipeline_cache.read().unwrap();
         let pipeline = match (
             array_a.check_contiguous_or_view(),
             array_b.check_contiguous_or_view(),
         ) {
             (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => {
-                if let Some(pipeline) = read.get("pipeline_non_scalar_contiguous") {
+                if let Some(pipeline) = read.get("pipeline_add_non_scalar_contiguous") {
                     PipelineCompound::PipelineCache(pipeline)
                 } else {
                     drop(read);
+
+                    let pipeline_layout = &self.common_pipeline_layout;
                     PipelineCompound::Pipeline(set_pipeline(
                         &wgpu.device,
                         array_a,
                         array_b,
-                        &pipeline_layout,
+                        pipeline_layout,
                     ))
                 }
             }
 
             _ => {
-                if let Some(pipeline) = read.get("pipeline_non_scalar_view") {
+                if let Some(pipeline) = read.get("pipeline_add_non_scalar_view") {
                     PipelineCompound::PipelineCache(pipeline)
                 } else {
                     drop(read);
+
+                    let pipeline_layout = &self.common_pipeline_layout;
                     PipelineCompound::Pipeline(set_pipeline(
                         &wgpu.device,
                         array_a,
                         array_b,
-                        &pipeline_layout,
+                        pipeline_layout,
                     ))
                 }
             }
@@ -158,10 +154,10 @@ fn save_pipeline<'a, A, B>(
         array_b.check_contiguous_or_view(),
     ) {
         (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => {
-            write.insert("pipeline_non_scalar_contiguous", pipeline);
+            write.insert("pipeline_add_non_scalar_contiguous", pipeline);
         }
         _ => {
-            write.insert("pipeline_non_scalar_view", pipeline);
+            write.insert("pipeline_add_non_scalar_view", pipeline);
         }
     };
 }

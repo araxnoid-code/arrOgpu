@@ -55,14 +55,6 @@ impl ArrOgpuModule {
         // heap
         let heap_bind = self.heap_binding();
 
-        let pipeline_layout = wgpu
-            .device
-            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("Create Pipeline Layout For Add"),
-                bind_group_layouts: &[&heap_bind.binding_group_layouts],
-                immediate_size: 0,
-            });
-
         let read = self.pipeline_cache.read().unwrap();
         let pipeline = match array.check_contiguous_or_view() {
             ArrayType::Contiguous(_) => {
@@ -70,6 +62,7 @@ impl ArrOgpuModule {
                     PipelineCompound::PipelineCache(pipeline)
                 } else {
                     drop(read);
+                    let pipeline_layout = &self.common_pipeline_layout;
                     PipelineCompound::Pipeline(set_pipeline(&wgpu.device, &pipeline_layout, array))
                 }
             }
@@ -78,6 +71,7 @@ impl ArrOgpuModule {
                     PipelineCompound::PipelineCache(pipeline)
                 } else {
                     drop(read);
+                    let pipeline_layout = &self.common_pipeline_layout;
                     PipelineCompound::Pipeline(set_pipeline(&wgpu.device, &pipeline_layout, array))
                 }
             }

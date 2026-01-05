@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use wgpu::{Buffer, ComputePipeline};
+use wgpu::{Buffer, ComputePipeline, PipelineLayout};
 
 use crate::{Allocator, BindGroupCompound, arr_o_gpu::WgpuModule};
 
@@ -18,6 +18,7 @@ pub struct ArrOgpuModule {
 
     // cache
     // // pipeline
+    pub(crate) common_pipeline_layout: Arc<PipelineLayout>,
     pub(crate) pipeline_cache: Arc<RwLock<HashMap<&'static str, ComputePipeline>>>,
 
     // Module Buffer

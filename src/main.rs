@@ -61,6 +61,6 @@ fn main() {
         speed_cache as f64 / times as f64
     );
 
-    let peningkatan = (speed_cache as f64 - speed as f64) / speed as f64;
+    let peningkatan = (speed_cache as f64 - speed as f64) / speed_cache as f64;
     println!(" persentase peningkatan {}%", peningkatan * 100.0);
 }
