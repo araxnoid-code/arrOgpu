@@ -1,14 +1,15 @@
-use crate::arr_o_gpu::module::method::function::operation::element_wise::skalar_operation::*;
-
 use crate::{
-    ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArray,
-    arr_o_gpu::module::method::function::operation::element_wise::skalar_operation::AbleElementWise,
+    ArrOgpuErr, ArrOgpuModule, ArrayCompute, CheckArrayType, GpuArray,
+    arr_o_gpu::module::method::function::operation::element_wise::skalar_operation::{
+        AbleElementWise, ElementWiseOption,
+    },
 };
 
 impl ArrOgpuModule {
-    pub fn sub<'a, A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
+    /// element-wise subtraction operations, input in the form of arrays and floats can be used as input in the second argument
+    pub fn sub<'a, A, B>(&self, array_a: &'a A, array_b: &'a B) -> Result<GpuArray, ArrOgpuErr>
     where
-        A: ArrayCompute,
+        A: ArrayCompute + CheckArrayType<'a>,
         B: AbleElementWise,
     {
         match array_b.get_eble_element_wise() {

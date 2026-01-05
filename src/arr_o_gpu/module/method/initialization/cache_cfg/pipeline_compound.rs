@@ -6,7 +6,7 @@ pub enum PipelineCompound<'a> {
 }
 
 impl<'a> PipelineCompound<'a> {
-    pub fn set_pipeline(&self, begin_compute_pass: &mut ComputePass) {
+    pub fn set_pipeline_begin_compute_pass(&self, begin_compute_pass: &mut ComputePass) {
         match self {
             Self::PipelineCache(cache) => begin_compute_pass.set_pipeline(cache),
             Self::Pipeline(pipeline) => begin_compute_pass.set_pipeline(pipeline),

@@ -8,7 +8,7 @@ use crate::{
 };
 
 impl ArrOgpuModule {
-    pub(crate) fn add_array<'a, A, B>(
+    pub(crate) fn sub_array<'a, A, B>(
         &self,
         array_a: &'a A,
         array_b: &'a B,
@@ -59,7 +59,7 @@ impl ArrOgpuModule {
             array_b.check_contiguous_or_view(),
         ) {
             (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => {
-                if let Some(pipeline) = read.get("pipeline_add_non_scalar_contiguous") {
+                if let Some(pipeline) = read.get("pipeline_sub_non_scalar_contiguous") {
                     PipelineCompound::PipelineCache(pipeline)
                 } else {
                     drop(read);
@@ -73,7 +73,7 @@ impl ArrOgpuModule {
             }
 
             _ => {
-                if let Some(pipeline) = read.get("pipeline_add_non_scalar_view") {
+                if let Some(pipeline) = read.get("pipeline_sub_non_scalar_view") {
                     PipelineCompound::PipelineCache(pipeline)
                 } else {
                     drop(read);
@@ -90,7 +90,7 @@ impl ArrOgpuModule {
         let mut encoder = wgpu
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Create Encoder For Add"),
+                label: Some("Create Encoder For Sub"),
             });
 
         set_execute_args(
@@ -149,10 +149,10 @@ fn save_pipeline<'a, A, B>(
         array_b.check_contiguous_or_view(),
     ) {
         (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => {
-            write.insert("pipeline_add_non_scalar_contiguous", pipeline);
+            write.insert("pipeline_sub_non_scalar_contiguous", pipeline);
         }
         _ => {
-            write.insert("pipeline_add_non_scalar_view", pipeline);
+            write.insert("pipeline_sub_non_scalar_view", pipeline);
         }
     };
 }
@@ -168,7 +168,7 @@ where
     B: ArrayCompute + ?Sized,
 {
     device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-        label: Some("Create Pipeline For Add"),
+        label: Some("Create Pipeline For Sub"),
         layout: Some(&pipeline_layout),
         module: &set_shaders(&device, array_a, array_b),
         entry_point: Some("main"),
@@ -186,16 +186,16 @@ where
     B: ArrayCompute + ?Sized,
 {
     device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("Create Shaders Module For Add"),
+        label: Some("Create Shaders Module For Sub"),
         source: wgpu::ShaderSource::Wgsl(
             match (
                 array_a.check_contiguous_or_view(),
                 array_b.check_contiguous_or_view(),
             ) {
                 (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => {
-                    include_str!("./shaders/add_contiguous.wgsl").into()
+                    include_str!("./shaders/sub_contiguous.wgsl").into()
                 }
-                _ => include_str!("./shaders/add_view.wgsl").into(),
+                _ => include_str!("./shaders/sub_view.wgsl").into(),
             },
         ),
     })

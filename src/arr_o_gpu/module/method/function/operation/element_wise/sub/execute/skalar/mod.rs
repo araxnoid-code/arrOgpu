@@ -22,7 +22,7 @@ struct StaticInterface {
 }
 
 impl ArrOgpuModule {
-    pub(crate) fn add_skalar<A>(
+    pub(crate) fn sub_skalar<A>(
         &self,
         array: &A,
         meta_data_option: MetaDataOption,
@@ -58,7 +58,7 @@ impl ArrOgpuModule {
         let read = self.pipeline_cache.read().unwrap();
         let pipeline = match array.check_contiguous_or_view() {
             ArrayType::Contiguous(_) => {
-                if let Some(pipeline) = read.get("pipeline_add_scalar_contiguous") {
+                if let Some(pipeline) = read.get("pipeline_sub_scalar_contiguous") {
                     PipelineCompound::PipelineCache(pipeline)
                 } else {
                     drop(read);
@@ -67,7 +67,7 @@ impl ArrOgpuModule {
                 }
             }
             ArrayType::View(_) => {
-                if let Some(pipeline) = read.get("pipeline_add_scalar_view") {
+                if let Some(pipeline) = read.get("pipeline_sub_scalar_view") {
                     PipelineCompound::PipelineCache(pipeline)
                 } else {
                     drop(read);
@@ -80,7 +80,7 @@ impl ArrOgpuModule {
         let mut encoder = wgpu
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Create Encoder For Add"),
+                label: Some("Create Encoder For Sub"),
             });
 
         set_cache(
@@ -94,7 +94,7 @@ impl ArrOgpuModule {
 
         {
             let mut begin_compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
-                label: Some("Create Begin Compute Pass For Add"),
+                label: Some("Create Begin Compute Pass For Sub"),
                 timestamp_writes: None,
             });
 
@@ -137,8 +137,8 @@ where
 {
     let mut write = module.pipeline_cache.write().unwrap();
     let key = match array.check_contiguous_or_view() {
-        ArrayType::Contiguous(_) => "pipeline_add_scalar_contiguous",
-        ArrayType::View(_) => "pipeline_add_scalar_view",
+        ArrayType::Contiguous(_) => "pipeline_sub_scalar_contiguous",
+        ArrayType::View(_) => "pipeline_sub_scalar_view",
     };
 
     write.insert(key, pipeline);
@@ -180,7 +180,7 @@ where
     };
 
     let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("Create Static Interface Buffer For Add"),
+        label: Some("Create Static Interface Buffer For Sub"),
         contents: bytemuck::bytes_of(&StaticInterface {
             counter,
             scalar,
@@ -200,7 +200,7 @@ where
     A: ArrayCompute,
 {
     device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-        label: Some("Create Pipeline Layout For Add"),
+        label: Some("Create Pipeline Layout For Sub"),
         layout: Some(&pipeline_layout),
         module: &set_shaders(&device, array),
         entry_point: Some("main"),
@@ -217,10 +217,10 @@ where
     A: ArrayCompute,
 {
     device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("Create Shaders Module For Add"),
+        label: Some("Create Shaders Module For Sub"),
         source: wgpu::ShaderSource::Wgsl(match array.check_contiguous_or_view() {
-            ArrayType::Contiguous(_) => include_str!("./shaders/add_skalar_contiguous.wgsl").into(),
-            ArrayType::View(_) => include_str!("./shaders/add_skalar_view.wgsl").into(),
+            ArrayType::Contiguous(_) => include_str!("./shaders/sub_skalar_contiguous.wgsl").into(),
+            ArrayType::View(_) => include_str!("./shaders/sub_skalar_view.wgsl").into(),
         }),
     })
 }

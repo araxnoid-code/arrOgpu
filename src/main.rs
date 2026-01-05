@@ -1,66 +1,37 @@
-use std::{time::UNIX_EPOCH, vec};
-
-use arr_o_gpu::{ArangeArray, ArangeIteratorTrait, ArrOgpuModule, ArrayCompute, r};
+use arr_o_gpu::{ArangeArray, ArangeIteratorTrait, ArrOgpuModule};
 
 fn main() {
-    let module = ArrOgpuModule::init(arr_o_gpu::ArrOgpuModuleInit {
-        heap_size: arr_o_gpu::HeapSize::Item(5_000_000),
-        wgpu: arr_o_gpu::WgpuInit::ManualInit(arr_o_gpu::ManualInit {
-            power: arr_o_gpu::Power::HighPerformance,
-            memory: arr_o_gpu::Memory::Performance,
-        }),
-    })
-    .unwrap();
+    let module = ArrOgpuModule::default();
 
-    let times = 120;
-    let mut speed = 0;
-    for _ in 0..times {
-        let data = vec![1.; 2_000_000];
-        let array = module.array_from_vector(&data, &[2_000_000]).unwrap();
+    let array_a = ArangeArray::arange(0..12)
+        .to_GpuArray_with_shape(&[3, 4], &module)
+        .unwrap();
+    println!("array a");
+    println!("{}", array_a);
 
-        let tick = std::time::SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_millis();
+    let array_b = ArangeArray::arange(12..24)
+        .to_GpuArray_with_shape(&[3, 4], &module)
+        .unwrap();
+    println!("array b");
+    println!("{}", array_b);
 
-        module.add(&array, &10.).unwrap();
+    let result = array_a.add(&array_b).unwrap();
+    println!("result");
+    println!("{}", result);
 
-        let tock = std::time::SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_millis();
+    let array_c = ArangeArray::arange(20..44)
+        .to_GpuArray_with_shape(&[2, 3, 4], &module)
+        .unwrap();
+    println!("array c");
+    println!("{}", array_c);
 
-        speed += tock - tick;
-    }
+    let array_d = ArangeArray::arange(100..124)
+        .to_GpuArray_with_shape(&[2, 3, 4], &module)
+        .unwrap();
+    println!("array d");
+    println!("{}", array_d);
 
-    println!(" rata rata metode baru {} ms", speed as f64 / times as f64);
-
-    let times = 120;
-    let mut speed_cache = 0;
-    for _ in 0..times {
-        let data = vec![1.; 2_000_000];
-        let array = module.array_from_vector(&data, &[2_000_000]).unwrap();
-
-        let tick = std::time::SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_millis();
-
-        module.sub(&array, &10.).unwrap();
-
-        let tock = std::time::SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_millis();
-
-        speed_cache += tock - tick;
-    }
-
-    println!(
-        " rata rata metode lama {} ms",
-        speed_cache as f64 / times as f64
-    );
-
-    let peningkatan = (speed_cache as f64 - speed as f64) / speed_cache as f64;
-    println!(" persentase peningkatan {}%", peningkatan * 100.0);
+    let result = array_c.add(&array_d).unwrap();
+    println!("result");
+    println!("{}", result);
 }
