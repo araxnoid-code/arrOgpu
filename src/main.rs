@@ -8,6 +8,6 @@ fn main() {
         .unwrap();
     println!("{}", array);
 
-    let result = module.abs_metadata(&array.view().unwrap()).unwrap();
+    let result = module.abs(&array.view().unwrap()).unwrap();
     println!("{}", result);
 }

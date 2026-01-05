@@ -21,14 +21,16 @@ struct ArrayMetadata{
 var<storage, read_write> heap: array<f32>;
 // // execute_args
 @group(0) @binding(1)
-var<uniform> execute_args: array<ArrayMetadata, 2>;
+var<uniform> execute_args: array<ArrayMetadata, 3>;
 
 @compute @workgroup_size(256, 1, 1)
 fn main(
     @builtin(global_invocation_id) global_id:vec3<u32>
 ){
+    // heap[8 + global_id.x] = f32(execute_args[1].pointer.x);
     if global_id.x < execute_args[0].len{
-        heap[global_id.x + execute_args[1].pointer.x] = abs(heap[indexing(global_id.x) + execute_args[0].pointer.x]);
+        heap[global_id.x + execute_args[1].pointer.x] = log2(heap[indexing(global_id.x) + execute_args[0].pointer.x]);
+
     }
 }
 
@@ -39,11 +41,11 @@ fn indexing(x:u32) -> u32{
     let shape = arr.shape;
     var idx = arr.offset;
     for (var i = 0u; i < arr.dim; i ++){
-        let idx0 = x >> 2;
-        let idx1 = x & 3;
+        let idx0 = i >> 2;
+        let idx1 = i & 3;
 
         let permute = (x / stride_o[idx0][idx1]) % shape[idx0][idx1];
-        idx += (permute * shape[idx0][idx1]);
+        idx += (permute * stride[idx0][idx1]);
     }
 
     return idx;

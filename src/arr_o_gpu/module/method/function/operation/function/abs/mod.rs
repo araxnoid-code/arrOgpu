@@ -1,4 +1,3 @@
-mod abs;
 use std::sync::Arc;
 
 use wgpu::{Buffer, CommandEncoder, ComputePipeline, Device, PipelineLayout};
@@ -14,7 +13,7 @@ const PIPELINE_ABS_CONTIGUOUS: &'static str = "pipeline_abs_contiguous";
 const PIPELINE_ABS_VIEW: &'static str = "pipeline_abs_view";
 
 impl ArrOgpuModule {
-    pub fn abs_metadata<A>(&self, array: &A) -> Result<GpuArray, ArrOgpuErr>
+    pub fn abs<A>(&self, array: &A) -> Result<GpuArray, ArrOgpuErr>
     where
         A: ArrayCompute,
     {

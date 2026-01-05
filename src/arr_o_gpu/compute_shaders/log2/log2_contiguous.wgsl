@@ -15,7 +15,7 @@ struct ArrayMetadata32{
 var<storage, read_write> heap: array<f32>;
 // // execute_args
 @group(0) @binding(1)
-var<uniform> execute_args: array<ArrayMetadata32, 2>;
+var<uniform> execute_args: array<ArrayMetadata32, 3>;
 
 
 
@@ -25,6 +25,6 @@ fn main(
     @builtin(global_invocation_id) global_id:vec3<u32>
 ){
     if global_id.x < execute_args[0].len{
-        heap[global_id.x + execute_args[1].pointer.x] = abs(heap[global_id.x + execute_args[0].pointer.x]);
+        heap[global_id.x + execute_args[1].pointer.x] = log2(heap[global_id.x + execute_args[0].pointer.x]);
     }
 }
