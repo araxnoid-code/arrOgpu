@@ -15,7 +15,7 @@ fn main() {
     println!("array b");
     println!("{}", array_b);
 
-    let result = array_a.sub(&array_b).unwrap();
+    let result = array_a.mul(&3.).unwrap();
     println!("result");
     println!("{}", result);
 
@@ -31,7 +31,7 @@ fn main() {
     println!("array d");
     println!("{}", array_d);
 
-    let result = array_c.sub(&array_d).unwrap();
+    let result = array_c.mul(&array_d).unwrap();
     println!("result");
     println!("{}", result);
 }
