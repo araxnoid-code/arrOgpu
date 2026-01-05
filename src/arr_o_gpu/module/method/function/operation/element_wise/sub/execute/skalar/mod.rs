@@ -105,13 +105,6 @@ impl ArrOgpuModule {
         }
         wgpu.queue.submit(Some(encoder.finish()));
 
-        // wgpu.device
-        //     .poll(wgpu::wgt::PollType::Wait {
-        //         submission_index: Some(idx),
-        //         timeout: None,
-        //     })
-        //     .unwrap();
-
         if let PipelineCompound::Pipeline(pipeline) = pipeline {
             set_pipeline_cache(self, array, pipeline);
         }
@@ -158,8 +151,8 @@ where
     let execute_args = &module.execute_args;
     let static_cache = &module.static_cache;
 
-    let array_a_metadata_buffer = array.metadata_compound().ok_or(ArrOgpuErr::Add(
-        "Add Error, Metadata Not Yet Defined For Array A".to_string(),
+    let array_a_metadata_buffer = array.metadata_compound().ok_or(ArrOgpuErr::Sub(
+        "Sub Error, Metadata Not Yet Defined For Array A".to_string(),
     ))?;
 
     let size = if let ArrayType::Contiguous(_) = array.check_contiguous_or_view() {

@@ -19,11 +19,11 @@ impl ArrOgpuModule {
     {
         if array_a.shape() != array_b.shape() {
             let err = format!(
-                "Array Add Error, Shape Of A is {:?} but adding with Shape Of B is {:?}",
+                "Array Sub Error, Shape Of A is {:?} but Subtracted with Shape Of B is {:?}",
                 array_a.shape(),
                 array_b.shape()
             );
-            return Err(ArrOgpuErr::Add(err));
+            return Err(ArrOgpuErr::Sub(err));
         }
 
         let wgpu = self.wgpu_init.read().unwrap();
@@ -212,12 +212,12 @@ where
     A: ArrayCompute,
     B: ArrayCompute + ?Sized,
 {
-    let buffer_a = array_a.metadata_compound().ok_or(ArrOgpuErr::Add(
-        "Add Error, Metadata Not Yet Defined For Array A".to_string(),
+    let buffer_a = array_a.metadata_compound().ok_or(ArrOgpuErr::Sub(
+        "Sub Error, Metadata Not Yet Defined For Array A".to_string(),
     ))?;
 
-    let buffer_b = array_b.metadata_compound().ok_or(ArrOgpuErr::Add(
-        "Add Error, Metadata Not Yet Defined For Array B".to_string(),
+    let buffer_b = array_b.metadata_compound().ok_or(ArrOgpuErr::Sub(
+        "Sub Error, Metadata Not Yet Defined For Array B".to_string(),
     ))?;
 
     match (
