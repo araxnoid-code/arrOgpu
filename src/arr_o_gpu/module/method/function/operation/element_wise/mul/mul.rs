@@ -6,7 +6,7 @@ use crate::{
 };
 
 impl ArrOgpuModule {
-    /// element-wise subtraction operations, input in the form of arrays and floats can be used as input in the second argument
+    /// arguments can be arrays and floats can only be the second argument
     pub fn mul<'a, A, B>(&self, array_a: &'a A, array_b: &'a B) -> Result<GpuArray, ArrOgpuErr>
     where
         A: ArrayCompute + CheckArrayType<'a>,
