@@ -27,9 +27,8 @@ var<uniform> execute_args: array<ArrayMetadata, 3>;
 fn main(
     @builtin(global_invocation_id) global_id:vec3<u32>
 ){
-    // heap[8 + global_id.x] = f32(execute_args[1].pointer.x);
     if global_id.x < execute_args[0].len{
-        heap[global_id.x + execute_args[1].pointer.x] = log2(heap[indexing(global_id.x) + execute_args[0].pointer.x]);
+        heap[global_id.x + execute_args[1].pointer.x] = sqrt(heap[indexing(global_id.x) + execute_args[0].pointer.x]);
 
     }
 }
