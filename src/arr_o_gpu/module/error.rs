@@ -23,6 +23,8 @@ pub enum ArrOgpuErr {
     Pow(String),
     Abs(String),
     Log2(String),
+    Powf(String),
+    Sqrt(String),
 
     // View
     Indexing(String),

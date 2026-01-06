@@ -25,7 +25,7 @@ var<uniform> execute_args: array<ArrayMetadata, 3>;
 // // static_cache
 
 struct CounterPowf{
-    counter: f32,
+    counter: u32,
     scalar: f32,
     index: u32,
     padding: u32,

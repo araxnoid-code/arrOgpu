@@ -8,7 +8,8 @@ fn main() {
         .unwrap();
     println!("{}", array);
 
-    let result = module.log2(&array.view().unwrap()).unwrap();
+    let scalar = module.array_from_vector(&[7.], &[1]).unwrap();
+    let result = module.powf(&array.view().unwrap(), &scalar).unwrap();
     println!("{}", result);
 
     println!(
@@ -16,7 +17,7 @@ fn main() {
         array
             .get_heap()
             .iter()
-            .map(|v| v.log2())
+            .map(|v| v.powf(7.))
             .collect::<Vec<f32>>()
     );
 }

@@ -62,7 +62,6 @@ impl ArrOgpuModule {
                 }
             }
             ArrayType::View(_) => {
-                println!("{}", "heara");
                 if let Some(pipeline) = read.get(PIPELINE_LOG2_VIEW) {
                     PipelineCompound::PipelineCache(pipeline)
                 } else {
