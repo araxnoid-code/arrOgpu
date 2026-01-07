@@ -25,6 +25,9 @@ pub enum ArrOgpuErr {
     Log2(String),
     Powf(String),
     Sqrt(String),
+    Sin(String),
+    Cos(String),
+    Tan(String),
 
     // View
     Indexing(String),
