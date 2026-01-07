@@ -1,4 +1,3 @@
-mod powf_trait;
 use std::sync::Arc;
 
 use wgpu::{
@@ -9,20 +8,20 @@ use crate::{
     ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, GpuArray, MetadataCompound,
     PipelineCompound,
     arr_o_gpu::{
-        compute_shaders::{POWF_CONTIGUOUS_SHADERS_PATH, POWF_VIEW_SHADERS_PATH},
-        module::method::function::operation::function::powf::powf_trait::PowFloat,
+        compute_shaders::{POWI_CONTIGUOUS_SHADERS_PATH, POWI_VIEW_SHADERS_PATH},
+        module::method::function::operation::function::pow::{PowInt, PowTrait},
     },
     get_stride_from_shape, vector_padding,
 };
 
-const PIPELINE_POWF_CONTIGUOUS: &'static str = "pipeline_powf_contiguous";
-const PIPELINE_POWF_VIEW: &'static str = "pipeline_powf_view";
+const PIPELINE_POWI_CONTIGUOUS: &'static str = "pipeline_powi_contiguous";
+const PIPELINE_POWI_VIEW: &'static str = "pipeline_powi_view";
 
 impl ArrOgpuModule {
-    pub fn powf<A, B>(&self, array: &A, power: &B) -> Result<GpuArray, ArrOgpuErr>
+    pub fn powi<A, B>(&self, array: &A, power: &B) -> Result<GpuArray, ArrOgpuErr>
     where
         A: ArrayCompute,
-        B: PowFloat,
+        B: PowTrait + PowInt,
     {
         let wgpu = self.wgpu_init().read().unwrap();
 
@@ -36,12 +35,12 @@ impl ArrOgpuModule {
 
         // padding
         let shape_padding: [u32; 8] = vector_padding(shape.clone(), 0, 8)
-            .map_err(|err| ArrOgpuErr::Powf(err))?
+            .map_err(|err| ArrOgpuErr::Powi(err))?
             .try_into()
             .unwrap();
 
         let stride_padding: [u32; 8] = vector_padding(stride.clone(), 0, 8)
-            .map_err(|err| ArrOgpuErr::Powf(err))?
+            .map_err(|err| ArrOgpuErr::Powi(err))?
             .try_into()
             .unwrap();
 
@@ -58,25 +57,25 @@ impl ArrOgpuModule {
         let read = self.pipeline_cache.read().unwrap();
         let pipeline = match array.check_contiguous_or_view() {
             ArrayType::Contiguous(_) => {
-                if let Some(pipeline) = read.get(PIPELINE_POWF_CONTIGUOUS) {
+                if let Some(pipeline) = read.get(PIPELINE_POWI_CONTIGUOUS) {
                     PipelineCompound::PipelineCache(pipeline)
                 } else {
                     let pipeline = set_pipeline(
                         &wgpu.device,
                         &self.common_pipeline_layout,
-                        POWF_CONTIGUOUS_SHADERS_PATH,
+                        POWI_CONTIGUOUS_SHADERS_PATH,
                     );
                     PipelineCompound::Pipeline(pipeline)
                 }
             }
             ArrayType::View(_) => {
-                if let Some(pipeline) = read.get(PIPELINE_POWF_VIEW) {
+                if let Some(pipeline) = read.get(PIPELINE_POWI_VIEW) {
                     PipelineCompound::PipelineCache(pipeline)
                 } else {
                     let pipeline = set_pipeline(
                         &wgpu.device,
                         &self.common_pipeline_layout,
-                        POWF_VIEW_SHADERS_PATH,
+                        POWI_VIEW_SHADERS_PATH,
                     );
 
                     PipelineCompound::Pipeline(pipeline)
@@ -87,7 +86,7 @@ impl ArrOgpuModule {
         let mut encoder =
             wgpu.device
                 .create_command_encoder(&wgpu::wgt::CommandEncoderDescriptor {
-                    label: Some("Create Command Encoder For Powf"),
+                    label: Some("Create Command Encoder For Powi"),
                 });
 
         let execute_args = &self.execute_args;
@@ -105,7 +104,7 @@ impl ArrOgpuModule {
 
         {
             let mut begin_compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
-                label: Some("Create Begin Compute Pass For Powf"),
+                label: Some("Create Begin Compute Pass For Powi"),
                 timestamp_writes: None,
             });
 
@@ -143,8 +142,8 @@ where
 {
     let mut write = module.pipeline_cache.write().unwrap();
     let key = match array.check_contiguous_or_view() {
-        ArrayType::Contiguous(_) => PIPELINE_POWF_CONTIGUOUS,
-        ArrayType::View(_) => PIPELINE_POWF_VIEW,
+        ArrayType::Contiguous(_) => PIPELINE_POWI_CONTIGUOUS,
+        ArrayType::View(_) => PIPELINE_POWI_VIEW,
     };
     write.insert(key, pipeline);
 }
@@ -153,17 +152,17 @@ fn set_cache<A, B>(
     device: &Device,
     encoder: &mut CommandEncoder,
     array: &A,
-    powf: &B,
+    pow: &B,
     execute_args: &Arc<Buffer>,
     static_cache: &Arc<Buffer>,
     output_metadata: &MetadataCompound,
 ) -> Result<(), ArrOgpuErr>
 where
     A: ArrayCompute,
-    B: PowFloat,
+    B: PowTrait + PowInt,
 {
-    let metadata = array.metadata_compound().ok_or(ArrOgpuErr::Powf(
-        "Powf Error, Metadata Not Yet Defined For Array A".to_string(),
+    let metadata = array.metadata_compound().ok_or(ArrOgpuErr::Powi(
+        "Powi Error, Metadata Not Yet Defined For Array A".to_string(),
     ))?;
 
     match array.check_contiguous_or_view() {
@@ -177,11 +176,9 @@ where
         }
     }
 
-    let static_data = powf
-        .get()
-        .map_err(|msg| ArrOgpuErr::Log2(msg.to_string()))?;
+    let static_data = pow.get().map_err(|msg| ArrOgpuErr::Log2(msg.to_string()))?;
     let static_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("Create Static Buffer For Powf"),
+        label: Some("Create Static Buffer For Powi"),
         contents: bytemuck::bytes_of(&static_data),
         usage: BufferUsages::UNIFORM | BufferUsages::COPY_SRC,
     });
@@ -196,10 +193,10 @@ fn set_pipeline(
     shaders_path: &'static str,
 ) -> wgpu::ComputePipeline {
     device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-        label: Some("Create Pipeline For Powf"),
+        label: Some("Create Pipeline For Powi"),
         layout: Some(layout),
         module: &device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Create Shaders Module For Powf"),
+            label: Some("Create Shaders Module For Powi"),
             source: wgpu::ShaderSource::Wgsl(shaders_path.into()),
         }),
         entry_point: Some("main"),

@@ -24,6 +24,7 @@ pub enum ArrOgpuErr {
     Abs(String),
     Log2(String),
     Powf(String),
+    Powi(String),
     Sqrt(String),
     Sin(String),
     Cos(String),

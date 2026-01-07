@@ -49,7 +49,7 @@ fn main(
         let minus_counter = mix(1., sign(base), f32(is_odd));
         result *= minus_counter;
 
-        heap[global_id.x + execute_args[1].pointer.x] = pow(heap[indexing(global_id.x) + execute_args[0].pointer.x], scalar);
+        heap[global_id.x + execute_args[1].pointer.x] = result;
 
     }
 }

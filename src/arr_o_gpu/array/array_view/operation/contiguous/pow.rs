@@ -1,13 +1,20 @@
-use crate::{AblePowType, ArrayCompute, GpuArray, GpuArrayView};
+use crate::{ArrayCompute, GpuArray, GpuArrayView, PowFloat, PowInt, PowTrait};
 
 impl<'a, A> GpuArrayView<'a, A>
 where
     A: ArrayCompute,
 {
-    pub fn pow<P>(&self, power: &P) -> Result<GpuArray, crate::ArrOgpuErr>
+    pub fn powf<P>(&self, power: &P) -> Result<GpuArray, crate::ArrOgpuErr>
     where
-        P: AblePowType,
+        P: PowTrait + PowFloat,
     {
-        self.module().pow(self, power)
+        self.module().powf(self, power)
+    }
+
+    pub fn powi<P>(&self, power: &P) -> Result<GpuArray, crate::ArrOgpuErr>
+    where
+        P: PowTrait + PowInt,
+    {
+        self.module().powi(self, power)
     }
 }
