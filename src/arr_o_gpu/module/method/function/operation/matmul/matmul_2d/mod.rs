@@ -99,7 +99,13 @@ impl ArrOgpuModule {
             begin_compute_pass.dispatch_workgroups(x, y, 1);
         }
 
-        wgpu.queue.submit(Some(encoder.finish()));
+        let id = wgpu.queue.submit(Some(encoder.finish()));
+        wgpu.device
+            .poll(wgpu::wgt::PollType::Wait {
+                submission_index: Some(id),
+                timeout: None,
+            })
+            .unwrap();
 
         let array = GpuArray {
             pointer: (allocate.1, allocate.2),

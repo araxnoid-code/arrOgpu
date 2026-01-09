@@ -138,10 +138,15 @@ impl ArrOgpuModule {
         }
 
         // submit
-        wgpu.queue.submit(Some(encoder.finish()));
+        let id = wgpu.queue.submit(Some(encoder.finish()));
 
         // sync
-        // wgpu.device.poll(wgpu::wgt::PollType::Wait).unwrap();
+        wgpu.device
+            .poll(wgpu::wgt::PollType::Wait {
+                submission_index: Some(id),
+                timeout: None,
+            })
+            .unwrap();
 
         let array = GpuArray {
             // build/0.1.0.5
