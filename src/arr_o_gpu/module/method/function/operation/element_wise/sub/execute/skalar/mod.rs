@@ -63,7 +63,10 @@ impl ArrOgpuModule {
                 } else {
                     drop(read);
                     let pipeline_layout = &self.common_pipeline_layout;
-                    PipelineCompound::Pipeline(set_pipeline(&wgpu.device, &pipeline_layout, array))
+                    PipelineCompound::Pipeline(
+                        set_pipeline(&wgpu.device, &pipeline_layout, array),
+                        "pipeline_sub_scalar_contiguous",
+                    )
                 }
             }
             ArrayType::View(_) => {
@@ -72,7 +75,10 @@ impl ArrOgpuModule {
                 } else {
                     drop(read);
                     let pipeline_layout = &self.common_pipeline_layout;
-                    PipelineCompound::Pipeline(set_pipeline(&wgpu.device, &pipeline_layout, array))
+                    PipelineCompound::Pipeline(
+                        set_pipeline(&wgpu.device, &pipeline_layout, array),
+                        "pipeline_sub_scalar_view",
+                    )
                 }
             }
         };
@@ -105,7 +111,7 @@ impl ArrOgpuModule {
         }
         wgpu.queue.submit(Some(encoder.finish()));
 
-        if let PipelineCompound::Pipeline(pipeline) = pipeline {
+        if let PipelineCompound::Pipeline(pipeline, _) = pipeline {
             set_pipeline_cache(self, array, pipeline);
         }
 

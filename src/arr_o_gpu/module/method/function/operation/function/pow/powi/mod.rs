@@ -65,7 +65,7 @@ impl ArrOgpuModule {
                         &self.common_pipeline_layout,
                         POWI_CONTIGUOUS_SHADERS_PATH,
                     );
-                    PipelineCompound::Pipeline(pipeline)
+                    PipelineCompound::Pipeline(pipeline, PIPELINE_POWI_CONTIGUOUS)
                 }
             }
             ArrayType::View(_) => {
@@ -78,7 +78,7 @@ impl ArrOgpuModule {
                         POWI_VIEW_SHADERS_PATH,
                     );
 
-                    PipelineCompound::Pipeline(pipeline)
+                    PipelineCompound::Pipeline(pipeline, PIPELINE_POWI_VIEW)
                 }
             }
         };
@@ -116,7 +116,7 @@ impl ArrOgpuModule {
 
         wgpu.queue.submit(Some(encoder.finish()));
 
-        if let PipelineCompound::Pipeline(pipeline) = pipeline {
+        if let PipelineCompound::Pipeline(pipeline, _) = pipeline {
             drop(read);
             set_pipeline_cache(self, array, pipeline);
         }

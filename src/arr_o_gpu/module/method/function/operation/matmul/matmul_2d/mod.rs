@@ -1,16 +1,100 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLockWriteGuard};
 
 use wgpu::{Buffer, CommandEncoder, ComputePipeline, Device, PipelineLayout};
 
 use crate::{
-    ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArray, PipelineCompound,
-    arr_o_gpu::compute_shaders::MATMUL_CONTIGUOUS_SHADERS_PATH, get_stride_from_shape,
-    vector_padding,
+    Allocator, ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArray, PipelineCompound,
+    arr_o_gpu::compute_shaders::{MATMUL_2D_SHADERS_PATH, MATMUL_ND_SHADERS_PATH},
+    get_stride_from_shape, vector_padding,
 };
 
 mod matmul_2d;
 
-const PIPELINE_MATMUL2D: &'static str = "pipeline_matmul2d_contiguous";
+const PIPELINE_MATMUL2D: &'static str = "pipeline_matmul2d";
+const PIPELINE_MATMULND: &'static str = "pipeline_matmulnd";
+
+enum MatmulOperate<'a, A, B>
+where
+    A: ArrayCompute,
+    B: ArrayCompute,
+{
+    _2D(&'a A, &'a B),
+    ND(&'a A, &'a B),
+}
+
+impl<'a, A, B> MatmulOperate<'a, A, B>
+where
+    A: ArrayCompute,
+    B: ArrayCompute,
+{
+    pub fn create(array_a: &'a A, array_b: &'a B) -> Result<MatmulOperate<'a, A, B>, ArrOgpuErr> {
+        let dim = array_a.dim();
+        if array_a.shape().len() <= 1 || array_b.shape().len() <= 1 {
+            let err = format!(
+                "Array Matmul 2d Error, Shape Of Array A Is {:?} And Shape Of Array B Is {:?}",
+                array_a.shape(),
+                array_b.shape()
+            );
+            Err(ArrOgpuErr::Matmul2D(err))
+        } else if array_a.shape().len() == 2
+            && array_b.shape().len() == 2
+            && array_a.shape()[1] == array_b.shape()[0]
+        {
+            Ok(Self::_2D(array_a, array_b))
+        } else if array_a.shape().len() == array_b.shape().len()
+            && array_a.shape()[..dim - 2] == array_b.shape()[..dim - 2]
+            && array_a.shape()[dim - 1] == array_b.shape()[dim - 2]
+        {
+            Ok(Self::ND(array_a, array_b))
+        } else {
+            let err = format!(
+                "Array Matmul 2d Error, Shape Of Array A Is {:?} And Shape Of Array B Is {:?}",
+                array_a.shape(),
+                array_b.shape()
+            );
+            Err(ArrOgpuErr::Matmul2D(err))
+        }
+    }
+
+    fn create_metadata_output(
+        &self,
+        allocate: &mut RwLockWriteGuard<'_, Allocator>,
+    ) -> (
+        Vec<u32>,
+        u32,
+        Vec<u32>,
+        u32,
+        u32,
+        (crate::SpaceType, u32, u32),
+    ) {
+        match self {
+            Self::_2D(arr_a, arr_b) => {
+                let shape = vec![arr_a.shape()[0], arr_b.shape()[1]];
+                let len = shape.iter().product::<u32>();
+                let stride = get_stride_from_shape(&shape);
+                let dim = 2;
+                let offset = 0;
+                let allocate = allocate.pointer_input(len);
+
+                (shape, len, stride, dim, offset, allocate)
+            }
+
+            Self::ND(arr_a, arr_b) => {
+                let mut shape = arr_a.shape().clone();
+                if let Some(coll) = shape.last_mut() {
+                    *coll = *arr_b.shape().last().unwrap();
+                }
+                let len = shape.iter().product::<u32>();
+                let stride = get_stride_from_shape(&shape);
+                let dim = arr_a.dim() as u32;
+                let offset = 0;
+                let allocate = allocate.pointer_input(len);
+
+                (shape, len, stride, dim, offset, allocate)
+            }
+        }
+    }
+}
 
 impl ArrOgpuModule {
     pub fn matmul_2d_metadata<A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
@@ -30,13 +114,10 @@ impl ArrOgpuModule {
         }
         // handling
 
-        // metadata_output
-        let shape = vec![array_a.shape()[0], array_b.shape()[1]];
-        let len = shape.iter().product::<u32>();
-        let stride = get_stride_from_shape(&shape);
-        let dim = 2;
-        let offset = 0;
-        let allocate = self.allocator_write().pointer_input(len);
+        let matmul_operate = MatmulOperate::create(array_a, array_b)?;
+
+        let (shape, len, stride, dim, offset, allocate) =
+            matmul_operate.create_metadata_output(&mut self.allocator_write());
 
         let shape_padding: [u32; 8] = vector_padding(shape.clone(), 0, 8)
             .map_err(|err| ArrOgpuErr::Matmul2D(err))?
@@ -60,21 +141,40 @@ impl ArrOgpuModule {
 
         let wgpu = self.wgpu_init().read().unwrap();
         let read = self.pipeline_cache.read().unwrap();
-
-        let pipeline = if let Some(pipeline) = read.get(PIPELINE_MATMUL2D) {
-            PipelineCompound::PipelineCache(pipeline)
+        let pipeline = if let MatmulOperate::_2D(_, _) = &matmul_operate {
+            if let Some(pipeline) = read.get(PIPELINE_MATMUL2D) {
+                PipelineCompound::PipelineCache(pipeline)
+            } else {
+                PipelineCompound::Pipeline(
+                    create_pipeline(
+                        &wgpu.device,
+                        &self.common_pipeline_layout,
+                        *self.maximum as f64,
+                        MATMUL_2D_SHADERS_PATH,
+                    ),
+                    PIPELINE_MATMUL2D,
+                )
+            }
         } else {
-            PipelineCompound::Pipeline(create_pipeline(
-                &wgpu.device,
-                &self.common_pipeline_layout,
-                *self.maximum as f64,
-            ))
+            if let Some(pipeline) = read.get(PIPELINE_MATMULND) {
+                PipelineCompound::PipelineCache(pipeline)
+            } else {
+                PipelineCompound::Pipeline(
+                    create_pipeline(
+                        &wgpu.device,
+                        &self.common_pipeline_layout,
+                        *self.maximum as f64,
+                        MATMUL_ND_SHADERS_PATH,
+                    ),
+                    PIPELINE_MATMULND,
+                )
+            }
         };
 
         let mut encoder =
             wgpu.device
                 .create_command_encoder(&wgpu::wgt::CommandEncoderDescriptor {
-                    label: Some("Create COmmand Encoder For Matmul2d"),
+                    label: Some("Create Command Encoder For Matmul2d"),
                 });
 
         set_cache(
@@ -100,12 +200,13 @@ impl ArrOgpuModule {
         }
 
         let id = wgpu.queue.submit(Some(encoder.finish()));
-        wgpu.device
-            .poll(wgpu::wgt::PollType::Wait {
-                submission_index: Some(id),
-                timeout: None,
-            })
-            .unwrap();
+
+        // wgpu.device
+        //     .poll(wgpu::wgt::PollType::Wait {
+        //         submission_index: Some(id),
+        //         timeout: None,
+        //     })
+        //     .unwrap();
 
         let array = GpuArray {
             pointer: (allocate.1, allocate.2),
@@ -152,13 +253,14 @@ fn create_pipeline(
     device: &Device,
     pipeline_layout: &PipelineLayout,
     heap_len: f64,
+    path: &'static str,
 ) -> ComputePipeline {
     device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
         label: Some("Create Pipeline For Matmul2d"),
         layout: Some(pipeline_layout),
         module: &device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Create Shaders Module For Matmul2d"),
-            source: wgpu::ShaderSource::Wgsl(MATMUL_CONTIGUOUS_SHADERS_PATH.into()),
+            source: wgpu::ShaderSource::Wgsl(path.into()),
         }),
         entry_point: Some("main"),
         compilation_options: wgpu::PipelineCompilationOptions {

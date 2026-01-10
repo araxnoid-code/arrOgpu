@@ -25,9 +25,6 @@ var<storage, read_write> heap: array<f32>;
 // execute_args
 @group(0) @binding(1)
 var<uniform> execute_args: array<ArrayMetadata, 3>;
-// static cache
-@group(0) @binding(2)
-var<uniform> static_cache: array<vec4<u32>, 2>;
 
 // workgroup
 var<workgroup> tile_a: array<array<f32, 16>, 16>;
@@ -54,7 +51,7 @@ fn main(
         let row_a = global_id.x;
         let coll_a = local_id.y + size * work_id.y;
         if row_a < m && coll_a < k {
-            let index = indexing_a(row_a, coll_a);
+            let index = indexing_a(row_a, coll_a, global_id.z);
             tile_a[local_id.x][local_id.y] = heap[index];
         } else {
             tile_a[local_id.x][local_id.y] = 0.;
@@ -63,7 +60,7 @@ fn main(
         let row_b = local_id.x + size * work_id.x;
         let coll_b = global_id.y;
         if row_a < k && row_b < n{
-            let indexing = indexing_b(row_b, coll_b);
+            let indexing = indexing_b(row_b, coll_b, global_id.z);
             tile_b[local_id.x][local_id.y] = heap[indexing];
         } else {
             tile_b[local_id.x][local_id.y] = 0.;
@@ -82,31 +79,34 @@ fn main(
         return;
     }
 
-    let index = indexing_o(global_id.x, global_id.y);
+    let index = indexing_o(global_id.x, global_id.y, global_id.z);
     heap[index] = acc;
 
 }
 
-fn indexing_a(row: u32, coll: u32) -> u32{
+fn indexing_a(row: u32, coll: u32, z: u32) -> u32{
     let arr = execute_args[0];
     let index = arr.dim - 1;
     let row_stride = arr.stride[(index - 1) >> 2][(index - 1) & 3];
     let coll_stride = arr.stride[index >> 2][index & 3];
-    return arr.offset + arr.pointer.x + row * row_stride + coll * coll_stride;
+    let other_stride = arr.stride[(index - 2) >> 2][(index - 2) & 3];
+    return arr.offset + arr.pointer.x + row * row_stride + coll * coll_stride + other_stride * z;
 }
 
-fn indexing_b(row: u32, coll: u32) -> u32{
+fn indexing_b(row: u32, coll: u32, z:u32) -> u32{
     let arr = execute_args[1];
     let index = arr.dim - 1;
     let row_stride = arr.stride[(index - 1) >> 2][(index - 1) & 3];
     let coll_stride = arr.stride[index >> 2][index & 3];
-    return arr.offset + arr.pointer.x + row * row_stride + coll * coll_stride;
+    let other_stride = arr.stride[(index - 2) >> 2][(index - 2) & 3];
+    return arr.offset + arr.pointer.x + row * row_stride + coll * coll_stride + other_stride * z;
 }
 
-fn indexing_o(row: u32, coll: u32) -> u32{
+fn indexing_o(row: u32, coll: u32, z:u32) -> u32{
     let arr = execute_args[2];
     let index = arr.dim - 1;
     let row_stride = arr.stride[(index - 1) >> 2][(index - 1) & 3];
     let coll_stride = arr.stride[index >> 2][index & 3];
-    return arr.offset + arr.pointer.x + row * row_stride + coll * coll_stride;
+    let other_stride = arr.stride[(index - 2) >> 2][(index - 2) & 3];
+    return arr.offset + arr.pointer.x + row * row_stride + coll * coll_stride + other_stride * z;
 }

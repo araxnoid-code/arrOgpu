@@ -39,5 +39,7 @@ pub(crate) const TAN_VIEW_SHADERS_PATH: &'static str =
     include_str!("./function/sin_cos_tan/tan/tan_view.wgsl");
 
 // Operation
-pub(crate) const MATMUL_CONTIGUOUS_SHADERS_PATH: &'static str =
+pub(crate) const MATMUL_2D_SHADERS_PATH: &'static str =
     include_str!("./operation/matmul/matmul_2d/matmul_2d.wgsl");
+pub(crate) const MATMUL_ND_SHADERS_PATH: &'static str =
+    include_str!("./operation/matmul/matmul_nd/matmul_nd.wgsl");
