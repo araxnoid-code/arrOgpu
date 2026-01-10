@@ -40,4 +40,4 @@ pub(crate) const TAN_VIEW_SHADERS_PATH: &'static str =
 
 // Operation
 pub(crate) const MATMUL_CONTIGUOUS_SHADERS_PATH: &'static str =
-    include_str!("./operation/matmul_2d/matmul_2d.wgsl");
+    include_str!("./operation/matmul/matmul_2d/matmul_2d.wgsl");
