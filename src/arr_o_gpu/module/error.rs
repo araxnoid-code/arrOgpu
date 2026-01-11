@@ -12,6 +12,7 @@ pub enum ArrOgpuErr {
     // Operation
     Matmul2D(String),
     MatmulND(String),
+    Matmul(String),
     Add(String),
     Sub(String),
     Mul(String),

@@ -1,16 +1,17 @@
 use wgpu::{
     ComputePassDescriptor, ComputePipelineDescriptor, PipelineLayoutDescriptor,
-    ShaderModuleDescriptor, ShaderSource,
-    wgt::{CommandEncoderDescriptor, PollType},
+    ShaderModuleDescriptor, ShaderSource, wgt::CommandEncoderDescriptor,
 };
 
-use crate::{ArrOgpuErr, ArrayCompute, GpuArray, GpuArrayView, get_stride_from_shape};
+use crate::{
+    ArrOgpuErr, ArrayCompute, GpuArray, GpuArrayView, get_stride_from_shape, vector_padding,
+};
 
 impl<'a, A> GpuArrayView<'a, A>
 where
     A: ArrayCompute,
 {
-    pub fn contiguous(self) -> GpuArray {
+    pub fn contiguous(self) -> Result<GpuArray, ArrOgpuErr> {
         let mut allocator = self.array.module().allocator.write().unwrap();
         let wgpu = self.array.module().wgpu_init.read().unwrap();
 
@@ -27,6 +28,27 @@ where
         let allocate = allocator.pointer_input(len);
         // // pointer
         let pointer_out = [allocate.1, allocate.2];
+
+        // Metadata Compound
+        let padding_shape: [u32; 8] = vector_padding(shape.clone(), 0, 8)
+            .map_err(|err| ArrOgpuErr::Contiguous(err))?
+            .try_into()
+            .unwrap();
+
+        let padding_stride: [u32; 8] = vector_padding(iters.clone(), 0, 8)
+            .map_err(|err| ArrOgpuErr::Contiguous(err))?
+            .try_into()
+            .unwrap();
+
+        let metadata_compund = self.module().create_metadata_compound(
+            pointer_out,
+            len,
+            shape.len() as u32,
+            0,
+            padding_shape,
+            padding_stride,
+            padding_stride,
+        );
 
         // bind group
         let heap_binding = &self.array.module().module_bind_group;
@@ -109,12 +131,12 @@ where
         }
 
         let index = wgpu.queue.submit(Some(encoder.finish()));
-        wgpu.device
-            .poll(PollType::Wait {
-                submission_index: Some(index),
-                timeout: None,
-            })
-            .unwrap();
+        // wgpu.device
+        //     .poll(PollType::Wait {
+        //         submission_index: Some(index),
+        //         timeout: None,
+        //     })
+        //     .unwrap();
 
         let stride = get_stride_from_shape(&shape);
         let binding = self.module().create_metadata_binding(
@@ -127,7 +149,7 @@ where
 
         let array = GpuArray {
             // build/0.1.0.5
-            metadata_compound: None,
+            metadata_compound: Some(metadata_compund),
 
             // build/0.1.0.5
             module: self.array.module().clone(),
@@ -139,6 +161,6 @@ where
             binding: Some(binding),
         };
 
-        array
+        Ok(array)
     }
 }

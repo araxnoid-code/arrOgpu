@@ -16,7 +16,7 @@ struct ArrayMetadata{
 }
 
 // override
-override LEN_HEAP: u32;
+override LEN_HEAP_MINUS_ONE: u32;
 
 // MODULE
 // // heap
@@ -78,14 +78,14 @@ fn indexing_a(row:u32, col:u32)-> u32{
     let arr = execute_args[0];
     let stride = arr.stride[0];
     let index = arr.pointer.x + arr.offset + row * stride[0] + col * stride[1];
-    return select(0, index, index < LEN_HEAP);
+    return select(0, index, index < LEN_HEAP_MINUS_ONE);
 }
 
 fn indexing_b(row:u32, col:u32)-> u32{
     let arr = execute_args[1];
     let stride = arr.stride[0];
     let index = arr.pointer.x + arr.offset + row * stride[0] + col * stride[1];
-    return select(0, index, index < LEN_HEAP);
+    return select(0, index, index < LEN_HEAP_MINUS_ONE);
 }
 
 fn indexing_out(row: u32, col:u32)-> u32{

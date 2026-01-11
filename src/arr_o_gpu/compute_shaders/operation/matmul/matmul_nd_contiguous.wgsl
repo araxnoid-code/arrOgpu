@@ -16,7 +16,7 @@ struct ArrayMetadata{
 }
 
 // override
-override LEN_HEAP: u32;
+override LEN_HEAP_MINUS_ONE: u32;
 
 // MODULE
 // heap
@@ -45,33 +45,23 @@ fn main(
     let k = array_a.shape[(dim - 1) >> 2][(dim - 1) & 3];
     let n = array_b.shape[(dim - 1) >> 2][(dim - 1) & 3];
 
-    let iteration = (k / size - 1) / size;
+    let iteration = (k + size - 1) / size;
     var acc = 0.;
     for (var i = 0u; i < iteration; i++){
         let row_a = global_id.x;
-        let coll_a = local_id.y + size * work_id.y;
-        if row_a < m && coll_a < k {
-            let index = indexing_a(row_a, coll_a, global_id.z);
-            tile_a[local_id.x][local_id.y] = heap[index];
-        } else {
-            tile_a[local_id.x][local_id.y] = 0.;
-        }
+        let coll_a = local_id.y + size * i;
+        let value_a = select(0., heap[indexing_a(row_a, coll_a, global_id.z)], row_a < m && coll_a < k);
+        tile_a[local_id.x][local_id.y] = value_a;
 
-        let row_b = local_id.x + size * work_id.x;
+        let row_b = local_id.x + size * i;
         let coll_b = global_id.y;
-        if row_a < k && row_b < n{
-            let indexing = indexing_b(row_b, coll_b, global_id.z);
-            tile_b[local_id.x][local_id.y] = heap[indexing];
-        } else {
-            tile_b[local_id.x][local_id.y] = 0.;
-        }
+        let value_b = select(0., heap[indexing_b(row_b, coll_b, global_id.z)], row_b < k && coll_b < n);
+        tile_b[local_id.x][local_id.y] = value_b;
 
         workgroupBarrier();
-
-        for (var ii = 0u; ii < size; i++){
+        for (var ii = 0u; ii < size; ii++){
            acc += tile_a[local_id.x][ii] * tile_b[ii][local_id.y];
         }
-
         workgroupBarrier();
     }
 
@@ -90,7 +80,10 @@ fn indexing_a(row: u32, coll: u32, z: u32) -> u32{
     let row_stride = arr.stride[(index - 1) >> 2][(index - 1) & 3];
     let coll_stride = arr.stride[index >> 2][index & 3];
     let other_stride = arr.stride[(index - 2) >> 2][(index - 2) & 3];
-    return arr.offset + arr.pointer.x + row * row_stride + coll * coll_stride + other_stride * z;
+
+    let out = arr.offset + arr.pointer.x + row * row_stride + coll * coll_stride + other_stride * z;
+    return select(0, out, out < LEN_HEAP_MINUS_ONE);
+    // return arr.offset + arr.pointer.x + row * row_stride + coll * coll_stride + other_stride * z;
 }
 
 fn indexing_b(row: u32, coll: u32, z:u32) -> u32{
@@ -99,7 +92,10 @@ fn indexing_b(row: u32, coll: u32, z:u32) -> u32{
     let row_stride = arr.stride[(index - 1) >> 2][(index - 1) & 3];
     let coll_stride = arr.stride[index >> 2][index & 3];
     let other_stride = arr.stride[(index - 2) >> 2][(index - 2) & 3];
-    return arr.offset + arr.pointer.x + row * row_stride + coll * coll_stride + other_stride * z;
+
+    let out = arr.offset + arr.pointer.x + row * row_stride + coll * coll_stride + other_stride * z;
+    return select(0, out, out < LEN_HEAP_MINUS_ONE);
+    // return arr.offset + arr.pointer.x + row * row_stride + coll * coll_stride + other_stride * z;
 }
 
 fn indexing_o(row: u32, coll: u32, z:u32) -> u32{
@@ -108,5 +104,7 @@ fn indexing_o(row: u32, coll: u32, z:u32) -> u32{
     let row_stride = arr.stride[(index - 1) >> 2][(index - 1) & 3];
     let coll_stride = arr.stride[index >> 2][index & 3];
     let other_stride = arr.stride[(index - 2) >> 2][(index - 2) & 3];
+
     return arr.offset + arr.pointer.x + row * row_stride + coll * coll_stride + other_stride * z;
+
 }
