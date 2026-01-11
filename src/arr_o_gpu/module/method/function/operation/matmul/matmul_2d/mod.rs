@@ -19,7 +19,7 @@ const PIPELINE_MATMULND_CONTIGUOUS: &'static str = "pipeline_matmulnd_contiguous
 const PIPELINE_MATMULND_VIEW: &'static str = "pipeline_matmulnd_view";
 
 impl ArrOgpuModule {
-    pub fn matmul_2d_metadata<A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
+    pub fn matmul_metadata<A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
     where
         A: ArrayCompute,
         B: ArrayCompute,
