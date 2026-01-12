@@ -45,3 +45,6 @@ pub(crate) const MATMUL_ND_CONTIGUOUS_SHADERS_PATH: &'static str =
     include_str!("./operation/matmul/matmul_nd_contiguous.wgsl");
 pub(crate) const MATMUL_ND_VIEW_SHADERS_PATH: &'static str =
     include_str!("./operation/matmul/matmul_nd_view.wgsl");
+
+// VIEW
+pub(crate) const CONTIGUOUS_SHADERS_PATH: &'static str = include_str!("./view/contiguous.wgsl");

@@ -54,7 +54,7 @@ impl ArrOgpuModule {
             if let Some(pipeline) = read.get(PIPELINE_MATMUL2D) {
                 PipelineCompound::PipelineCache(pipeline)
             } else {
-                PipelineCompound::Pipeline(
+                PipelineCompound::UnsavePipeline(
                     create_pipeline(
                         &wgpu.device,
                         &self.common_pipeline_layout,
@@ -73,7 +73,7 @@ impl ArrOgpuModule {
                     if let Some(pipeline) = read.get(PIPELINE_MATMULND_CONTIGUOUS) {
                         PipelineCompound::PipelineCache(pipeline)
                     } else {
-                        PipelineCompound::Pipeline(
+                        PipelineCompound::UnsavePipeline(
                             create_pipeline(
                                 &wgpu.device,
                                 &self.common_pipeline_layout,
@@ -89,7 +89,7 @@ impl ArrOgpuModule {
                     if let Some(pipeline) = read.get(PIPELINE_MATMULND_VIEW) {
                         PipelineCompound::PipelineCache(pipeline)
                     } else {
-                        PipelineCompound::Pipeline(
+                        PipelineCompound::UnsavePipeline(
                             create_pipeline(
                                 &wgpu.device,
                                 &self.common_pipeline_layout,

@@ -58,7 +58,7 @@ impl ArrOgpuModule {
                         &self.common_pipeline_layout,
                         TAN_CONTIGUOUS_SHADERS_PATH,
                     );
-                    PipelineCompound::Pipeline(pipeline, PIPELINE_TAN_CONTIGUOUS)
+                    PipelineCompound::UnsavePipeline(pipeline, PIPELINE_TAN_CONTIGUOUS)
                 }
             }
             ArrayType::View(_) => {
@@ -71,7 +71,7 @@ impl ArrOgpuModule {
                         TAN_VIEW_SHADERS_PATH,
                     );
 
-                    PipelineCompound::Pipeline(pipeline, PIPELINE_TAN_VIEW)
+                    PipelineCompound::UnsavePipeline(pipeline, PIPELINE_TAN_VIEW)
                 }
             }
         };
@@ -99,7 +99,7 @@ impl ArrOgpuModule {
 
         wgpu.queue.submit(Some(encoder.finish()));
 
-        if let PipelineCompound::Pipeline(pipeline, _) = pipeline {
+        if let PipelineCompound::UnsavePipeline(pipeline, _) = pipeline {
             drop(read);
             set_pipeline_cache(self, array, pipeline);
         }

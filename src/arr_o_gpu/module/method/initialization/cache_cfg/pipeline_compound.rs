@@ -4,19 +4,19 @@ use crate::ArrOgpuModule;
 
 pub enum PipelineCompound<'a> {
     PipelineCache(&'a ComputePipeline),
-    Pipeline(ComputePipeline, &'static str),
+    UnsavePipeline(ComputePipeline, &'static str),
 }
 
 impl<'a> PipelineCompound<'a> {
     pub fn set_pipeline_begin_compute_pass(&self, begin_compute_pass: &mut ComputePass) {
         match self {
             Self::PipelineCache(cache) => begin_compute_pass.set_pipeline(cache),
-            Self::Pipeline(pipeline, _) => begin_compute_pass.set_pipeline(pipeline),
+            Self::UnsavePipeline(pipeline, _) => begin_compute_pass.set_pipeline(pipeline),
         }
     }
 
     pub fn get_unsave_pipeline(self) -> Option<(ComputePipeline, &'static str)> {
-        if let Self::Pipeline(pipeline, key) = self {
+        if let Self::UnsavePipeline(pipeline, key) = self {
             Some((pipeline, key))
         } else {
             None

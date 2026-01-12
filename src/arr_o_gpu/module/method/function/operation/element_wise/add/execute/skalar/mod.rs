@@ -63,7 +63,7 @@ impl ArrOgpuModule {
                 } else {
                     drop(read);
                     let pipeline_layout = &self.common_pipeline_layout;
-                    PipelineCompound::Pipeline(
+                    PipelineCompound::UnsavePipeline(
                         set_pipeline(&wgpu.device, &pipeline_layout, array),
                         "pipeline_add_scalar_contiguous",
                     )
@@ -75,7 +75,7 @@ impl ArrOgpuModule {
                 } else {
                     drop(read);
                     let pipeline_layout = &self.common_pipeline_layout;
-                    PipelineCompound::Pipeline(
+                    PipelineCompound::UnsavePipeline(
                         set_pipeline(&wgpu.device, &pipeline_layout, array),
                         "pipeline_add_scalar_view",
                     )
@@ -118,7 +118,7 @@ impl ArrOgpuModule {
         //     })
         //     .unwrap();
 
-        if let PipelineCompound::Pipeline(pipeline, _) = pipeline {
+        if let PipelineCompound::UnsavePipeline(pipeline, _) = pipeline {
             set_pipeline_cache(self, array, pipeline);
         }
 
