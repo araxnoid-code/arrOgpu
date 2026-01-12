@@ -15,7 +15,7 @@ fn main() {
     let view = array.index(&[1]).unwrap();
     let view = view.slicing(&[r(5..10), r(5..10)]).unwrap();
     let view = view.permute(&[1, 0]).unwrap();
-    println!("{}", view.contiguous_metadata().unwrap());
+    println!("{}", view.contiguous().unwrap());
 
     // let array_b = ArangeArray::arange(20..45)
     //     .to_GpuArray_with_shape(&[5, 5], &module)

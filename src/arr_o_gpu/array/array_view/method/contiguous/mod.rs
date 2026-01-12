@@ -11,7 +11,7 @@ impl<'a, A> GpuArrayView<'a, A>
 where
     A: ArrayCompute,
 {
-    pub fn contiguous_metadata(self) -> Result<GpuArray, ArrOgpuErr> {
+    pub fn contiguous(self) -> Result<GpuArray, ArrOgpuErr> {
         let module = self.module().clone();
         let mut allocator = self.array.module().allocator.write().unwrap();
         let wgpu = self.array.module().wgpu_init.read().unwrap();
