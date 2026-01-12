@@ -19,11 +19,11 @@ fn main() {
         .to_GpuArray_with_shape(&[5, 5], &module)
         .unwrap();
 
-    let result_a = module.matmul_metadata(&view, &array_b).unwrap();
+    let result_a = module.matmul(&view, &array_b).unwrap();
     println!("{}", result_a);
 
     let contiguous = view.contiguous_metadata().unwrap();
-    let result_b = module.matmul_metadata(&contiguous, &array_b).unwrap();
+    let result_b = module.matmul(&contiguous, &array_b).unwrap();
     println!("{}", result_b);
 
     println!("{}", result_a.get_heap() == result_b.get_heap());

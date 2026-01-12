@@ -5,6 +5,6 @@ impl GpuArray {
     where
         A: ArrayCompute,
     {
-        self.module().matmul_nd(self, arr)
+        self.module().matmul(self, arr)
     }
 }

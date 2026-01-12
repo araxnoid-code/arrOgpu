@@ -8,6 +8,6 @@ where
     where
         B: ArrayCompute,
     {
-        self.module().matmul_nd(self, arr)
+        self.module().matmul(self, arr)
     }
 }
