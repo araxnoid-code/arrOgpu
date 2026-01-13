@@ -17,12 +17,22 @@ var<storage, read_write> heap: array<f32>;
 @group(0) @binding(1)
 var<uniform> execute_args: array<ArrayMetadata32, 3>;
 
+// reduction
+struct Counter{
+    value: u32,
+    padding0: vec3<u32>,
+    padding1: array<vec4<u32>, 15>
+}
+
 // // reduction_heap
 @group(1) @binding(0)
 var<storage, read_write> reduction_heap: array<f32>;
 
-@group(1) @binding(0)
-var<uniform> reduction_counter: u32;
+@group(1) @binding(1)
+var<uniform> reduction_len_list: Counter;
+
+@group(1) @binding(2)
+var<uniform> reduction_counter: Counter;
 
 // heap
 var<workgroup> cache: array<f32, 256>;
@@ -35,27 +45,32 @@ fn main(
 ){
     let total_thread = 256u;
     let total_thread_double = 512u;
-    let len = execute_args[0].len;
+    var len = select(reduction_len_list.value, execute_args[0].len, reduction_counter.value == 0);
     let output_len = (len + 511) >> 9;
+    var reduction_len = select(total_thread_double, len - total_thread_double * work.x, total_thread_double * (work.x + 1) > len);
 
-    var reduction_len = total_thread_double;
-    if total_thread_double * (work.x + 1) > len{
-        reduction_len = len - total_thread_double * work.x;
-    }
-
-
-
-    if global_id.x < len && global_id.x < reduction_len{
+    let used_thread = (reduction_len + 1) >> 1;
+    if local_id.x < used_thread{
         let start = global_id.x * 2;
         let end = start + 1;
-        if end < reduction_len{
-            let a = heap[execute_args[0].pointer.x + start] * heap[execute_args[1].pointer.x + start];
-            let b = heap[execute_args[0].pointer.x + end] * heap[execute_args[1].pointer.x + end];
-            cache[local_id.x] = a + b;
 
+        if reduction_counter.value == 0{
+            if end < reduction_len{
+                let a = heap[execute_args[0].pointer.x + start] * heap[execute_args[1].pointer.x + start];
+                let b = heap[execute_args[0].pointer.x + end] * heap[execute_args[1].pointer.x + end];
+                cache[local_id.x] = a + b;
+
+            } else {
+                let a = heap[execute_args[0].pointer.x + start] * heap[execute_args[1].pointer.x + start];
+                cache[local_id.x] = a;
+            }
         } else {
-            let a = heap[execute_args[0].pointer.x + start] * heap[execute_args[1].pointer.x + start];
-            cache[local_id.x] = a;
+            if end < reduction_len{
+                cache[local_id.x] = reduction_heap[start] + reduction_heap[end];
+
+            } else {
+                cache[local_id.x] = reduction_heap[start];
+            }
         }
     }
     workgroupBarrier();
@@ -73,9 +88,13 @@ fn main(
         workgroupBarrier();
     }
 
-    if output_len == 1 && local_id.x == 0{
+    if local_id.x != 0{
+        return;
+    }
+
+    if output_len == 1{
         heap[execute_args[2].pointer.x] = cache[0];
-    } else if local_id.x == 0 {
+    } else {
         reduction_heap[work.x] = cache[0];
     }
 }
