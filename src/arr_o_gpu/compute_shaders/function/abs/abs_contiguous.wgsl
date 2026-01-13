@@ -17,9 +17,6 @@ var<storage, read_write> heap: array<f32>;
 @group(0) @binding(1)
 var<uniform> execute_args: array<ArrayMetadata32, 3>;
 
-
-
-
 @compute @workgroup_size(256, 1, 1)
 fn main(
     @builtin(global_invocation_id) global_id:vec3<u32>
