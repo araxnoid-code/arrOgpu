@@ -2,15 +2,15 @@ use std::{num::NonZero, sync::Arc, vec};
 
 use bytemuck::{Pod, Zeroable};
 use wgpu::{
-    BindGroupEntry, BindGroupLayoutEntry, Buffer, BufferUsages, CommandEncoder, Device,
-    PipelineLayout, ShaderStages, util::DeviceExt,
+    BindGroupEntry, BindGroupLayoutEntry, Buffer, BufferUsages, CommandEncoder, ShaderStages,
+    util::DeviceExt,
 };
 
 use crate::{
-    ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, GpuArray, MetadataCompound,
-    PipelineCompound, arr_o_gpu::compute_shaders::DOT_PRODUCT_CONTIGUOUS_SHADERS_PATH,
+    ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, ContiguousArray, GpuArray,
+    MetadataCompound, arr_o_gpu::compute_shaders::DOT_PRODUCT_CONTIGUOUS_SHADERS_PATH,
 };
-const PIPELINE_DOT_PRODUCT_CONTIGUOUS: &'static str = "pipeline_dot_product_contiguous";
+// const PIPELINE_DOT_PRODUCT_CONTIGUOUS: &'static str = "pipeline_dot_product_contiguous";
 
 mod dot_product;
 mod execute;
@@ -18,8 +18,8 @@ mod execute;
 impl ArrOgpuModule {
     pub fn dot_product_unsave<A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
     where
-        A: ArrayCompute,
-        B: ArrayCompute,
+        A: ArrayCompute + ContiguousArray,
+        B: ArrayCompute + ContiguousArray,
     {
         if array_a.shape().len() != 1 && array_b.shape().len() != 1 {
             let err = format!(
@@ -59,11 +59,12 @@ impl ArrOgpuModule {
         // reduction
         // // reduction_len_list
         let mut reduction_len_list = vec![];
+        let mut dummy = array_a.len();
         loop {
-            let out_len = (len + 511) >> 9;
-            reduction_len_list.push(Counter::init(out_len));
+            dummy = (dummy + 511) >> 9;
+            reduction_len_list.push(Counter::init(dummy));
 
-            if out_len == 1 {
+            if dummy == 1 {
                 break;
             }
         }
@@ -206,10 +207,6 @@ impl ArrOgpuModule {
         )?;
 
         for (i, len) in reduction_len_list.iter().enumerate() {
-            if len.value == 1 {
-                break;
-            }
-
             let mut begin_compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                 label: Some("Create Begin Compute Pass For Dot Product"),
                 timestamp_writes: None,
@@ -217,7 +214,21 @@ impl ArrOgpuModule {
 
             begin_compute_pass.set_pipeline(&pipeline);
             begin_compute_pass.set_bind_group(0, Some(&self.heap_binding().binding_groups), &[]);
-            begin_compute_pass.set_bind_group(1, Some(&bind_group), &[(i != 0) as u32, i as u32]);
+
+            begin_compute_pass.set_bind_group(
+                1,
+                Some(&bind_group),
+                &[
+                    (i as u32 - 1 * (i != 0) as u32) * 256,
+                    (i != 0) as u32 * 256,
+                ],
+            );
+
+            begin_compute_pass.dispatch_workgroups(len.value, 1, 1);
+
+            if len.value == 1 {
+                break;
+            }
         }
 
         wgpu.queue.submit(Some(encoder.finish()));
@@ -267,27 +278,29 @@ where
             Ok(())
         }
         (_, _) => Err(ArrOgpuErr::DotProduct(
-            "Dot Product Error, Metadata Not Yet Defined For Array B".to_string(),
+            "Dot Product Error, Array View Not Able Yet".to_string(),
         )),
     }
-
-    // Ok(())
 }
 
 #[repr(C)]
-#[derive(Pod, Zeroable, Copy, Clone)]
+#[derive(Pod, Zeroable, Copy, Clone, Debug)]
 struct Counter {
     value: u32,
-    padding0: [u32; 3],
-    padding1: [u32; 60],
+    padding0: u32,
+    padding1: u32,
+    padding2: u32,
+    padding3: [u32; 60],
 }
 
 impl Counter {
     fn init(value: u32) -> Counter {
         Self {
             value,
-            padding0: [0; 3],
-            padding1: [0; 60],
+            padding0: 0,
+            padding1: 0,
+            padding2: 0,
+            padding3: [0; 60],
         }
     }
 }

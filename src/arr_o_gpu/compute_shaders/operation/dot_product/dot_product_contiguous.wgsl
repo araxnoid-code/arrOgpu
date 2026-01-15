@@ -20,8 +20,10 @@ var<uniform> execute_args: array<ArrayMetadata32, 3>;
 // reduction
 struct Counter{
     value: u32,
-    padding0: vec3<u32>,
-    padding1: array<vec4<u32>, 15>
+    padding0: u32,
+    padding1: u32,
+    padding2: u32,
+    padding3: array<vec4<u32>, 15>
 }
 
 // // reduction_heap
@@ -46,7 +48,6 @@ fn main(
     let total_thread = 256u;
     let total_thread_double = 512u;
     var len = select(reduction_len_list.value, execute_args[0].len, reduction_counter.value == 0);
-    let output_len = (len + 511) >> 9;
     var reduction_len = select(total_thread_double, len - total_thread_double * work.x, total_thread_double * (work.x + 1) > len);
 
     let used_thread = (reduction_len + 1) >> 1;
@@ -55,7 +56,7 @@ fn main(
         let end = start + 1;
 
         if reduction_counter.value == 0{
-            if end < reduction_len{
+            if end - work.x * 512 < reduction_len{
                 let a = heap[execute_args[0].pointer.x + start] * heap[execute_args[1].pointer.x + start];
                 let b = heap[execute_args[0].pointer.x + end] * heap[execute_args[1].pointer.x + end];
                 cache[local_id.x] = a + b;
@@ -64,14 +65,16 @@ fn main(
                 let a = heap[execute_args[0].pointer.x + start] * heap[execute_args[1].pointer.x + start];
                 cache[local_id.x] = a;
             }
-        } else {
-            if end < reduction_len{
-                cache[local_id.x] = reduction_heap[start] + reduction_heap[end];
 
+        } else {
+            if end - work.x * 512 < reduction_len{
+                cache[local_id.x] = reduction_heap[start] + reduction_heap[end];
             } else {
                 cache[local_id.x] = reduction_heap[start];
             }
         }
+    } else {
+        cache[local_id.x] = 0.;
     }
     workgroupBarrier();
 
@@ -92,7 +95,8 @@ fn main(
         return;
     }
 
-    if output_len == 1{
+
+    if (len + 511) >> 9 == 1{
         heap[execute_args[2].pointer.x] = cache[0];
     } else {
         reduction_heap[work.x] = cache[0];
