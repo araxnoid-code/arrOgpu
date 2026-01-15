@@ -1,18 +1,21 @@
 use crate::{
-    ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArrayView,
+    ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArrayView, SliceRangeNegativeAble,
     arr_o_gpu::module::method::function::view::slicing::slice_range::SliceRange,
-    get_stride_from_shape, vector_padding,
+    get_stride_from_shape, slice_negative_indexing_converter, vector_padding,
 };
 
 impl ArrOgpuModule {
     pub fn slicing<'a, A>(
         &self,
         array: &'a A,
-        slice: &[SliceRange],
+        slice: &[SliceRangeNegativeAble],
     ) -> Result<GpuArrayView<'a, A>, ArrOgpuErr>
     where
         A: ArrayCompute,
     {
+        let slice = slice_negative_indexing_converter(slice, array.shape())
+            .map_err(|err| ArrOgpuErr::Slicing(err))?;
+
         if array.shape().len() < slice.len() || slice.len() == 0 {
             let err = format!(
                 "Array Slicing Error, Array {:?} can't Slice By {:?} cause out of range",

@@ -8,7 +8,10 @@ use wgpu::{
 
 use crate::{
     ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, ContiguousArray, GpuArray,
-    MetadataCompound, arr_o_gpu::compute_shaders::DOT_PRODUCT_CONTIGUOUS_SHADERS_PATH,
+    MetadataCompound,
+    arr_o_gpu::compute_shaders::{
+        DOT_PRODUCT_CONTIGUOUS_SHADERS_PATH, DOT_PRODUCT_VIEW_SHADERS_PATH,
+    },
 };
 // const PIPELINE_DOT_PRODUCT_CONTIGUOUS: &'static str = "pipeline_dot_product_contiguous";
 
@@ -18,8 +21,8 @@ mod execute;
 impl ArrOgpuModule {
     pub fn dot_product_unsave<A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
     where
-        A: ArrayCompute + ContiguousArray,
-        B: ArrayCompute + ContiguousArray,
+        A: ArrayCompute,
+        B: ArrayCompute,
     {
         if array_a.shape().len() != 1 && array_b.shape().len() != 1 {
             let err = format!(
@@ -181,7 +184,16 @@ impl ArrOgpuModule {
                     .create_shader_module(wgpu::ShaderModuleDescriptor {
                         label: Some("Create Pipeline For Dot Product"),
                         source: wgpu::ShaderSource::Wgsl(
-                            DOT_PRODUCT_CONTIGUOUS_SHADERS_PATH.into(),
+                            match (
+                                array_a.check_contiguous_or_view(),
+                                array_b.check_contiguous_or_view(),
+                            ) {
+                                (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => {
+                                    DOT_PRODUCT_CONTIGUOUS_SHADERS_PATH
+                                }
+                                _ => DOT_PRODUCT_VIEW_SHADERS_PATH,
+                            }
+                            .into(),
                         ),
                     }),
                 entry_point: Some("main"),
@@ -267,20 +279,18 @@ where
         "Dot Product Error, Metadata Not Yet Defined For Array B".to_string(),
     ))?;
 
-    match (
+    let size = match (
         array_a.check_contiguous_or_view(),
         array_b.check_contiguous_or_view(),
     ) {
-        (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => {
-            encoder.copy_buffer_to_buffer(&metadata_a.buffer, 0, execute_cache, 0, 32);
-            encoder.copy_buffer_to_buffer(&metadata_b.buffer, 0, execute_cache, 32, 32);
-            encoder.copy_buffer_to_buffer(&output_metadata.buffer, 0, execute_cache, 64, 32);
-            Ok(())
-        }
-        (_, _) => Err(ArrOgpuErr::DotProduct(
-            "Dot Product Error, Array View Not Able Yet".to_string(),
-        )),
-    }
+        (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => 32,
+        (_, _) => 256,
+    };
+
+    encoder.copy_buffer_to_buffer(&metadata_a.buffer, 0, execute_cache, size * 0, size);
+    encoder.copy_buffer_to_buffer(&metadata_b.buffer, 0, execute_cache, size * 1, size);
+    encoder.copy_buffer_to_buffer(&output_metadata.buffer, 0, execute_cache, size * 2, size);
+    Ok(())
 }
 
 #[repr(C)]
