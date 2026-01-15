@@ -1,4 +1,4 @@
-use crate::{ArrOgpuErr, GpuArray, SliceRangeNegativeAble, slice_negative_indexing_converter};
+use crate::{GpuArray, SliceRangeNegativeAble};
 
 impl GpuArray {
     pub fn slicing(
