@@ -7,19 +7,15 @@ use wgpu::{
 };
 
 use crate::{
-    ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, ContiguousArray, GpuArray,
-    MetadataCompound,
+    ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, GpuArray, MetadataCompound,
     arr_o_gpu::compute_shaders::{
         DOT_PRODUCT_CONTIGUOUS_SHADERS_PATH, DOT_PRODUCT_VIEW_SHADERS_PATH,
     },
 };
 // const PIPELINE_DOT_PRODUCT_CONTIGUOUS: &'static str = "pipeline_dot_product_contiguous";
 
-mod dot_product;
-mod execute;
-
 impl ArrOgpuModule {
-    pub fn dot_product_unsave<A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
+    pub fn dot_product<A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
     where
         A: ArrayCompute,
         B: ArrayCompute,

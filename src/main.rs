@@ -32,7 +32,7 @@ fn main() {
     let view_b = module.slicing(&view_b, &[r(..16)]).unwrap();
     // println!("{}", view_b.contiguous().unwrap());
 
-    let result = module.dot_product_unsave(&view_a, &view_b).unwrap();
+    let result = module.dot_product(&view_a, &view_b).unwrap();
     println!("{}", result);
 
     let dot = view_a
