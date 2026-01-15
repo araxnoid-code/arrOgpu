@@ -51,5 +51,10 @@ pub(crate) const DOT_PRODUCT_CONTIGUOUS_SHADERS_PATH: &'static str =
 pub(crate) const DOT_PRODUCT_VIEW_SHADERS_PATH: &'static str =
     include_str!("./operation/dot_product/dot_product_view.wgsl");
 
+pub(crate) const SUM_CONTIGUOUS_SHADERS_PATH: &'static str =
+    include_str!("./operation/sum/sum_contiguous.wgsl");
+pub(crate) const SUM_VIEW_SHADERS_PATH: &'static str =
+    include_str!("./operation/sum/sum_view.wgsl");
+
 // VIEW
 pub(crate) const CONTIGUOUS_SHADERS_PATH: &'static str = include_str!("./view/contiguous.wgsl");

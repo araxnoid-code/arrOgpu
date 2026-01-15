@@ -12,7 +12,6 @@ use crate::{
         DOT_PRODUCT_CONTIGUOUS_SHADERS_PATH, DOT_PRODUCT_VIEW_SHADERS_PATH,
     },
 };
-// const PIPELINE_DOT_PRODUCT_CONTIGUOUS: &'static str = "pipeline_dot_product_contiguous";
 
 impl ArrOgpuModule {
     pub fn dot_product<A, B>(&self, array_a: &A, array_b: &B) -> Result<GpuArray, ArrOgpuErr>
