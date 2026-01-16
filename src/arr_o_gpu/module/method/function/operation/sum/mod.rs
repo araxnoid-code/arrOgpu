@@ -1,6 +1,3 @@
-// mod sum;
-mod sum_axis;
-
 use std::{num::NonZero, sync::Arc, vec};
 
 use bytemuck::{Pod, Zeroable};

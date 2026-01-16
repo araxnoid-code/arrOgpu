@@ -7,7 +7,7 @@ use wgpu::{
 
 use crate::{
     ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArray,
-    arr_o_gpu::module::method::function::operation::sum::sum_axis::tools::{
+    arr_o_gpu::module::method::function::operation::sum_axis::tools::{
         error_handling, others_binding,
     },
     get_stride_from_shape,
