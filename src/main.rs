@@ -1,39 +1,74 @@
-use arr_o_gpu::{ArangeArray, ArangeIteratorTrait, ArrOgpuModule, r};
+use std::vec;
 
 fn main() {
-    let module = ArrOgpuModule::init(arr_o_gpu::ArrOgpuModuleInit {
-        heap_size: arr_o_gpu::HeapSize::Item(2_000_000),
-        ..Default::default()
-    })
-    .unwrap();
+    let gpu_virtualizer = GpuVirtualizer {};
 
-    let array_a = ArangeArray::arange(0..65536)
-        .to_GpuArray_with_shape(&[256, 256], &module)
-        .unwrap();
-    // let array_b = ArangeArray::arange(65536..65536 * 2)
-    // .to_GpuArray_with_shape(&[256, 128, 2], &module)
-    // .unwrap();
+    let shape = vec![2, 3, 4];
+    let stride = vec![12, 4, 1];
+    let axis = vec![1, 2];
 
-    let view_a = module.permute(&array_a, &[1, 0]).unwrap();
-    let view_a = module.slicing(&view_a, &[r(..64), r(32..64)]).unwrap();
-    let view_a = module.index(&view_a, &[32]).unwrap();
-    let view_a = module.slicing(&view_a, &[r(16..)]).unwrap();
+    let mut out_shape = shape.clone();
+    let mut in_axis_shape = vec![1; shape.len()];
+    let mut sum_len = 1;
+    for axis in axis.iter().rev() {
+        in_axis_shape[*axis] = shape[*axis];
+        sum_len *= shape[*axis];
+        out_shape.remove(*axis);
+    }
+    let out_stride = out_shape
+        .iter()
+        .enumerate()
+        .map(|(i, _)| out_shape[i + 1..].iter().product::<u32>())
+        .collect::<Vec<u32>>();
+    let in_axis_stride = in_axis_shape
+        .iter()
+        .enumerate()
+        .map(|(i, _)| in_axis_shape[i + 1..].iter().product::<u32>())
+        .collect::<Vec<u32>>();
 
-    // let view_b = module.to_shape(&array_b, &[128, 2, 256]).unwrap();
-    // let view_b = module
-    //     .slicing(&view_b, &[r(..), r(1..), r(32..64)])
-    //     .unwrap();
-    // let view_b = module.broadcast(&view_b, &[128, 4, 32]).unwrap();
-    // let view_b = module.permute(&view_b, &[2, 0, 1]).unwrap();
-    // let view_b = module.permute(&view_b, &[1, 0, 2]).unwrap();
-    // let view_b = module.permute(&view_b, &[2, 0, 1]).unwrap();
-    // let view_b = module.index(&view_b, &[2, 16]).unwrap();
-    // let view_b = module.slicing(&view_b, &[r(..16)]).unwrap();
-    // println!("{}", view_b.contiguous().unwrap());
+    println!("{in_axis_shape:?}");
+    println!("{in_axis_stride:?}");
 
-    let result = module.sum(&view_a).unwrap();
-    println!("{}", result);
+    gpu_virtualizer.running(16, 16, 1, |x, y, _| {
+        let total_x = out_shape.iter().product::<u32>();
+        if x < total_x && y < sum_len {
+            let mut is_axis = false;
+            let mut idx = 0;
+            print!("( ");
+            for (d, s) in shape.iter().enumerate() {
+                for d_axis in &axis {
+                    if *d_axis == d {
+                        is_axis = true;
+                        break;
+                    }
+                }
 
-    let dot = view_a.contiguous().unwrap().get_heap().iter().sum::<f32>();
-    println!("{}", dot);
+                if is_axis {
+                    let permute = (y / in_axis_stride[d]) % in_axis_shape[d];
+                    print!(" {} ", permute);
+                } else {
+                    let permute = (x / out_stride[idx]) % out_shape[idx];
+                    idx += 1;
+                    print!(" {} ", permute)
+                }
+                is_axis = false;
+            }
+            print!(" )")
+        }
+    });
+}
+
+struct GpuVirtualizer {}
+
+impl GpuVirtualizer {
+    pub fn running(&self, x: u32, y: u32, z: u32, f: impl Fn(u32, u32, u32)) {
+        for x in 0..x {
+            for y in 0..y {
+                for z in 0..z {
+                    f(x, y, z);
+                }
+            }
+            println!()
+        }
+    }
 }
