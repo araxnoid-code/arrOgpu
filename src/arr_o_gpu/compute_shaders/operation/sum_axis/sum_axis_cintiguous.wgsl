@@ -79,7 +79,7 @@ fn get_in_axis_stride(in_axis_shape: array<u32, 9>) -> array<u32, 8>{
     var in_axis_sride = array<u32, 8>(1, 1, 1, 1, 1, 1, 1, 1);
     for (var i = 0u; i < execute_args[0].dim; i++){
         for (var ii = i + 1; ii < execute_args[0].dim; ii++){
-            in_axis_sride[i] *= execute_args[0].shape[ii >> 2][ii & 3];
+            in_axis_sride[i] *= in_axis_shape[ii];
         }
     }
 
