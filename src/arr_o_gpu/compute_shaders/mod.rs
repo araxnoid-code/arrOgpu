@@ -56,5 +56,8 @@ pub(crate) const SUM_CONTIGUOUS_SHADERS_PATH: &'static str =
 pub(crate) const SUM_VIEW_SHADERS_PATH: &'static str =
     include_str!("./operation/sum/sum_view.wgsl");
 
+pub(crate) const SUM_AXIS_SHADERS_PATH: &'static str =
+    include_str!("./operation/sum_axis/sum_axis.wgsl");
+
 // VIEW
 pub(crate) const CONTIGUOUS_SHADERS_PATH: &'static str = include_str!("./view/contiguous.wgsl");

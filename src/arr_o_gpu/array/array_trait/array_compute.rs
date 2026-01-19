@@ -25,7 +25,7 @@ pub trait ArrayCompute {
 
     fn metadata_compound(&self) -> Option<&MetadataCompound>;
 
-    fn check_contiguous_or_view(&self) -> ArrayType;
+    fn check_contiguous_or_view<'a>(&'a self) -> ArrayType<'a>;
 }
 
 impl ArrayCompute for GpuArray {
@@ -73,7 +73,7 @@ impl ArrayCompute for GpuArray {
         self.metadata_compound()
     }
 
-    fn check_contiguous_or_view(&self) -> ArrayType {
+    fn check_contiguous_or_view<'a>(&'a self) -> ArrayType<'a> {
         self.check()
     }
 }
@@ -126,7 +126,7 @@ where
         self.metadata_compound.as_ref()
     }
 
-    fn check_contiguous_or_view(&self) -> ArrayType {
+    fn check_contiguous_or_view(&self) -> ArrayType<'_> {
         self.check()
     }
 }

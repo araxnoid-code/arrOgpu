@@ -26,48 +26,65 @@ var<uniform> execute_args: array<ArrayMetadata, 3>;
 @group(0) @binding(2)
 var<uniform> static_cache: array<vec4<u32>, 2>;
 
+// cache
+var<workgroup> cache: array<array<f32, 16>, 16>;
+
 @compute @workgroup_size(16, 16, 1)
 fn main(
-    @builtin (global_invocation_id) global_id: vec3<u32>
+    @builtin (global_invocation_id) global_id: vec3<u32>,
+    @builtin (local_invocation_id) local_id: vec3<u32>,
 ){
+    let sum_len = get_sum_len();
     if global_id.x < execute_args[1].len{
-        let sum_len = get_sum_len();
         if global_id.y < sum_len{
 
             let in_axis_shape = get_in_axis_shape();
             let in_axis_stride = get_in_axis_stride(in_axis_shape);
             let mark_stride = get_mark_stride();
 
-            var index = execute_args[0].offset;
-
+            var index = execute_args[0].pointer.x + execute_args[0].offset;
             for (var i = 0u; i < 8; i++){
                 let axis = static_cache[i >> 2][i & 3];
                 if axis != 0 || i == 0{
-                    let permute = (global_id.y / in_axis_stride[i]) % in_axis_shape[i];
+                    let permute = (global_id.y / in_axis_stride[axis]) % in_axis_shape[axis];
                     index += permute * execute_args[0].stride[axis >> 2][axis & 3];
                 }
             }
 
             for (var i = 0u; i < execute_args[1].dim; i++){
-                let idx0 = i >> 2;
-                let idx1 = i % 3;
-                let permute = (global_id.x / execute_args[1].o_stride[idx0][idx1]) * execute_args[1].shape[idx0][idx1];
+                let permute = (global_id.x / execute_args[1].o_stride[i >> 2][i & 3]) % execute_args[1].shape[i >> 2][i & 3];
                 index += permute * mark_stride[i];
             }
+
+            cache[local_id.x][local_id.y] = heap[index];
         }
     }
+
+    workgroupBarrier();
+
+    let total_thread_y = 16u;
+    let reduction_len = 16u;
+    var stride = 1u;
+    while (stride < total_thread_y){
+        let start = local_id.y * 2 * stride;
+        let index = select(0 , start + stride, start + stride < reduction_len);
+        cache[local_id.x][start] += select(0, cache[local_id.x][index], start + stride < reduction_len);
+        stride <<= 1;
+        workgroupBarrier();
+    };
+
+    if global_id.x >= execute_args[1].len || global_id.y != 0{
+        return;
+    }
+
+    heap[global_id.x + execute_args[1].pointer.x] = cache[local_id.x][0];
 }
 
 fn get_in_axis_shape() -> array<u32, 9> {
-    var in_axis_shape = array<u32, 9>(0, 0, 0, 0, 0, 0, 0, 0, 0);
-    for (var i = 0u; i < execute_args[0].dim; i++){
-        in_axis_shape[i] = 1;
-    }
+    var in_axis_shape = array<u32, 9>(1, 1, 1, 1, 1, 1, 1, 1, 0);
 
     for (var i = 0u; i < 8; i++){
         let axis = static_cache[i >> 2][i & 3];
-        let zero = u32(axis != 0 || i == 0);
-
         let index = select(8, axis, axis != 0 || i == 0);
         in_axis_shape[index] = execute_args[0].shape[axis >> 2][axis & 3];
     }
@@ -76,14 +93,13 @@ fn get_in_axis_shape() -> array<u32, 9> {
 }
 
 fn get_in_axis_stride(in_axis_shape: array<u32, 9>) -> array<u32, 8>{
-    var in_axis_sride = array<u32, 8>(1, 1, 1, 1, 1, 1, 1, 1);
+    var in_axis_stride = array<u32, 8>(1, 1, 1, 1, 1, 1, 1, 1);
     for (var i = 0u; i < execute_args[0].dim; i++){
         for (var ii = i + 1; ii < execute_args[0].dim; ii++){
-            in_axis_sride[i] *= in_axis_shape[ii];
+            in_axis_stride[i] *= in_axis_shape[ii];
         }
     }
-
-    return in_axis_sride;
+    return in_axis_stride;
 }
 
 fn get_mark_stride() -> array<u32, 8>{
@@ -99,7 +115,7 @@ fn get_mark_stride() -> array<u32, 8>{
 
     var skip = 0u;
     for (var i = 0u; i < execute_args[0].dim; i++){
-        if execute_args[0].shape[i >> 2][i & 3] != 0{
+        if mark_shape[i >> 2][i & 3] != 0{
             let stride = execute_args[0].stride[i >> 2][i & 3];
             mark_stride[i - skip] = stride;
         } else {
