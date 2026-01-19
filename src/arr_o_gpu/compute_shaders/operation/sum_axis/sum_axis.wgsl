@@ -26,6 +26,24 @@ var<uniform> execute_args: array<ArrayMetadata, 3>;
 @group(0) @binding(2)
 var<uniform> static_cache: array<vec4<u32>, 2>;
 
+// Reduction
+struct Counter{
+    value: u32,
+    padding0: u32,
+    padding1: u32,
+    padding2: u32,
+    padding3: array<vec4<u32>, 15>
+}
+
+@group(1) @binding(0)
+var<storage, read_write> reduction_heap: array<f32>;
+
+@group(1) @binding(1)
+var<uniform> reduction_counter: Counter;
+
+@group(1) @binding(2)
+var<storage, read_write> reduction_len: Counter;
+
 // cache
 var<workgroup> cache: array<array<f32, 16>, 16>;
 
@@ -33,9 +51,17 @@ var<workgroup> cache: array<array<f32, 16>, 16>;
 fn main(
     @builtin (global_invocation_id) global_id: vec3<u32>,
     @builtin (local_invocation_id) local_id: vec3<u32>,
+    @builtin (workgroup_id) work_id: vec3<u32>,
 ){
+    let len = select(reduction_len.value, execute_args[1].len, reduction_counter.value == 0);
+    let total_thread_y = 16u;
+    var reduction_len = total_thread_y;
+    if reduction_len > (work_id.y + 1) * 16{
+        reduction_len = reduction_len - work_id.y * 16;
+    }
+
     let sum_len = get_sum_len();
-    if global_id.x < execute_args[1].len{
+    if global_id.x < len && reduction_counter.value == 0{
         if global_id.y < sum_len{
 
             let in_axis_shape = get_in_axis_shape();
@@ -58,12 +84,14 @@ fn main(
 
             cache[local_id.x][local_id.y] = heap[index];
         }
+    } else if global_id.x < len && global_id.y < reduction_len {
+        let index = len * global_id.x + global_id.y;
+        cache[local_id.x][local_id.y] = reduction_heap[index];
     }
-
     workgroupBarrier();
 
-    let total_thread_y = 16u;
-    let reduction_len = 16u;
+
+
     var stride = 1u;
     while (stride < total_thread_y){
         let start = local_id.y * 2 * stride;
@@ -73,11 +101,17 @@ fn main(
         workgroupBarrier();
     };
 
-    if global_id.x >= execute_args[1].len || global_id.y != 0{
+    if global_id.x >= len || global_id.y != 0{
         return;
     }
 
-    heap[global_id.x + execute_args[1].pointer.x] = cache[local_id.x][0];
+    if (len + 15) >> 4 == 1{
+        heap[global_id.x + execute_args[1].pointer.x] = cache[local_id.x][0];
+    } else {
+        let index = len * global_id.x + work_id.y;
+        reduction_heap[index] = cache[local_id.x][0];
+    }
+
 }
 
 fn get_in_axis_shape() -> array<u32, 9> {
