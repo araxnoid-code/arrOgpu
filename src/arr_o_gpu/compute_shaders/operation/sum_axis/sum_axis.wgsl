@@ -42,7 +42,7 @@ var<storage, read_write> reduction_heap: array<f32>;
 var<uniform> reduction_counter: Counter;
 
 @group(1) @binding(2)
-var<storage, read_write> reduction_len: Counter;
+var<uniform> reduction_len: Counter;
 
 // cache
 var<workgroup> cache: array<array<f32, 16>, 16>;
