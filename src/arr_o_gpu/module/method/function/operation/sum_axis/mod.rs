@@ -14,12 +14,11 @@ use crate::{
     get_stride_from_shape, vector_padding,
 };
 
-mod sum_axis;
 mod sum_axis_keep_dim;
 mod tools;
 
 impl ArrOgpuModule {
-    pub fn sum_axis_unsafe<A>(&self, array: &A, axis: &[u32]) -> Result<GpuArray, ArrOgpuErr>
+    pub fn sum_axis<A>(&self, array: &A, axis: &[u32]) -> Result<GpuArray, ArrOgpuErr>
     where
         A: ArrayCompute,
     {

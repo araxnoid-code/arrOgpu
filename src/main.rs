@@ -12,7 +12,7 @@ fn main() {
     let array = module.broadcast(&array, &[3, 2, 500]).unwrap();
     // println!("{}", array);
 
-    let sum_axis = module.sum_axis_unsafe(&array, &[1]).unwrap();
+    let sum_axis = module.sum_axis(&array, &[1]).unwrap();
     println!("{}", module.sum(&sum_axis).unwrap());
 }
 
