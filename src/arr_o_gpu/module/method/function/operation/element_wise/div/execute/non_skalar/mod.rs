@@ -4,6 +4,9 @@ use wgpu::{Buffer, CommandEncoder, ComputePipeline, Device, PipelineLayout, Shad
 
 use crate::{
     ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, CheckArrayType, GpuArray, PipelineCompound,
+    arr_o_gpu::compute_shaders::{
+        DIV_NON_SCALAR_CONTIGUOUS_SHADERS_PATH, DIV_NON_SCALAR_VIEW_SHADERS_PATH,
+    },
     get_stride_from_shape, vector_padding,
 };
 
@@ -189,9 +192,9 @@ where
                 array_b.check_contiguous_or_view(),
             ) {
                 (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => {
-                    include_str!("./shaders/div_contiguous.wgsl").into()
+                    DIV_NON_SCALAR_CONTIGUOUS_SHADERS_PATH.into()
                 }
-                _ => include_str!("./shaders/div_view.wgsl").into(),
+                _ => DIV_NON_SCALAR_VIEW_SHADERS_PATH.into(),
             },
         ),
     })

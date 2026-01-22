@@ -50,18 +50,10 @@ fn main(
 }
 
 fn indexing(x:u32) -> u32{
-    let arr = execute_args[0];
-    let shape = arr.shape;
-    let dim = arr.dim;
-    let stride = arr.stride;
-    let o_stride = arr.o_stride;
-
-    var idx = arr.offset;
-    for (var i = 0u; i < dim; i++){
-        let idx0 = i >> 2;
-        let idx1 = i & 3;
-        let permute = (x / o_stride[idx0][idx1]) % shape[idx0][idx1];
-        idx += (permute * stride[idx0][idx1]);
+    var idx = execute_args[0].offset;
+    for (var i = 0u; i < execute_args[0].dim; i++){
+        let permute = (x / execute_args[0].o_stride[i >> 2][i & 3]) % execute_args[0].shape[i >> 2][i & 3];
+        idx += (permute * execute_args[0].stride[i >> 2][i & 3]);
     }
     return idx;
 }
