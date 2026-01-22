@@ -61,5 +61,14 @@ pub(crate) const SUM_AXIS_SHADERS_PATH: &'static str =
 pub(crate) const SUM_AXIS_KEEP_DIM_SHADERS_PATH: &'static str =
     include_str!("./operation/sum_axis/sum_axis_keep_dim.wgsl");
 
+pub(crate) const ADD_NON_SCALAR_CONTIGUOUS_SHADERS_PATH: &'static str =
+    include_str!("./operation/element_wise/add/non_scalar/add_contiguous.wgsl");
+pub(crate) const ADD_NON_SCALAR_VIEW_SHADERS_PATH: &'static str =
+    include_str!("./operation/element_wise/add/non_scalar/add_view.wgsl");
+pub(crate) const ADD_SCALAR_CONTIGUOUS_SHADERS_PATH: &'static str =
+    include_str!("./operation/element_wise/add/scalar/add_scalar_contiguous.wgsl");
+pub(crate) const ADD_SCALAR_VIEW_SHADERS_PATH: &'static str =
+    include_str!("./operation/element_wise/add/scalar/add_scalar_view.wgsl");
+
 // VIEW
 pub(crate) const CONTIGUOUS_SHADERS_PATH: &'static str = include_str!("./view/contiguous.wgsl");
