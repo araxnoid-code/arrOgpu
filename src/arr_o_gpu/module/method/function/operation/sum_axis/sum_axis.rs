@@ -1,5 +1,3 @@
-mod sum_axis_keep_dim;
-
 use std::{num::NonZero, sync::Arc};
 
 use bytemuck::{Pod, Zeroable, cast_slice};
@@ -10,18 +8,14 @@ use wgpu::{
 use crate::{
     ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArray,
     arr_o_gpu::{
-        compute_shaders::{SUM_AXIS_KEEP_DIM_SHADERS_PATH, SUM_AXIS_SHADERS_PATH},
+        compute_shaders::SUM_AXIS_SHADERS_PATH,
         module::method::function::operation::sum_axis::tools::error_handling,
     },
     get_stride_from_shape, vector_padding,
 };
 
 impl ArrOgpuModule {
-    pub fn sum_axis_keep_dim_unsafe<A>(
-        &self,
-        array: &A,
-        axis: &[u32],
-    ) -> Result<GpuArray, ArrOgpuErr>
+    pub fn sum_axis<A>(&self, array: &A, axis: &[u32]) -> Result<GpuArray, ArrOgpuErr>
     where
         A: ArrayCompute,
     {
@@ -33,9 +27,13 @@ impl ArrOgpuModule {
 
         let array_shape = array.shape();
         let mut out_shape = array_shape.clone();
-        axis.iter().rev().for_each(|idx| {
-            out_shape[*idx as usize] = 1;
-        });
+        if array_shape.len() != axis.len() {
+            axis.iter().rev().for_each(|idx| {
+                out_shape.remove(*idx as usize);
+            });
+        } else {
+            out_shape = vec![1];
+        }
 
         let dim = out_shape.len();
         let stride = get_stride_from_shape(&out_shape);
@@ -242,7 +240,7 @@ fn create_pipeline_and_reduction(
         layout: Some(&pipeline_layout),
         module: &device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Create Shaders Module For Sum Axis"),
-            source: wgpu::ShaderSource::Wgsl(SUM_AXIS_KEEP_DIM_SHADERS_PATH.into()),
+            source: wgpu::ShaderSource::Wgsl(SUM_AXIS_SHADERS_PATH.into()),
         }),
         entry_point: Some("main"),
         compilation_options: wgpu::PipelineCompilationOptions {
