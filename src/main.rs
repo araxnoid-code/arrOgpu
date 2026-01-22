@@ -7,13 +7,13 @@ fn main() {
     })
     .unwrap();
 
-    let data = [1.; 1000];
-    let array = module.array_from_vector(&data, &[2, 500]).unwrap();
-    let array = module.broadcast(&array, &[3, 2, 500]).unwrap();
+    let data = [1.; 2500];
+    let array = module.array_from_vector(&data, &[50, 50]).unwrap();
+    // let array = module.broadcast(&array, &[3, 2, 500]).unwrap();
     // println!("{}", array);
 
-    let sum_axis = module.sum_axis(&array, &[1]).unwrap();
-    println!("{}", module.sum(&sum_axis).unwrap());
+    let sum_axis = module.sum_axis_keep_dim_unsafe(&array, &[0]).unwrap();
+    println!("{}", sum_axis);
 }
 
 // println!("{:?}", &module.get_heap()[1000001..1000101]);
