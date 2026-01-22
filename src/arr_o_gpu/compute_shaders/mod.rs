@@ -79,5 +79,23 @@ pub(crate) const DIV_SCALAR_CONTIGUOUS_SHADERS_PATH: &'static str =
 pub(crate) const DIV_SCALAR_VIEW_SHADERS_PATH: &'static str =
     include_str!("./operation/element_wise/div/scalar/div_scalar_view.wgsl");
 
+pub(crate) const MUL_NON_SCALAR_CONTIGUOUS_SHADERS_PATH: &'static str =
+    include_str!("./operation/element_wise/mul/non_scalar/mul_contiguous.wgsl");
+pub(crate) const MUL_NON_SCALAR_VIEW_SHADERS_PATH: &'static str =
+    include_str!("./operation/element_wise/mul/non_scalar/mul_view.wgsl");
+pub(crate) const MUL_SCALAR_CONTIGUOUS_SHADERS_PATH: &'static str =
+    include_str!("./operation/element_wise/mul/scalar/mul_scalar_contiguous.wgsl");
+pub(crate) const MUL_SCALAR_VIEW_SHADERS_PATH: &'static str =
+    include_str!("./operation/element_wise/mul/scalar/mul_scalar_view.wgsl");
+
+pub(crate) const SUB_NON_SCALAR_CONTIGUOUS_SHADERS_PATH: &'static str =
+    include_str!("./operation/element_wise/sub/non_scalar/sub_contiguous.wgsl");
+pub(crate) const SUB_NON_SCALAR_VIEW_SHADERS_PATH: &'static str =
+    include_str!("./operation/element_wise/sub/non_scalar/sub_view.wgsl");
+pub(crate) const SUB_SCALAR_CONTIGUOUS_SHADERS_PATH: &'static str =
+    include_str!("./operation/element_wise/sub/scalar/sub_scalar_contiguous.wgsl");
+pub(crate) const SUB_SCALAR_VIEW_SHADERS_PATH: &'static str =
+    include_str!("./operation/element_wise/sub/scalar/sub_scalar_view.wgsl");
+
 // VIEW
 pub(crate) const CONTIGUOUS_SHADERS_PATH: &'static str = include_str!("./view/contiguous.wgsl");

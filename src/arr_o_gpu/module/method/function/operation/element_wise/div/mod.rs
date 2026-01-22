@@ -1,4 +1,5 @@
-mod execute;
+mod non_scalar;
+mod scalar;
 
 use crate::{
     ArrOgpuErr, ArrOgpuModule, ArrayCompute, CheckArrayType, GpuArray,

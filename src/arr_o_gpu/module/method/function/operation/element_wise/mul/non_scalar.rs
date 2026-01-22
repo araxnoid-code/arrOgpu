@@ -4,11 +4,14 @@ use wgpu::{Buffer, CommandEncoder, ComputePipeline, Device, PipelineLayout, Shad
 
 use crate::{
     ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, CheckArrayType, GpuArray, PipelineCompound,
+    arr_o_gpu::compute_shaders::{
+        MUL_NON_SCALAR_CONTIGUOUS_SHADERS_PATH, MUL_NON_SCALAR_VIEW_SHADERS_PATH,
+    },
     get_stride_from_shape, vector_padding,
 };
 
 impl ArrOgpuModule {
-    pub(crate) fn sub_array<'a, A, B>(
+    pub(crate) fn mul_array<'a, A, B>(
         &self,
         array_a: &'a A,
         array_b: &'a B,
@@ -19,11 +22,11 @@ impl ArrOgpuModule {
     {
         if array_a.shape() != array_b.shape() {
             let err = format!(
-                "Array Sub Error, Shape Of A is {:?} but Subtracted with Shape Of B is {:?}",
+                "Array Mul Error, Shape Of A is {:?} but Multiplied with Shape Of B is {:?}",
                 array_a.shape(),
                 array_b.shape()
             );
-            return Err(ArrOgpuErr::Sub(err));
+            return Err(ArrOgpuErr::Mul(err));
         }
 
         let wgpu = self.wgpu_init.read().unwrap();
@@ -59,25 +62,25 @@ impl ArrOgpuModule {
             array_b.check_contiguous_or_view(),
         ) {
             (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => {
-                if let Some(pipeline) = read.get("pipeline_sub_non_scalar_contiguous") {
+                if let Some(pipeline) = read.get("pipeline_mul_non_scalar_contiguous") {
                     PipelineCompound::PipelineCache(pipeline)
                 } else {
                     drop(read);
                     PipelineCompound::UnsavePipeline(
                         set_pipeline(&wgpu.device, array_a, array_b, &self.common_pipeline_layout),
-                        "pipeline_sub_non_scalar_contiguous",
+                        "pipeline_mul_non_scalar_contiguous",
                     )
                 }
             }
 
             _ => {
-                if let Some(pipeline) = read.get("pipeline_sub_non_scalar_view") {
+                if let Some(pipeline) = read.get("pipeline_mul_non_scalar_view") {
                     PipelineCompound::PipelineCache(pipeline)
                 } else {
                     drop(read);
                     PipelineCompound::UnsavePipeline(
                         set_pipeline(&wgpu.device, array_a, array_b, &self.common_pipeline_layout),
-                        "pipeline_sub_non_scalar_view",
+                        "pipeline_mul_non_scalar_view",
                     )
                 }
             }
@@ -86,7 +89,7 @@ impl ArrOgpuModule {
         let mut encoder = wgpu
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Create Encoder For Sub"),
+                label: Some("Create Encoder For Mul"),
             });
 
         set_execute_args(
@@ -145,10 +148,10 @@ fn save_pipeline<'a, A, B>(
         array_b.check_contiguous_or_view(),
     ) {
         (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => {
-            write.insert("pipeline_sub_non_scalar_contiguous", pipeline);
+            write.insert("pipeline_mul_non_scalar_contiguous", pipeline);
         }
         _ => {
-            write.insert("pipeline_sub_non_scalar_view", pipeline);
+            write.insert("pipeline_mul_non_scalar_view", pipeline);
         }
     };
 }
@@ -164,7 +167,7 @@ where
     B: ArrayCompute + ?Sized,
 {
     device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-        label: Some("Create Pipeline For Sub"),
+        label: Some("Create Pipeline For Mul"),
         layout: Some(&pipeline_layout),
         module: &set_shaders(&device, array_a, array_b),
         entry_point: Some("main"),
@@ -182,16 +185,16 @@ where
     B: ArrayCompute + ?Sized,
 {
     device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some("Create Shaders Module For Sub"),
+        label: Some("Create Shaders Module For Mul"),
         source: wgpu::ShaderSource::Wgsl(
             match (
                 array_a.check_contiguous_or_view(),
                 array_b.check_contiguous_or_view(),
             ) {
                 (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => {
-                    include_str!("./shaders/sub_contiguous.wgsl").into()
+                    MUL_NON_SCALAR_CONTIGUOUS_SHADERS_PATH.into()
                 }
-                _ => include_str!("./shaders/sub_view.wgsl").into(),
+                _ => MUL_NON_SCALAR_VIEW_SHADERS_PATH.into(),
             },
         ),
     })
@@ -208,12 +211,12 @@ where
     A: ArrayCompute,
     B: ArrayCompute + ?Sized,
 {
-    let buffer_a = array_a.metadata_compound().ok_or(ArrOgpuErr::Sub(
-        "Sub Error, Metadata Not Yet Defined For Array A".to_string(),
+    let buffer_a = array_a.metadata_compound().ok_or(ArrOgpuErr::Mul(
+        "Mul Error, Metadata Not Yet Defined For Array A".to_string(),
     ))?;
 
-    let buffer_b = array_b.metadata_compound().ok_or(ArrOgpuErr::Sub(
-        "Sub Error, Metadata Not Yet Defined For Array B".to_string(),
+    let buffer_b = array_b.metadata_compound().ok_or(ArrOgpuErr::Mul(
+        "Mul Error, Metadata Not Yet Defined For Array B".to_string(),
     ))?;
 
     match (

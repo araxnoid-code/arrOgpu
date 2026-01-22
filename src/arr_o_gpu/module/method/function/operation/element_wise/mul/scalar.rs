@@ -8,7 +8,13 @@ use wgpu::{
 
 use crate::{
     ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, GpuArray, PipelineCompound,
-    arr_o_gpu::module::method::function::operation::element_wise::skalar_operation::MetaDataOption,
+    arr_o_gpu::{
+        compute_shaders::{
+            MUL_NON_SCALAR_VIEW_SHADERS_PATH, MUL_SCALAR_CONTIGUOUS_SHADERS_PATH,
+            MUL_SCALAR_VIEW_SHADERS_PATH,
+        },
+        module::method::function::operation::element_wise::skalar_operation::MetaDataOption,
+    },
     get_stride_from_shape, vector_padding,
 };
 
@@ -218,8 +224,8 @@ where
     device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("Create Shaders Module For Mul"),
         source: wgpu::ShaderSource::Wgsl(match array.check_contiguous_or_view() {
-            ArrayType::Contiguous(_) => include_str!("./shaders/mul_skalar_contiguous.wgsl").into(),
-            ArrayType::View(_) => include_str!("./shaders/mul_skalar_view.wgsl").into(),
+            ArrayType::Contiguous(_) => MUL_SCALAR_CONTIGUOUS_SHADERS_PATH.into(),
+            ArrayType::View(_) => MUL_SCALAR_VIEW_SHADERS_PATH.into(),
         }),
     })
 }
