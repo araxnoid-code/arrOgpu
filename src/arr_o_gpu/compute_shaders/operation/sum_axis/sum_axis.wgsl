@@ -42,7 +42,7 @@ var<storage, read_write> reduction_heap: array<f32>;
 var<uniform> reduction_counter: Counter;
 
 @group(1) @binding(2)
-var<uniform> reduction_len: Counter;
+var<uniform> reduction_len_list: Counter;
 
 // cache
 var<workgroup> cache: array<array<f32, 16>, 16>;
@@ -53,15 +53,18 @@ fn main(
     @builtin (local_invocation_id) local_id: vec3<u32>,
     @builtin (workgroup_id) work_id: vec3<u32>,
 ){
-    let len = select(reduction_len.value, execute_args[1].len, reduction_counter.value == 0);
+    let out_len = execute_args[1].len;
     let total_thread_y = 16u;
+    let size_stride = get_sum_len();
+
+    let sum_len = select(reduction_len_list.value, size_stride, reduction_counter.value == 0);
+
     var reduction_len = total_thread_y;
-    if reduction_len > (work_id.y + 1) * 16{
-        reduction_len = reduction_len - work_id.y * 16;
+    if (work_id.y + 1) * 16 > sum_len{
+        reduction_len = sum_len - work_id.y * 16;
     }
 
-    let sum_len = get_sum_len();
-    if global_id.x < len && reduction_counter.value == 0{
+    if global_id.x < out_len && reduction_counter.value == 0{
         if global_id.y < sum_len{
 
             let in_axis_shape = get_in_axis_shape();
@@ -84,13 +87,13 @@ fn main(
 
             cache[local_id.x][local_id.y] = heap[index];
         }
-    } else if global_id.x < len && global_id.y < reduction_len {
-        let index = len * global_id.x + global_id.y;
+    } else if global_id.x < out_len && local_id.y < reduction_len {
+        let index = ((size_stride + 15) >> 4) * global_id.x + global_id.y;
         cache[local_id.x][local_id.y] = reduction_heap[index];
+    } else {
+        cache[local_id.x][local_id.y] = 0.0;
     }
     workgroupBarrier();
-
-
 
     var stride = 1u;
     while (stride < total_thread_y){
@@ -101,14 +104,15 @@ fn main(
         workgroupBarrier();
     };
 
-    if global_id.x >= len || global_id.y != 0{
+    if global_id.x >= out_len || local_id.y != 0{
         return;
     }
 
-    if (len + 15) >> 4 == 1{
+
+    if (sum_len + 15) >> 4 == 1{
         heap[global_id.x + execute_args[1].pointer.x] = cache[local_id.x][0];
     } else {
-        let index = len * global_id.x + work_id.y;
+        let index = ((size_stride + 15) >> 4) * global_id.x + work_id.y;
         reduction_heap[index] = cache[local_id.x][0];
     }
 

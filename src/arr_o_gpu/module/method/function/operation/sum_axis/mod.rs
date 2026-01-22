@@ -89,6 +89,7 @@ impl ArrOgpuModule {
         wgpu.queue
             .write_buffer(&self.static_cache, 0, cast_slice(&axis_padding));
 
+        let x = (out_len + 15) >> 4;
         for (i, counter) in reduction_len.iter().enumerate() {
             let mut begin_compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                 label: Some("Create Begin Compute Pass For Sum Axos"),
@@ -102,12 +103,11 @@ impl ArrOgpuModule {
                 1,
                 Some(&bind_group),
                 &[
-                    (i as u32 - 1 * (i != 0) as u32) * 256,
                     (i != 0) as u32 * 256,
+                    (i as u32 - 1 * (i != 0) as u32) * 256,
                 ],
             );
 
-            let x = (out_len + 15) >> 4;
             begin_compute_pass.dispatch_workgroups(x, counter.value, 1);
         }
 
