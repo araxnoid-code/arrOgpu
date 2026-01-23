@@ -1,6 +1,5 @@
 use crate::{
     ArrOgpuErr, ArrOgpuModule, ArrayCompute, GpuArrayView, SliceRangeNegativeAble,
-    arr_o_gpu::module::method::function::view::slicing::slice_range::SliceRange,
     get_stride_from_shape, slice_negative_indexing_converter, vector_padding,
 };
 
