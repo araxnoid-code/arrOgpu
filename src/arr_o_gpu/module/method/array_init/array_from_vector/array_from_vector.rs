@@ -27,9 +27,9 @@ impl ArrOgpuModule {
             return Err(ArrOgpuErr::Init(
                 "Array Initialization Error, Empty Array Not Supported".to_string(),
             ));
-        } else if shape.len() > 10 {
+        } else if shape.len() > 8 {
             return Err(ArrOgpuErr::Init(
-                "Array Initialization Error, Maximum Array Dimension Is 10 Dimensions".to_string(),
+                "Array Initialization Error, Maximum Array Dimension Is 8 Dimensions".to_string(),
             ));
         }
 
