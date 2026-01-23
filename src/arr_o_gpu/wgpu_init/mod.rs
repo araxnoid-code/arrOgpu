@@ -1,2 +1,2 @@
-mod wgpu_init;
-pub use wgpu_init::*;
+mod wgpu_module;
+pub use wgpu_module::*;

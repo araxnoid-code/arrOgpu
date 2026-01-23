@@ -1,11 +1,11 @@
 use uuid::Uuid;
 
-use crate::{ GpuArray, MonagementGet, MonagementInsertRemove, MonagementRemove, SpaceType };
+use crate::{GpuArray, MonagementGet, MonagementInsertRemove, MonagementRemove, SpaceType};
 
 impl Drop for GpuArray {
     fn drop(&mut self) {
-        let mut allocator = self.module.allocator.write().unwrap();
-        let self_range = self.pointer.0 as u32..self.pointer.1 as u32;
+        let mut allocator = self.module().allocator.write().unwrap();
+        let self_range = self.pointer().0 as u32..self.pointer().1 as u32;
 
         // monagement branch
         match self.space_type {
@@ -20,7 +20,9 @@ impl Drop for GpuArray {
                     self_range.end
                 };
 
-                allocator.monanagement.insert(self_range.start, (_id, self_range.start..end));
+                allocator
+                    .monanagement
+                    .insert(self_range.start, (_id, self_range.start..end));
             }
             SpaceType::FragmentSpace(_id, _idx) => {
                 // monagement branch
@@ -34,7 +36,9 @@ impl Drop for GpuArray {
                     self_range.end
                 };
 
-                allocator.monanagement.insert(self_range.start, (_id, self_range.start..end));
+                allocator
+                    .monanagement
+                    .insert(self_range.start, (_id, self_range.start..end));
             }
         }
         // monagement branch

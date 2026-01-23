@@ -1,7 +1,4 @@
-use std::{
-    sync::{Arc, RwLock},
-    vec,
-};
+use std::sync::Arc;
 
 use wgpu::{
     BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor, BindGroupLayoutEntry,
@@ -9,18 +6,14 @@ use wgpu::{
     PipelineCompilationOptions, PipelineLayoutDescriptor, ShaderModuleDescriptor, ShaderSource,
     ShaderStages,
     util::{BufferInitDescriptor, DeviceExt},
-    wgt::{CommandEncoderDescriptor, PollType},
+    wgt::CommandEncoderDescriptor,
 };
 
 use crate::*;
 
 impl ArrOgpuModule {
     // array init
-    pub fn array_from_vector(
-        &self,
-        vector: &Vec<f32>,
-        shape: &[u32],
-    ) -> Result<GpuArray, ArrOgpuErr> {
+    pub fn array_from_vector(&self, vector: &[f32], shape: &[u32]) -> Result<GpuArray, ArrOgpuErr> {
         let (flatten, _) = vector.flatten();
 
         let len = flatten.len();
@@ -29,6 +22,14 @@ impl ArrOgpuModule {
         if (len as u32) != shape_len {
             return Err(ArrOgpuErr::Init(
                 "Array Initialization Error, len of vector and len of shape not same".to_string(),
+            ));
+        } else if vector.len() == 0 {
+            return Err(ArrOgpuErr::Init(
+                "Array Initialization Error, Empty Array Not Supported".to_string(),
+            ));
+        } else if shape.len() > 8 {
+            return Err(ArrOgpuErr::Init(
+                "Array Initialization Error, Maximum Array Dimension Is 8 Dimensions".to_string(),
             ));
         }
 
@@ -110,10 +111,10 @@ impl ArrOgpuModule {
             &(PipelineLayoutDescriptor {
                 label: Some("create pipeline layout for array_init"),
                 bind_group_layouts: &[
-                    &self.binding_compounds.read().unwrap()[0].binding_group_layouts, // heap
+                    &self.module_bind_group.binding_group_layouts, // heap
                     &binding_layout,
                 ],
-                push_constant_ranges: &[],
+                immediate_size: 0,
             }),
         );
 
@@ -149,11 +150,7 @@ impl ArrOgpuModule {
             bcp.set_pipeline(&pipeline);
 
             // heap
-            bcp.set_bind_group(
-                0,
-                &self.binding_compounds.read().unwrap()[0].binding_groups,
-                &[],
-            );
+            bcp.set_bind_group(0, &self.module_bind_group.binding_groups, &[]);
 
             bcp.set_bind_group(1, &binding, &[]);
             let x = ((len as f32) / 256.0).ceil() as u32;
@@ -162,17 +159,53 @@ impl ArrOgpuModule {
 
         wgpu.queue.submit(Some(encoder.finish()));
 
-        wgpu.device.poll(PollType::Wait).unwrap();
+        let pointer = (pointer[0], pointer[1]);
 
-        let pointer = (pointer[0] as usize, pointer[1] as usize);
+        let stride = get_stride_from_shape(shape);
+        let binding =
+            self.create_metadata_binding(&[pointer.0, pointer.1], &shape, &stride, &stride, &0);
+
+        // build/0.1.0.5
+        let shape_padding: [u32; 8] = (vector_padding(shape.to_vec(), 0, 8)
+            .map_err(ArrOgpuErr::from)?)
+        .try_into()
+        .map_err(|_| {
+            ArrOgpuErr::Padding(
+                "Padding Error, Conversion Shape Padding To [u32; 8] Failed".to_string(),
+            )
+        })?;
+        let stride_padding: [u32; 8] = (vector_padding(stride.to_vec(), 0, 8)
+            .map_err(ArrOgpuErr::from)?)
+        .try_into()
+        .map_err(|_| {
+            ArrOgpuErr::Padding(
+                "Padding Error, Conversion Shape Padding To [u32; 8] Failed".to_string(),
+            )
+        })?;
+        let origin_stride = stride_padding.clone();
+        let metadata_compound = self.create_metadata_compound(
+            [pointer.0, pointer.1],
+            pointer.1 - pointer.0,
+            shape.len() as u32,
+            0,
+            shape_padding,
+            stride_padding,
+            origin_stride,
+        );
+        // build/0.1.0.5
 
         Ok(GpuArray {
             module: Arc::new(self.clone()),
             pointer,
-            length: pointer.1 - pointer.0,
+            length: (pointer.1 - pointer.0) as usize,
             shape: shape.to_vec(),
-            stride: get_stride_from_shape(shape),
+            stride,
             space_type: space_type,
+            binding: Some(binding),
+
+            // build/0.1.0.5
+            metadata_compound: Some(metadata_compound),
+            // build/0.1.0.5
         })
     }
 }

@@ -1,16 +1,33 @@
-use std::sync::{ Arc, RwLock };
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 
-use wgpu::Buffer;
+use wgpu::{Buffer, ComputePipeline, PipelineLayout};
 
-use crate::{ arr_o_gpu::WgpuInit, Allocator, BindGroupCompound };
+use crate::{Allocator, BindGroupCompound, arr_o_gpu::WgpuModule};
 
 #[derive(Clone)]
 pub struct ArrOgpuModule {
     pub(crate) allocator: Arc<RwLock<Allocator>>,
     pub(crate) maximum: Arc<u32>,
-    pub(crate) wgpu_init: Arc<RwLock<WgpuInit>>,
+    pub(crate) wgpu_init: Arc<RwLock<WgpuModule>>,
+
+    // Module Bind
+    pub(crate) module_bind_group: Arc<BindGroupCompound>,
+
+    // cache
+    // // pipeline
+    pub(crate) common_pipeline_layout: Arc<PipelineLayout>,
+    pub(crate) pipeline_cache: Arc<RwLock<HashMap<&'static str, ComputePipeline>>>,
+
+    // Module Buffer
+    // // heap
     pub(crate) heap_buffer: Arc<Buffer>,
-    pub(crate) binding_compounds: Arc<RwLock<Vec<BindGroupCompound>>>,
+    // // execute_array_cache
+    pub(crate) execute_args: Arc<Buffer>,
+    // // execute_array_cache
+    pub(crate) static_cache: Arc<Buffer>,
 }
 
 // basic
@@ -23,7 +40,7 @@ impl ArrOgpuModule {
         *self.maximum
     }
 
-    pub fn wgpu_init(&self) -> &Arc<RwLock<WgpuInit>> {
+    pub fn wgpu_init(&self) -> &Arc<RwLock<WgpuModule>> {
         &self.wgpu_init
     }
 
@@ -31,8 +48,8 @@ impl ArrOgpuModule {
         &*self.heap_buffer
     }
 
-    pub fn binding_compounds(&self) -> &RwLock<Vec<BindGroupCompound>> {
-        &self.binding_compounds
+    pub fn heap_binding(&self) -> &Arc<BindGroupCompound> {
+        &self.module_bind_group
     }
 
     pub fn allocator_write(&self) -> std::sync::RwLockWriteGuard<'_, Allocator> {

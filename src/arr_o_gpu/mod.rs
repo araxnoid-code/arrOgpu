@@ -1,6 +1,8 @@
 mod module;
 pub use module::*;
 
+mod compute_shaders;
+
 mod array;
 pub use array::*;
 
@@ -14,4 +16,4 @@ mod wgpu_init;
 pub use wgpu_init::*;
 
 mod utils;
-pub use utils::*;
+pub(crate) use utils::*;

@@ -1,24 +1,36 @@
 use std::sync::Arc;
 
-use crate::{ArrOgpuModule, SpaceType};
+use wgpu::{BindGroup, BindGroupLayout};
+
+use crate::{ArrOgpuModule, MetadataCompound, SpaceType};
 
 pub struct GpuArray {
+    // module
     pub(crate) module: Arc<ArrOgpuModule>,
-    pub(crate) pointer: (usize, usize),
+
+    // meta data
+    pub(crate) pointer: (u32, u32),
     pub(crate) length: usize,
     pub(crate) shape: Vec<u32>,
     pub(crate) stride: Vec<u32>,
 
-    //
+    // bind_group
+    pub(crate) binding: Option<(BindGroupLayout, BindGroup)>,
+
+    // build/0.1.0.5
+    pub(crate) metadata_compound: Option<MetadataCompound>,
+    // build/0.1.0.5
+
+    // space_type
     pub(crate) space_type: SpaceType,
 }
 
 impl GpuArray {
-    pub fn module(&self) -> &ArrOgpuModule {
-        &*self.module
+    pub fn module(&self) -> &Arc<ArrOgpuModule> {
+        &self.module
     }
 
-    pub fn pointer(&self) -> (usize, usize) {
+    pub fn pointer(&self) -> (u32, u32) {
         self.pointer
     }
 
@@ -44,5 +56,13 @@ impl GpuArray {
 
     pub fn pointer_to_arr(&self) -> [u32; 2] {
         [self.pointer.0 as u32, self.pointer.1 as u32]
+    }
+
+    pub fn binding(&self) -> Option<&(BindGroupLayout, BindGroup)> {
+        self.binding.as_ref()
+    }
+
+    pub fn metadata_compound(&self) -> Option<&MetadataCompound> {
+        self.metadata_compound.as_ref()
     }
 }

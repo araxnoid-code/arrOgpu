@@ -1,9 +1,17 @@
-use std::{
-    ops::{Range, RangeFull},
-    sync::mpsc,
-    time::UNIX_EPOCH,
-};
+use arr_o_gpu::ArrOgpuModule;
 
-use arr_o_gpu::{ArangeArray, ArrOgpuModule, FlatteTrait};
+fn main() {
+    let module = ArrOgpuModule::default();
 
-fn main() {}
+    let array = module
+        .array_from_vector(&[1., 2., 3., 4., 5., 6.], &[2, 3])
+        .unwrap();
+
+    let result = array.add(&1.).unwrap();
+
+    println!("{}", result);
+    // [
+    //  [2.0, 3.0, 4.0]
+    //  [5.0, 6.0, 7.0]
+    // ]
+}
