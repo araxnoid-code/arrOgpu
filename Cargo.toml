@@ -2,6 +2,9 @@
 name = "arrOgpu"
 version = "0.2.0"
 edition = "2024"
+description = "GPU Computing Library"
+keywords = ["AI", "machine-learning", "deep-learning", "neural-network", "tensor"]
+license = "Apache-2.0"
 
 [lib]
 name = "arr_o_gpu"
