@@ -21,7 +21,7 @@
     - The maximum array dimension is now 8 dimensions.
 
 - rewrite compute shaders
-  - The compute shaders used in execution have all been rewritten and optimized due to the use of new metadata. Compute shaders have now been combined into the compute_shaders folder for easier searching and maintenance, as can be seen in[compute_shaders](./src/arr_o_gpu/compute_shaders/)
+  - The compute shaders used in execution have all been rewritten and optimized due to the use of new metadata. Compute shaders have now been combined into the compute_shaders folder for easier searching and maintenance, as can be seen in [compute_shaders](./src/arr_o_gpu/compute_shaders/)
 
 - Changes to the method
   - pow has now been split into powi and powf.
