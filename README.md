@@ -1,4 +1,4 @@
-<div align="center">
+ <div align="center">
     <img width="250px" src="./image/arrOgpu_logo.png"></img>
     <h1>arrOgpu</h1>
     <b><p>Array Operations On Gpu</p></b>
@@ -59,3 +59,9 @@ fn main() {
 - cos
 - tan
 - sqrt
+- broadcasting
+- slice
+- index
+- to_shape
+- permute
+- contiguous(View)
