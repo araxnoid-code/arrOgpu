@@ -1,6 +1,7 @@
 # VERSION/0.2.0
 - attention
   - Although arrOgpu currently does not directly mention limitations, because arrOgpu is based on WGPU which has inherent limitations, therefore arrOgpu still has limitations on the maximum data that can be stored, how much data can be sent etc. therefore arrOgpu is still not ready for large cases, you can read about it at: https://docs.rs/wgpu/latest/wgpu/struct.Limits.html
+  - This version uses wgpu version 28.0.0
 
 - add cache
   - Now group 0 has 3 bindings, including
