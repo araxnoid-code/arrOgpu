@@ -19,7 +19,14 @@ version changelog: [changelog.md](./changelog.md)
 
 ## Starting
 ### install
-coming soon
+Run the following Cargo command in your project directory:
+```sh
+cargo add arrOgpu
+```
+Or add the following line to your Cargo.toml:
+```toml
+arrOgpu = "0.2.0"
+```
 
 ### Code
 ```rust
