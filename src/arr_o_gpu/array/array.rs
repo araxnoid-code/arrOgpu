@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use monagement::Allocated;
 
-use crate::{ArrOgpuModule, MetadataCompound, SpaceType};
+use crate::{ArrOgpuModule, MetadataCompound};
 
 pub struct GpuArray {
     // module
@@ -15,7 +15,6 @@ pub struct GpuArray {
     pub(crate) metadata_compound: Option<MetadataCompound>,
 
     // allocator update
-    // pub(crate) pointer: (u32, u32),
     pub(crate) allocated: Allocated,
     // allocator update
 }
