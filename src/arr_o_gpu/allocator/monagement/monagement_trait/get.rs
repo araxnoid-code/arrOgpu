@@ -1,4 +1,4 @@
-use crate::Monagement;
+use crate::Monagement_old;
 
 pub trait MonagementGet {
     fn get(&self, key: &u32) -> Option<&(u128, std::ops::Range<u32>)>;
@@ -6,7 +6,7 @@ pub trait MonagementGet {
     fn get_mut(&mut self, key: &u32) -> Option<&mut (u128, std::ops::Range<u32>)>;
 }
 
-impl MonagementGet for Monagement {
+impl MonagementGet for Monagement_old {
     fn get(&self, key: &u32) -> Option<&(u128, std::ops::Range<u32>)> {
         self.range_space.get(key)
     }

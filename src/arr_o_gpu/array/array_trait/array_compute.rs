@@ -21,8 +21,6 @@ pub trait ArrayCompute {
 
     fn is_contiguous(&self) -> bool;
 
-    // fn binding(&self) -> Option<&(BindGroupLayout, BindGroup)>;
-
     fn metadata_compound(&self) -> Option<&MetadataCompound>;
 
     fn check_contiguous_or_view<'a>(&'a self) -> ArrayType<'a>;

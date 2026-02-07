@@ -43,9 +43,14 @@ impl ArrOgpuModule {
         );
 
         // allocator
-        let pointer = self.allocator.write().unwrap().pointer_input(len as u32);
-        let space_type = pointer.0;
-        let pointer = [pointer.1, pointer.2];
+        let allocated = self
+            .allocator
+            .write()
+            .unwrap()
+            .allocate(len as u32)
+            .map_err(|msg| ArrOgpuErr::Allocate(msg))?;
+        let pointer = allocated.get_range();
+        let pointer = [pointer.0 as u32, pointer.1 as u32];
 
         // pointer
         let pointer_buffer = wgpu.device.create_buffer_init(
@@ -186,21 +191,17 @@ impl ArrOgpuModule {
             shape.len() as u32,
             0,
             shape_padding,
-            stride_padding,
             origin_stride,
+            stride_padding,
         );
 
         Ok(GpuArray {
             module: Arc::new(self.clone()),
-            pointer,
             length: (pointer.1 - pointer.0) as usize,
             shape: shape.to_vec(),
             stride,
-            space_type: space_type,
-
-            // build/0.1.0.5
             metadata_compound: Some(metadata_compound),
-            // build/0.1.0.5
+            allocated,
         })
     }
 }

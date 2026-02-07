@@ -9,6 +9,9 @@ pub enum ArrOgpuErr {
     Init(String),
     ArangeInit(String),
 
+    // Allocate
+    Allocate(String),
+
     // Operation
     Matmul2D(String),
     MatmulND(String),

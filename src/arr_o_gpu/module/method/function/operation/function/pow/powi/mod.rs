@@ -31,7 +31,13 @@ impl ArrOgpuModule {
         let shape = array.shape();
         let stride = get_stride_from_shape(&shape);
         let offset = 0;
-        let allocate = self.allocator_write().pointer_input(len);
+        let allocated = self
+            .allocator
+            .write()
+            .unwrap()
+            .allocate(len)
+            .map_err(|msg| ArrOgpuErr::Allocate(msg))?;
+        let pointer = allocated.get_range();
 
         // padding
         let shape_padding: [u32; 8] = vector_padding(shape.clone(), 0, 8)
@@ -45,7 +51,7 @@ impl ArrOgpuModule {
             .unwrap();
 
         let output_metadata = self.create_metadata_compound(
-            [allocate.1, allocate.2],
+            [pointer.0 as u32, pointer.1 as u32],
             len,
             dim as u32,
             offset,
@@ -124,11 +130,10 @@ impl ArrOgpuModule {
         let array = GpuArray {
             module: Arc::new(self.clone()),
             length: len as usize,
-            pointer: (allocate.1, allocate.2),
             shape: shape.clone(),
             stride: stride,
-            space_type: allocate.0,
             metadata_compound: Some(output_metadata),
+            allocated,
         };
 
         Ok(array)

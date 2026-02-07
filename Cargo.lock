@@ -440,9 +440,9 @@ dependencies = [
 
 [[package]]
 name = "monagement"
-version = "0.0.2"
+version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "433894cc2c4e346473dd09278543c803e063f9686e40186eab90221b0cd5c7ba"
+checksum = "3b577d055a78e53f53f2e952c200302cd77028343a55b3747766d712e7639d5c"
 dependencies = [
  "rand",
 ]

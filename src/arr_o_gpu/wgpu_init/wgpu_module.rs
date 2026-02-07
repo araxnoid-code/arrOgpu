@@ -51,6 +51,9 @@ impl WgpuModule {
                     .block_on()
                     .unwrap();
 
+                println!("{:#?}", adapter.limits());
+
+                println!("{:#?}", device.limits());
                 (device, queue)
             }
         };

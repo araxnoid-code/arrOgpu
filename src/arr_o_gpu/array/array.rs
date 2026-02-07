@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use wgpu::{BindGroup, BindGroupLayout};
+use monagement::Allocated;
 
 use crate::{ArrOgpuModule, MetadataCompound, SpaceType};
 
@@ -9,17 +9,15 @@ pub struct GpuArray {
     pub(crate) module: Arc<ArrOgpuModule>,
 
     // meta data
-    pub(crate) pointer: (u32, u32),
     pub(crate) length: usize,
     pub(crate) shape: Vec<u32>,
     pub(crate) stride: Vec<u32>,
-
-    // build/0.1.0.5
     pub(crate) metadata_compound: Option<MetadataCompound>,
-    // build/0.1.0.5
 
-    // space_type
-    pub(crate) space_type: SpaceType,
+    // allocator update
+    // pub(crate) pointer: (u32, u32),
+    pub(crate) allocated: Allocated,
+    // allocator update
 }
 
 impl GpuArray {
@@ -28,7 +26,8 @@ impl GpuArray {
     }
 
     pub fn pointer(&self) -> (u32, u32) {
-        self.pointer
+        let range = self.allocated.get_range();
+        (range.0 as u32, range.1 as u32)
     }
 
     pub fn len(&self) -> usize {
@@ -43,16 +42,17 @@ impl GpuArray {
         &self.stride
     }
 
-    pub fn space_type(&self) -> &SpaceType {
-        &self.space_type
-    }
+    // pub fn space_type(&self) -> &SpaceType {
+    //     &self.space_type
+    // }
 
     pub fn dim(&self) -> usize {
         self.shape.len()
     }
 
     pub fn pointer_to_arr(&self) -> [u32; 2] {
-        [self.pointer.0 as u32, self.pointer.1 as u32]
+        let pointer = self.pointer();
+        [pointer.0 as u32, pointer.1 as u32]
     }
 
     pub fn metadata_compound(&self) -> Option<&MetadataCompound> {

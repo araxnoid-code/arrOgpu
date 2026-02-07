@@ -9,10 +9,7 @@ use wgpu::{
 use crate::{
     ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, GpuArray, PipelineCompound,
     arr_o_gpu::{
-        compute_shaders::{
-            MUL_NON_SCALAR_VIEW_SHADERS_PATH, MUL_SCALAR_CONTIGUOUS_SHADERS_PATH,
-            MUL_SCALAR_VIEW_SHADERS_PATH,
-        },
+        compute_shaders::{MUL_SCALAR_CONTIGUOUS_SHADERS_PATH, MUL_SCALAR_VIEW_SHADERS_PATH},
         module::method::function::operation::element_wise::skalar_operation::MetaDataOption,
     },
     get_stride_from_shape, vector_padding,
@@ -43,13 +40,19 @@ impl ArrOgpuModule {
         let offset = 0;
         let shape = array.shape().clone();
         let stride = get_stride_from_shape(&shape);
-        let allocate = self.allocator.write().unwrap().pointer_input(len);
+        let allocated = self
+            .allocator
+            .write()
+            .unwrap()
+            .allocate(len)
+            .map_err(|msg| ArrOgpuErr::Allocate(msg))?;
+        let pointer = allocated.get_range();
 
         let shape_padding: [u32; 8] = vector_padding(shape.clone(), 0, 8)?.try_into().unwrap();
         let origin_stride_padding: [u32; 8] =
             vector_padding(stride.clone(), 0, 8)?.try_into().unwrap();
         let output_metadata = self.create_metadata_compound(
-            [allocate.1, allocate.2],
+            [pointer.0 as u32, pointer.1 as u32],
             len,
             dim as u32,
             offset,
@@ -125,10 +128,9 @@ impl ArrOgpuModule {
             module: Arc::new(self.clone()),
             length: len as usize,
             metadata_compound: Some(output_metadata),
-            pointer: (allocate.1, allocate.2),
             shape,
-            space_type: allocate.0,
             stride,
+            allocated,
         };
 
         Ok(array)

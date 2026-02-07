@@ -1,3 +1,5 @@
+use std::num::NonZeroU64;
+
 use wgpu::{ComputePipelineDescriptor, ShaderModuleDescriptor, ShaderSource};
 
 use crate::{
@@ -21,10 +23,13 @@ where
         let shape = self.shape().clone();
         let stride = get_stride_from_shape(&shape);
         let offset = 0;
-        let allocate = allocator.pointer_input(len);
+        let allocated = allocator
+            .allocate(len)
+            .map_err(|msg| ArrOgpuErr::Allocate(msg))?;
+        let pointer = allocated.get_range();
 
         // output_metadata_buffer
-        let pointer_arr = [allocate.1, allocate.2];
+        let pointer_arr = [pointer.0 as u32, pointer.1 as u32];
         let dim = shape.len();
         let padding_shape: [u32; 8] = vector_padding(shape.clone(), 0, 8)
             .map_err(|err| ArrOgpuErr::Contiguous(err))?
@@ -111,10 +116,9 @@ where
             module,
             length: len as usize,
             metadata_compound: Some(output_metadata),
-            pointer: (allocate.1, allocate.2),
-            space_type: allocate.0,
             shape,
             stride,
+            allocated,
         };
 
         Ok(array)

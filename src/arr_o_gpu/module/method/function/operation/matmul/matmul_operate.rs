@@ -1,5 +1,7 @@
 use std::sync::RwLockWriteGuard;
 
+use monagement::Allocated;
+
 use crate::{Allocator, ArrOgpuErr, ArrayCompute, get_stride_from_shape};
 
 pub(crate) enum MatmulOperate<'a, A, B>
@@ -48,14 +50,7 @@ where
     pub fn create_metadata_output(
         &self,
         allocate: &mut RwLockWriteGuard<'_, Allocator>,
-    ) -> (
-        Vec<u32>,
-        u32,
-        Vec<u32>,
-        u32,
-        u32,
-        (crate::SpaceType, u32, u32),
-    ) {
+    ) -> (Vec<u32>, u32, Vec<u32>, u32, u32, Allocated) {
         match self {
             Self::_2D(arr_a, arr_b) => {
                 let shape = vec![arr_a.shape()[0], arr_b.shape()[1]];
@@ -63,7 +58,10 @@ where
                 let stride = get_stride_from_shape(&shape);
                 let dim = 2;
                 let offset = 0;
-                let allocate = allocate.pointer_input(len);
+                let allocate = allocate
+                    .allocate(len)
+                    .map_err(|msg| ArrOgpuErr::Allocate(msg))
+                    .unwrap();
 
                 (shape, len, stride, dim, offset, allocate)
             }
@@ -77,7 +75,10 @@ where
                 let stride = get_stride_from_shape(&shape);
                 let dim = arr_a.dim() as u32;
                 let offset = 0;
-                let allocate = allocate.pointer_input(len);
+                let allocate = allocate
+                    .allocate(len)
+                    .map_err(|msg| ArrOgpuErr::Allocate(msg))
+                    .unwrap();
 
                 (shape, len, stride, dim, offset, allocate)
             }

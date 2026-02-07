@@ -25,7 +25,7 @@ impl ArrOgpuModule {
     {
         let matmul_operate = MatmulOperate::create(array_a, array_b)?;
 
-        let (shape, len, stride, dim, offset, allocate) =
+        let (shape, len, stride, dim, offset, allocated) =
             matmul_operate.create_metadata_output(&mut self.allocator_write());
 
         let shape_padding: [u32; 8] = vector_padding(shape.clone(), 0, 8)
@@ -38,8 +38,9 @@ impl ArrOgpuModule {
             .try_into()
             .unwrap();
 
+        let pointer = allocated.get_range();
         let metadata_output = self.create_metadata_compound(
-            [allocate.1, allocate.2],
+            [pointer.0 as u32, pointer.1 as u32],
             len,
             dim,
             offset,
@@ -132,25 +133,17 @@ impl ArrOgpuModule {
 
         wgpu.queue.submit(Some(encoder.finish()));
 
-        // wgpu.device
-        //     .poll(wgpu::wgt::PollType::Wait {
-        //         submission_index: Some(id),
-        //         timeout: None,
-        //     })
-        //     .unwrap();
-
         let unsave_pipeline = pipeline.get_unsave_pipeline();
         drop(read);
         self.saving_from_pipeline_compound(unsave_pipeline);
 
         let array = GpuArray {
-            pointer: (allocate.1, allocate.2),
             length: len as usize,
             metadata_compound: Some(metadata_output),
             module: Arc::new(self.clone()),
             shape,
             stride,
-            space_type: allocate.0,
+            allocated,
         };
 
         Ok(array)

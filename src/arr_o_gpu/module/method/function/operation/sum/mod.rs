@@ -23,10 +23,16 @@ impl ArrOgpuModule {
         let offset = 0;
         let dim = 1;
         let len = 1;
-        let allocate = self.allocator.write().unwrap().pointer_input(len);
+        let allocated = self
+            .allocator
+            .write()
+            .unwrap()
+            .allocate(len)
+            .map_err(|msg| ArrOgpuErr::Allocate(msg))?;
+        let pointer = allocated.get_range();
 
         let output_metadata = self.create_metadata_compound(
-            [allocate.1, allocate.2],
+            [pointer.0 as u32, pointer.1 as u32],
             len,
             dim,
             offset,
@@ -215,8 +221,7 @@ impl ArrOgpuModule {
             length: len as usize,
             metadata_compound: Some(output_metadata),
             module: Arc::new(self.clone()),
-            pointer: (allocate.1, allocate.2),
-            space_type: allocate.0,
+            allocated,
             stride,
         };
 

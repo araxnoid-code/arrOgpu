@@ -1,3 +1,3 @@
-mod pointer_input;
+mod allocate;
 
 mod clean_allocate;
