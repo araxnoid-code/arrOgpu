@@ -106,7 +106,6 @@ impl ArrOgpuModule {
         wgpu.queue.submit(Some(encoder.finish()));
 
         let array = GpuArray {
-            binding: None,
             length: out_len as usize,
             metadata_compound: Some(metada_output),
             module: Arc::new(self.clone()),

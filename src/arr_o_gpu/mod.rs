@@ -7,7 +7,7 @@ mod array;
 pub use array::*;
 
 mod allocator;
-pub use allocator::*;
+pub use allocator::{MonagementGet, *};
 
 mod shader;
 pub use shader::*;

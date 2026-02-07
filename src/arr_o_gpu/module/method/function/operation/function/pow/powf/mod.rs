@@ -123,7 +123,6 @@ impl ArrOgpuModule {
 
         let array = GpuArray {
             module: Arc::new(self.clone()),
-            binding: None,
             length: len as usize,
             pointer: (allocate.1, allocate.2),
             shape: shape.clone(),

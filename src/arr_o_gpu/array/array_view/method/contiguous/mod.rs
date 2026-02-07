@@ -109,7 +109,6 @@ where
 
         let array = GpuArray {
             module,
-            binding: None,
             length: len as usize,
             metadata_compound: Some(output_metadata),
             pointer: (allocate.1, allocate.2),

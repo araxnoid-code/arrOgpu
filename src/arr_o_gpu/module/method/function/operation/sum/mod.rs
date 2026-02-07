@@ -212,7 +212,6 @@ impl ArrOgpuModule {
 
         let array = GpuArray {
             shape,
-            binding: None,
             length: len as usize,
             metadata_compound: Some(output_metadata),
             module: Arc::new(self.clone()),

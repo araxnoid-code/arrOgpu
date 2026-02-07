@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use crate::Monagement;
 
-pub(crate) trait MonagementInit {
+pub trait MonagementInit {
     fn init() -> Monagement;
 }
 

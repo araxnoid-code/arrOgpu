@@ -1,4 +1,4 @@
-use std::{ collections::BTreeMap, ops::Range };
+use std::{collections::BTreeMap, ops::Range};
 
 #[derive(Debug, Clone)]
 pub struct Monagement {

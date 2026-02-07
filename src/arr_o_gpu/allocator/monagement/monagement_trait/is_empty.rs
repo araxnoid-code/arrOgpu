@@ -1,6 +1,6 @@
 use crate::Monagement;
 
-pub(crate) trait MonagementIsEmpty {
+pub trait MonagementIsEmpty {
     fn is_empty(&self) -> bool;
 }
 

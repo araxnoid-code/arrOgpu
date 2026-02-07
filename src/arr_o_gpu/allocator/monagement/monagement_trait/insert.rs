@@ -1,8 +1,8 @@
-use std::{ ops::Range, u128 };
+use std::{ops::Range, u128};
 
 use crate::Monagement;
 
-pub(crate) trait MonagementInsertRemove {
+pub trait MonagementInsertRemove {
     fn insert(&mut self, key: u32, range: (u128, Range<u32>)) -> Option<(u128, Range<u32>)>;
 }
 

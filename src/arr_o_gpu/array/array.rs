@@ -14,9 +14,6 @@ pub struct GpuArray {
     pub(crate) shape: Vec<u32>,
     pub(crate) stride: Vec<u32>,
 
-    // bind_group
-    pub(crate) binding: Option<(BindGroupLayout, BindGroup)>,
-
     // build/0.1.0.5
     pub(crate) metadata_compound: Option<MetadataCompound>,
     // build/0.1.0.5
@@ -56,10 +53,6 @@ impl GpuArray {
 
     pub fn pointer_to_arr(&self) -> [u32; 2] {
         [self.pointer.0 as u32, self.pointer.1 as u32]
-    }
-
-    pub fn binding(&self) -> Option<&(BindGroupLayout, BindGroup)> {
-        self.binding.as_ref()
     }
 
     pub fn metadata_compound(&self) -> Option<&MetadataCompound> {

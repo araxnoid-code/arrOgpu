@@ -1,6 +1,6 @@
 use crate::Monagement;
 
-pub(crate) trait MonagementRemove {
+pub trait MonagementRemove {
     fn remove(&mut self, key: &u32) -> Option<(u128, std::ops::Range<u32>)>;
 }
 

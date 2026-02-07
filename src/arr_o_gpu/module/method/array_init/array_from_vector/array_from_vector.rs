@@ -162,10 +162,7 @@ impl ArrOgpuModule {
         let pointer = (pointer[0], pointer[1]);
 
         let stride = get_stride_from_shape(shape);
-        let binding =
-            self.create_metadata_binding(&[pointer.0, pointer.1], &shape, &stride, &stride, &0);
 
-        // build/0.1.0.5
         let shape_padding: [u32; 8] = (vector_padding(shape.to_vec(), 0, 8)
             .map_err(ArrOgpuErr::from)?)
         .try_into()
@@ -192,7 +189,6 @@ impl ArrOgpuModule {
             stride_padding,
             origin_stride,
         );
-        // build/0.1.0.5
 
         Ok(GpuArray {
             module: Arc::new(self.clone()),
@@ -201,7 +197,6 @@ impl ArrOgpuModule {
             shape: shape.to_vec(),
             stride,
             space_type: space_type,
-            binding: Some(binding),
 
             // build/0.1.0.5
             metadata_compound: Some(metadata_compound),
