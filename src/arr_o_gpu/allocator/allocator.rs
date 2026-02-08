@@ -1,5 +1,4 @@
 use monagement::{Monagement, MonagementInit};
-use std::ops::Range;
 
 // #[derive(Clone)]
 pub struct Allocator {
@@ -10,13 +9,14 @@ pub struct Allocator {
 impl Allocator {
     pub fn init(maximum: u32) -> Allocator {
         Self {
-            // range_space: vec![],
-            // empty_idx: Vec::new(),
-            // last_space: (0, maximum),
             maximum,
             // core update
             core: Monagement::init(MonagementInit::default()).unwrap(),
             // core update
         }
+    }
+
+    pub fn core(&self) -> &Monagement {
+        &self.core
     }
 }
