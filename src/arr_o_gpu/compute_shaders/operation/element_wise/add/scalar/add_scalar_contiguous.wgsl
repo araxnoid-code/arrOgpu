@@ -1,3 +1,6 @@
+// override
+override WORKGROUP_SIZE_X: u32;
+
 // INIT
 struct ArrayMetadata32{
 	pointer: vec2<u32>, // 8
@@ -22,12 +25,12 @@ struct StaticInterface{
 var<storage, read_write> heap: array<f32>;
 // // execute_args
 @group(0) @binding(1)
-var<uniform> execute_args: array<ArrayMetadata32, 3>;
+var<uniform> execute_args: array<ArrayMetadata32, 2>;
 // // static cache
 @group(0) @binding(2)
 var<uniform> static_cache: StaticInterface;
 
-@compute @workgroup_size(256, 1, 1)
+@compute @workgroup_size(WORKGROUP_SIZE_X, 1, 1)
 fn main(
     @builtin(global_invocation_id) global_id: vec3<u32>,
 ){
