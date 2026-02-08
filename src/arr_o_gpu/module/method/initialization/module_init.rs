@@ -1,6 +1,6 @@
 use wgpu::{Adapter, Device, MemoryHints, PowerPreference, Queue};
 
-use crate::{ArrOgpuErr, WgpuLimits};
+use crate::{ArrOgpuErr, FunctionExecuteOpt, WgpuLimits};
 
 #[derive(Clone)]
 pub enum HeapSize {
@@ -80,8 +80,9 @@ impl Default for ManualInit {
 #[derive(Clone)]
 pub struct ArrOgpuModuleInit {
     pub heap_size: HeapSize,
-    pub wgpu: WgpuInit,
     pub limits: WgpuLimits,
+    pub function_execute_opt: FunctionExecuteOpt,
+    pub wgpu: WgpuInit,
 }
 
 impl Default for ArrOgpuModuleInit {
@@ -89,6 +90,7 @@ impl Default for ArrOgpuModuleInit {
         Self {
             heap_size: HeapSize::Item(100_000),
             wgpu: WgpuInit::ManualInit(ManualInit::default()),
+            function_execute_opt: FunctionExecuteOpt::default(),
             limits: WgpuLimits::default(),
         }
     }

@@ -1,12 +1,22 @@
-use arr_o_gpu::{ArangeArray, ArangeIteratorTrait, ArrOgpuModule, WgpuLimits};
+use arr_o_gpu::{
+    AddOpt, ArangeArray, ArangeIteratorTrait, ArrOgpuModule, ArrOgpuModuleInit, FunctionExecuteOpt,
+    WgpuLimits,
+};
 
 fn main() {
-    let module = ArrOgpuModule::init(arr_o_gpu::ArrOgpuModuleInit {
-        heap_size: arr_o_gpu::HeapSize::Item(33554445),
+    let module = ArrOgpuModule::init(ArrOgpuModuleInit {
         limits: WgpuLimits {
-            max_storage_buffer_binding_size: 256 << 20,
+            max_compute_workgroup_size_x: 512,
+            max_compute_invocations_per_workgroup: 512,
             ..Default::default()
         },
-        wgpu: arr_o_gpu::WgpuInit::ManualInit(arr_o_gpu::ManualInit::default()),
-    });
+        function_execute_opt: FunctionExecuteOpt {
+            add: AddOpt {
+                compute_workgroup_size_x: 256,
+            },
+        },
+        ..Default::default()
+    })
+    .unwrap();
+    println!("{:#?}", module.get_device_limit());
 }

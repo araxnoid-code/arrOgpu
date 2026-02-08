@@ -47,7 +47,28 @@ impl WgpuModule {
                                 max_storage_buffer_binding_size: arr_o_gpu_init
                                     .limits
                                     .max_storage_buffer_binding_size,
+
                                 max_buffer_size: arr_o_gpu_init.limits.max_buffer_size,
+
+                                max_compute_invocations_per_workgroup: arr_o_gpu_init
+                                    .limits
+                                    .max_compute_invocations_per_workgroup,
+
+                                max_compute_workgroup_size_x: arr_o_gpu_init
+                                    .limits
+                                    .max_compute_workgroup_size_x,
+
+                                max_compute_workgroup_size_y: arr_o_gpu_init
+                                    .limits
+                                    .max_compute_workgroup_size_y,
+
+                                max_compute_workgroup_size_z: arr_o_gpu_init
+                                    .limits
+                                    .max_compute_workgroup_size_z,
+
+                                max_compute_workgroups_per_dimension: arr_o_gpu_init
+                                    .limits
+                                    .max_compute_workgroups_per_dimension,
                                 ..Default::default()
                             },
                             trace: wgpu::Trace::Off,

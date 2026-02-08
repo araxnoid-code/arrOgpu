@@ -131,6 +131,9 @@ impl ArrOgpuModule {
             // Module Bind
             module_bind_group: Arc::new(buffer_compound),
 
+            // function execute opt
+            function_execute_opt: arr_o_gpu_module_init.function_execute_opt,
+
             // cache
             // // pipeline
             pipeline_cache: Arc::new(RwLock::new(HashMap::new())),

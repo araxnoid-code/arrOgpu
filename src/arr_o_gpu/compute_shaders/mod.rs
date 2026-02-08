@@ -69,6 +69,10 @@ pub(crate) const ADD_SCALAR_CONTIGUOUS_SHADERS_PATH: &'static str =
     include_str!("./operation/element_wise/add/scalar/add_scalar_contiguous.wgsl");
 pub(crate) const ADD_SCALAR_VIEW_SHADERS_PATH: &'static str =
     include_str!("./operation/element_wise/add/scalar/add_scalar_view.wgsl");
+// EXECUTE_OPT
+pub(crate) const ADD_NON_SCALAR_CONTIGUOUS_EXECUTE_OPT_SHADERS_PATH: &'static str = include_str!(
+    "./operation/element_wise/add/execute_opt/non_scalar/add_contiguous_execute_opt.wgsl"
+);
 
 pub(crate) const DIV_NON_SCALAR_CONTIGUOUS_SHADERS_PATH: &'static str =
     include_str!("./operation/element_wise/div/non_scalar/div_contiguous.wgsl");

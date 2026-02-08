@@ -6,3 +6,6 @@ pub use method::*;
 
 mod error;
 pub use error::*;
+
+mod function_execute_opt;
+pub use function_execute_opt::*;

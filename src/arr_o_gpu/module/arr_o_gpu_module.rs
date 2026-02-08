@@ -5,7 +5,7 @@ use std::{
 
 use wgpu::{Buffer, ComputePipeline, PipelineLayout};
 
-use crate::{Allocator, BindGroupCompound, WgpuLimits, arr_o_gpu::WgpuModule};
+use crate::{Allocator, BindGroupCompound, FunctionExecuteOpt, WgpuLimits, arr_o_gpu::WgpuModule};
 
 #[derive(Clone)]
 pub struct ArrOgpuModule {
@@ -15,6 +15,9 @@ pub struct ArrOgpuModule {
     // wgpu
     pub(crate) limit: Arc<WgpuLimits>,
     pub(crate) wgpu_module: Arc<RwLock<WgpuModule>>,
+
+    // function execute opt
+    pub(crate) function_execute_opt: FunctionExecuteOpt,
 
     // Module Bind
     pub(crate) module_bind_group: Arc<BindGroupCompound>,
