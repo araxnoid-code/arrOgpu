@@ -30,7 +30,7 @@ impl ArrOgpuModule {
             return Err(ArrOgpuErr::Div(err));
         }
 
-        let wgpu = self.wgpu_init.read().unwrap();
+        let wgpu = self.wgpu_module.read().unwrap();
         // metadata output
         let len = array_a.len();
         let dim = array_a.dim();

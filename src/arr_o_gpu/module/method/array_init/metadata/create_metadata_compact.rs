@@ -44,7 +44,7 @@ impl ArrOgpuModule {
             padding_3: [0; 16],
         };
 
-        let wgpu = self.wgpu_init.read().unwrap();
+        let wgpu = self.wgpu_module.read().unwrap();
 
         let metadata_buffer = wgpu
             .device

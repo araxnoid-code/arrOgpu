@@ -12,7 +12,7 @@ where
     // unsafe
     pub fn get_heap(&self) -> Vec<f32> {
         let module = self.array.module();
-        let wgpu = module.wgpu_init.read().unwrap();
+        let wgpu = module.wgpu_module.read().unwrap();
         let heap_buffer = module.heap_buffer();
 
         // array

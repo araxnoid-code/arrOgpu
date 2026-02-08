@@ -16,7 +16,7 @@ where
     pub fn contiguous(self) -> Result<GpuArray, ArrOgpuErr> {
         let module = self.module().clone();
         let mut allocator = self.array.module().allocator.write().unwrap();
-        let wgpu = self.array.module().wgpu_init.read().unwrap();
+        let wgpu = self.array.module().wgpu_module.read().unwrap();
 
         // output metadata
         let len = self.len();

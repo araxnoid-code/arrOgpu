@@ -33,7 +33,7 @@ impl ArrOgpuModule {
     where
         A: ArrayCompute,
     {
-        let wgpu = self.wgpu_init.read().unwrap();
+        let wgpu = self.wgpu_module.read().unwrap();
         // output metadata
         let len = array.len();
         let dim = array.dim();

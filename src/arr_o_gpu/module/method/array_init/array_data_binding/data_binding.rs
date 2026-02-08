@@ -15,7 +15,7 @@ impl ArrOgpuModule {
         stride: &[u32],
         offset: &u32,
     ) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
-        let wgpu = self.wgpu_init.read().unwrap();
+        let wgpu = self.wgpu_module.read().unwrap();
 
         // pointer
         let pointer_buffer = wgpu.device.create_buffer_init(

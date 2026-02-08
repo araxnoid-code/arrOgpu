@@ -1,7 +1,8 @@
-use wgpu::{ Device, MemoryHints, PowerPreference, Queue };
+use wgpu::{Adapter, Device, MemoryHints, PowerPreference, Queue};
 
-use crate::ArrOgpuErr;
+use crate::{ArrOgpuErr, WgpuLimits};
 
+#[derive(Clone)]
 pub enum HeapSize {
     Item(u32),
     Byte(u64),
@@ -18,26 +19,29 @@ impl HeapSize {
                 }
                 Ok(((*byte as u32) / 4, *byte))
             }
-            HeapSize::Item(item) =>
-                Ok((*item, (*item as u64) * (std::mem::size_of::<f32>() as u64))),
+            HeapSize::Item(item) => {
+                Ok((*item, (*item as u64) * (std::mem::size_of::<f32>() as u64)))
+            }
         }
     }
 }
 
-pub enum Power {
+#[derive(Clone)]
+pub enum PowerInit {
     HighPerformance,
     LowPower,
 }
 
-impl Power {
+impl PowerInit {
     pub(crate) fn conversion(&self) -> PowerPreference {
         match &self {
-            Power::HighPerformance => PowerPreference::HighPerformance,
-            Power::LowPower => PowerPreference::LowPower,
+            PowerInit::HighPerformance => PowerPreference::HighPerformance,
+            PowerInit::LowPower => PowerPreference::LowPower,
         }
     }
 }
 
+#[derive(Clone)]
 pub enum Memory {
     Performance,
     MemoryUsage,
@@ -52,13 +56,15 @@ impl Memory {
     }
 }
 
+#[derive(Clone)]
 pub enum WgpuInit {
-    ManualDeviceQueue(Device, Queue),
+    ManualDeviceQueue(Adapter, Device, Queue),
     ManualInit(ManualInit),
 }
 
+#[derive(Clone)]
 pub struct ManualInit {
-    pub power: Power,
+    pub power: PowerInit,
     pub memory: Memory,
 }
 
@@ -66,14 +72,16 @@ impl Default for ManualInit {
     fn default() -> Self {
         Self {
             memory: Memory::MemoryUsage,
-            power: Power::LowPower,
+            power: PowerInit::LowPower,
         }
     }
 }
 
+#[derive(Clone)]
 pub struct ArrOgpuModuleInit {
     pub heap_size: HeapSize,
     pub wgpu: WgpuInit,
+    pub limits: WgpuLimits,
 }
 
 impl Default for ArrOgpuModuleInit {
@@ -81,6 +89,7 @@ impl Default for ArrOgpuModuleInit {
         Self {
             heap_size: HeapSize::Item(100_000),
             wgpu: WgpuInit::ManualInit(ManualInit::default()),
+            limits: WgpuLimits::default(),
         }
     }
 }

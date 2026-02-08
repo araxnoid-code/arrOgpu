@@ -1,7 +1,7 @@
 use pollster::FutureExt;
 use wgpu::{
-    Backends, Device, ExperimentalFeatures, Features, Instance, InstanceDescriptor, Limits, Queue,
-    RequestAdapterOptions, wgt::DeviceDescriptor,
+    Adapter, Backends, Device, ExperimentalFeatures, Features, Instance, InstanceDescriptor,
+    Limits, Queue, RequestAdapterOptions, wgt::DeviceDescriptor,
 };
 
 use crate::{ArrOgpuModuleInit, WgpuInit};
@@ -9,6 +9,7 @@ use crate::{ArrOgpuModuleInit, WgpuInit};
 pub struct WgpuModule {
     pub device: Device,
     pub queue: Queue,
+    pub adapter: Adapter,
 }
 
 impl WgpuModule {
@@ -21,8 +22,8 @@ impl WgpuModule {
             }),
         );
 
-        let (device, queue) = match arr_o_gpu_init.wgpu {
-            WgpuInit::ManualDeviceQueue(device, queue) => (device, queue),
+        let (adapter, device, queue) = match arr_o_gpu_init.wgpu {
+            WgpuInit::ManualDeviceQueue(adapter, device, queue) => (adapter, device, queue),
             WgpuInit::ManualInit(manual_init) => {
                 let adapter = instance
                     .request_adapter(
@@ -43,6 +44,10 @@ impl WgpuModule {
                             required_features: Features::empty(),
                             experimental_features: ExperimentalFeatures::disabled(),
                             required_limits: Limits {
+                                max_storage_buffer_binding_size: arr_o_gpu_init
+                                    .limits
+                                    .max_storage_buffer_binding_size,
+                                max_buffer_size: arr_o_gpu_init.limits.max_buffer_size,
                                 ..Default::default()
                             },
                             trace: wgpu::Trace::Off,
@@ -51,11 +56,15 @@ impl WgpuModule {
                     .block_on()
                     .unwrap();
 
-                (device, queue)
+                (adapter, device, queue)
             }
         };
 
-        Self { device, queue }
+        Self {
+            device,
+            queue,
+            adapter,
+        }
     }
 
     // create array

@@ -5,13 +5,16 @@ use std::{
 
 use wgpu::{Buffer, ComputePipeline, PipelineLayout};
 
-use crate::{Allocator, BindGroupCompound, arr_o_gpu::WgpuModule};
+use crate::{Allocator, BindGroupCompound, WgpuLimits, arr_o_gpu::WgpuModule};
 
 #[derive(Clone)]
 pub struct ArrOgpuModule {
     pub(crate) allocator: Arc<RwLock<Allocator>>,
     pub(crate) maximum: Arc<u32>,
-    pub(crate) wgpu_init: Arc<RwLock<WgpuModule>>,
+
+    // wgpu
+    pub(crate) limit: Arc<WgpuLimits>,
+    pub(crate) wgpu_module: Arc<RwLock<WgpuModule>>,
 
     // Module Bind
     pub(crate) module_bind_group: Arc<BindGroupCompound>,
@@ -41,7 +44,7 @@ impl ArrOgpuModule {
     }
 
     pub fn wgpu_init(&self) -> &Arc<RwLock<WgpuModule>> {
-        &self.wgpu_init
+        &self.wgpu_module
     }
 
     pub fn heap_buffer(&self) -> &Buffer {

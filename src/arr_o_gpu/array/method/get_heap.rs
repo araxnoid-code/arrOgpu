@@ -8,7 +8,7 @@ use crate::GpuArray;
 impl GpuArray {
     pub fn get_heap(&self) -> Vec<f32> {
         let module = &self.module();
-        let wgpu_init = &module.wgpu_init.read().unwrap();
+        let wgpu_init = &module.wgpu_module.read().unwrap();
         let heap_buffer = &module.heap_buffer;
 
         let pointer = self.pointer();

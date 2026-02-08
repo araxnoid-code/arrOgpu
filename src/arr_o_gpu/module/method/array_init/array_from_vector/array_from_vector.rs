@@ -33,7 +33,7 @@ impl ArrOgpuModule {
             ));
         }
 
-        let wgpu = &self.wgpu_init.read().unwrap();
+        let wgpu = &self.wgpu_module.read().unwrap();
         let vector_buffer = wgpu.device.create_buffer_init(
             &(BufferInitDescriptor {
                 label: Some(&format!("create array buffer with shape:{shape:?}")),

@@ -16,7 +16,7 @@ use crate::{
 impl ArrOgpuModule {
     pub fn init(arr_o_gpu_module_init: ArrOgpuModuleInit) -> Result<ArrOgpuModule, ArrOgpuErr> {
         let (maksimum, size) = arr_o_gpu_module_init.heap_size.get_size_of_32()?;
-        let wgpu = WgpuModule::init(arr_o_gpu_module_init);
+        let wgpu = WgpuModule::init(arr_o_gpu_module_init.clone());
 
         // storage
         // // heap
@@ -123,7 +123,10 @@ impl ArrOgpuModule {
         Ok(Self {
             allocator: Arc::new(RwLock::new(Allocator::init(maksimum))),
             maximum: Arc::new(maksimum),
-            wgpu_init: Arc::new(RwLock::new(wgpu)),
+
+            // wgpu
+            wgpu_module: Arc::new(RwLock::new(wgpu)),
+            limit: Arc::new(arr_o_gpu_module_init.limits),
 
             // Module Bind
             module_bind_group: Arc::new(buffer_compound),
