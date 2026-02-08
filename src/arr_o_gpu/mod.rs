@@ -17,3 +17,5 @@ pub use wgpu_init::*;
 
 mod utils;
 pub(crate) use utils::*;
+
+mod testing;
