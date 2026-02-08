@@ -1,4 +1,3 @@
-mod add_opt;
 mod non_scalar;
 mod scalar;
 
