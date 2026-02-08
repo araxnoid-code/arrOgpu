@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use wgpu::{Buffer, CommandEncoder, ComputePipeline, Device, ShaderModule};
+use wgpu::{Buffer, CommandEncoder, Device, ShaderModule};
 
 use crate::{
     ArrOgpuErr, ArrOgpuModule, ArrayCompute, ArrayType, CheckArrayType, GpuArray, PipelineCompound,
@@ -11,7 +11,7 @@ use crate::{
 const PIPELINE_ADD_EXECUTE_CONTIGUOUS: &'static str = "pipeline_abs_execute_contiguous";
 
 impl ArrOgpuModule {
-    pub(crate) fn add_array_execute_opt<'a, A, B>(
+    pub fn add_array_execute_opt<'a, A, B>(
         &self,
         array_a: &'a A,
         array_b: &'a B,
@@ -68,14 +68,13 @@ impl ArrOgpuModule {
             array_b.check_contiguous_or_view(),
         ) {
             (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => {
-                if let Some(pipeline) = read.get(ADD_NON_SCALAR_CONTIGUOUS_EXECUTE_OPT_SHADERS_PATH)
-                {
+                if let Some(pipeline) = read.get(PIPELINE_ADD_EXECUTE_CONTIGUOUS) {
                     PipelineCompound::PipelineCache(pipeline)
                 } else {
                     drop(read);
                     PipelineCompound::UnsavePipeline(
                         create_pipeline(&self, array_a, array_b),
-                        ADD_NON_SCALAR_CONTIGUOUS_EXECUTE_OPT_SHADERS_PATH,
+                        PIPELINE_ADD_EXECUTE_CONTIGUOUS,
                     )
                 }
             }
@@ -118,6 +117,7 @@ impl ArrOgpuModule {
 
             let workgroup_x = self.function_execute_opt.add.compute_workgroup_size_x;
             let x = (len + workgroup_x - 1) / workgroup_x;
+            println!("{}", x);
             begin_compute_pass.dispatch_workgroups(x, 1, 1);
         }
 
