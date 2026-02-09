@@ -1,3 +1,6 @@
+// override
+override WORKGROUP_SIZE_X: u32;
+
 // INIT
 struct ArrayMetadata{
 	pointer: vec2<u32>, // 8
@@ -29,7 +32,7 @@ var <storage, read_write> heap: array<f32>;
 @group(0) @binding(1)
 var <uniform> execute_args: ExecuteArgs;
 
-@compute @workgroup_size(256, 1, 1)
+@compute @workgroup_size(WORKGROUP_SIZE_X, 1, 1)
 fn main(
     @builtin (global_invocation_id) global_id: vec3<u32>,
 ){
