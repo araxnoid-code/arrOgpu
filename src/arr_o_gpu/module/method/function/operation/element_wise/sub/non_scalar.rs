@@ -10,6 +10,9 @@ use crate::{
     get_stride_from_shape, vector_padding,
 };
 
+const PIPELINE_SUB_CONTIGUOUS: &'static str = "pipeline_sub_non_scalar_contiguous";
+const PIPELINE_SUB_VIEW: &'static str = "pipeline_sub_non_scalar_view";
+
 impl ArrOgpuModule {
     pub(crate) fn sub_array<'a, A, B>(
         &self,
@@ -68,25 +71,37 @@ impl ArrOgpuModule {
             array_b.check_contiguous_or_view(),
         ) {
             (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => {
-                if let Some(pipeline) = read.get("pipeline_sub_non_scalar_contiguous") {
+                if let Some(pipeline) = read.get(PIPELINE_SUB_CONTIGUOUS) {
                     PipelineCompound::PipelineCache(pipeline)
                 } else {
                     drop(read);
                     PipelineCompound::UnsavePipeline(
-                        set_pipeline(&wgpu.device, array_a, array_b, &self.common_pipeline_layout),
-                        "pipeline_sub_non_scalar_contiguous",
+                        set_pipeline(
+                            &wgpu.device,
+                            array_a,
+                            array_b,
+                            &self.common_pipeline_layout,
+                            self.function_execute_opt.sub.compute_workgroup_size_x,
+                        ),
+                        PIPELINE_SUB_CONTIGUOUS,
                     )
                 }
             }
 
             _ => {
-                if let Some(pipeline) = read.get("pipeline_sub_non_scalar_view") {
+                if let Some(pipeline) = read.get(PIPELINE_SUB_VIEW) {
                     PipelineCompound::PipelineCache(pipeline)
                 } else {
                     drop(read);
                     PipelineCompound::UnsavePipeline(
-                        set_pipeline(&wgpu.device, array_a, array_b, &self.common_pipeline_layout),
-                        "pipeline_sub_non_scalar_view",
+                        set_pipeline(
+                            &wgpu.device,
+                            array_a,
+                            array_b,
+                            &self.common_pipeline_layout,
+                            self.function_execute_opt.sub.compute_workgroup_size_x,
+                        ),
+                        PIPELINE_SUB_VIEW,
                     )
                 }
             }
@@ -114,15 +129,15 @@ impl ArrOgpuModule {
 
             pipeline.set_pipeline_begin_compute_pass(&mut begin_compute_pass);
             begin_compute_pass.set_bind_group(0, Some(&heap_bind.binding_groups), &[]);
-            let x = (len + 255) >> 8;
+
+            let workgroup_size_x = self.function_execute_opt.sub.compute_workgroup_size_x;
+            let x = (len + workgroup_size_x - 1) / workgroup_size_x;
             begin_compute_pass.dispatch_workgroups(x, 1, 1);
         }
 
         wgpu.queue.submit(Some(encoder.finish()));
 
-        if let PipelineCompound::UnsavePipeline(pipeline, _) = pipeline {
-            save_pipeline(self, pipeline, array_a, array_b);
-        }
+        self.saving_from_pipeline_compound(pipeline.get_unsave_pipeline());
 
         let array = GpuArray {
             module: Arc::new(self.clone()),
@@ -137,34 +152,12 @@ impl ArrOgpuModule {
     }
 }
 
-fn save_pipeline<'a, A, B>(
-    module: &ArrOgpuModule,
-    pipeline: ComputePipeline,
-    array_a: &'a A,
-    array_b: &'a B,
-) where
-    A: ArrayCompute,
-    B: ArrayCompute + ?Sized,
-{
-    let mut write = module.pipeline_cache.write().unwrap();
-    match (
-        array_a.check_contiguous_or_view(),
-        array_b.check_contiguous_or_view(),
-    ) {
-        (ArrayType::Contiguous(_), ArrayType::Contiguous(_)) => {
-            write.insert("pipeline_sub_non_scalar_contiguous", pipeline);
-        }
-        _ => {
-            write.insert("pipeline_sub_non_scalar_view", pipeline);
-        }
-    };
-}
-
 fn set_pipeline<'a, A, B>(
     device: &Device,
     array_a: &'a A,
     array_b: &'a B,
     pipeline_layout: &PipelineLayout,
+    workgroup_size_x: u32,
 ) -> ComputePipeline
 where
     A: ArrayCompute,
@@ -176,7 +169,7 @@ where
         module: &set_shaders(&device, array_a, array_b),
         entry_point: Some("main"),
         compilation_options: wgpu::PipelineCompilationOptions {
-            constants: &[],
+            constants: &[("WORKGROUP_SIZE_X", workgroup_size_x as f64)],
             zero_initialize_workgroup_memory: false,
         },
         cache: None,

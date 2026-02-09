@@ -61,4 +61,8 @@ impl ArrOgpuModule {
     pub fn allocator_write(&self) -> std::sync::RwLockWriteGuard<'_, Allocator> {
         self.allocator.write().unwrap()
     }
+
+    pub fn get_pipeline_cache(&self) -> &Arc<RwLock<HashMap<&'static str, ComputePipeline>>> {
+        &self.pipeline_cache
+    }
 }
