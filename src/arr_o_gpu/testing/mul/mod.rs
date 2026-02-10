@@ -1,7 +1,7 @@
-use crate::{ArangeArray, ArangeIteratorTrait, ArrOgpuModule, SubOpt, r};
+use crate::{ArangeArray, ArangeIteratorTrait, ArrOgpuModule, MulOpt, r};
 
 #[test]
-fn sub_error_handler() {
+fn mul_error_handler() {
     let module = ArrOgpuModule::init(crate::ArrOgpuModuleInit {
         ..Default::default()
     })
@@ -13,7 +13,7 @@ fn sub_error_handler() {
     let array_b = ArangeArray::arange(0..16)
         .to_GpuArray_with_shape(&[4, 4], &module)
         .unwrap();
-    let result = module.sub(&array_a, &array_b).unwrap();
+    let result = module.mul(&array_a, &array_b).unwrap();
     drop(array_a);
     drop(array_b);
     drop(result);
@@ -24,7 +24,7 @@ fn sub_error_handler() {
     let array_b = ArangeArray::arange(0..16)
         .to_GpuArray_with_shape(&[16, 1], &module)
         .unwrap();
-    let result = module.sub(&array_a, &array_b);
+    let result = module.mul(&array_a, &array_b);
     if let Ok(_) = result {
         panic!("this code must be error")
     }
@@ -34,12 +34,12 @@ fn sub_error_handler() {
 }
 
 #[test]
-fn sub_contiguous() {
+fn mul_contiguous() {
     let module = ArrOgpuModule::init(crate::ArrOgpuModuleInit {
         heap_size: crate::HeapSize::Item(4096),
         ..Default::default()
     })
-    .expect("module init in sub error");
+    .expect("module init in mul error");
 
     // 256
     let array_a = ArangeArray::arange(0..256)
@@ -50,12 +50,12 @@ fn sub_contiguous() {
         .to_GpuArray_with_shape(&[16, 16], &module)
         .unwrap();
 
-    let result = module.sub(&array_a, &array_b).unwrap();
+    let result = module.mul(&array_a, &array_b).unwrap();
 
     let check = (0..256)
         .into_iter()
         .zip((256..512).into_iter())
-        .map(|(a, b)| (a - b) as f32)
+        .map(|(a, b)| (a * b) as f32)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
 
@@ -72,12 +72,12 @@ fn sub_contiguous() {
         .to_GpuArray_with_shape(&[8, 8, 8], &module)
         .unwrap();
 
-    let result = module.sub(&array_a, &array_b).unwrap();
+    let result = module.mul(&array_a, &array_b).unwrap();
 
     let check = (0..512)
         .into_iter()
         .zip((512..1024).into_iter())
-        .map(|(a, b)| (a - b) as f32)
+        .map(|(a, b)| (a * b) as f32)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
 
@@ -94,12 +94,12 @@ fn sub_contiguous() {
         .to_GpuArray_with_shape(&[32, 32], &module)
         .unwrap();
 
-    let result = module.sub(&array_a, &array_b).unwrap();
+    let result = module.mul(&array_a, &array_b).unwrap();
 
     let check = (0..1024)
         .into_iter()
         .zip((1024..2048).into_iter())
-        .map(|(a, b)| (a - b) as f32)
+        .map(|(a, b)| (a * b) as f32)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
 
@@ -109,12 +109,12 @@ fn sub_contiguous() {
 }
 
 #[test]
-fn sub_view() {
+fn mul_view() {
     let module = ArrOgpuModule::init(crate::ArrOgpuModuleInit {
         heap_size: crate::HeapSize::Item(4096),
         ..Default::default()
     })
-    .expect("module init in sub error");
+    .expect("module init in mul error");
 
     // 256
     let array_a = ArangeArray::arange(0..256)
@@ -126,13 +126,13 @@ fn sub_view() {
         .unwrap();
 
     let result = module
-        .sub(&array_a.view().unwrap(), &array_b.view().unwrap())
+        .mul(&array_a.view().unwrap(), &array_b.view().unwrap())
         .unwrap();
 
     let check = (0..256)
         .into_iter()
         .zip((256..512).into_iter())
-        .map(|(a, b)| (a - b) as f32)
+        .map(|(a, b)| (a * b) as f32)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
 
@@ -150,13 +150,13 @@ fn sub_view() {
         .unwrap();
 
     let result = module
-        .sub(&array_a.view().unwrap(), &array_b.view().unwrap())
+        .mul(&array_a.view().unwrap(), &array_b.view().unwrap())
         .unwrap();
 
     let check = (0..512)
         .into_iter()
         .zip((512..1024).into_iter())
-        .map(|(a, b)| (a - b) as f32)
+        .map(|(a, b)| (a * b) as f32)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
 
@@ -173,7 +173,7 @@ fn sub_view() {
         .to_GpuArray_with_shape(&[8, 8, 8], &module)
         .unwrap();
 
-    let result = module.sub(&permute, &array_b).unwrap();
+    let result = module.mul(&permute, &array_b).unwrap();
 
     let check = permute
         .contiguous()
@@ -181,7 +181,7 @@ fn sub_view() {
         .get_heap()
         .iter()
         .zip((512..1024).into_iter())
-        .map(|(a, b)| a - b as f32)
+        .map(|(a, b)| a * b as f32)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
 
@@ -198,13 +198,13 @@ fn sub_view() {
         .unwrap();
     let slicing = module.slicing(&array_b, &[r(16..), r(..16)]).unwrap();
 
-    let result = module.sub(&array_a, &slicing).unwrap();
+    let result = module.mul(&array_a, &slicing).unwrap();
 
     let check = array_a
         .get_heap()
         .iter()
         .zip(slicing.contiguous().unwrap().get_heap().iter())
-        .map(|(a, b)| a - b)
+        .map(|(a, b)| a * b)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
 
@@ -224,7 +224,7 @@ fn sub_view() {
     let permute_b = module.permute(&array_b, &[1, 0]).unwrap();
     let slicing_b = module.slicing(&permute_b, &[r(..16), r(16..)]).unwrap();
 
-    let result = module.sub(&broadcasting_a, &slicing_b).unwrap();
+    let result = module.mul(&broadcasting_a, &slicing_b).unwrap();
 
     let check = broadcasting_a
         .contiguous()
@@ -232,7 +232,7 @@ fn sub_view() {
         .get_heap()
         .iter()
         .zip(slicing_b.contiguous().unwrap().get_heap().iter())
-        .map(|(a, b)| a - b)
+        .map(|(a, b)| a * b)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
 
@@ -242,7 +242,7 @@ fn sub_view() {
 }
 
 #[test]
-fn sub_scalar_contiguous() {
+fn mul_scalar_contiguous() {
     let module = ArrOgpuModule::init(crate::ArrOgpuModuleInit {
         heap_size: crate::HeapSize::Item(4096),
         ..Default::default()
@@ -254,10 +254,10 @@ fn sub_scalar_contiguous() {
         .unwrap();
     let scalar = 10.;
 
-    let result = module.sub(&array, &scalar).unwrap();
+    let result = module.mul(&array, &scalar).unwrap();
     let check = (0..512)
         .into_iter()
-        .map(|x| (x as f32) - scalar)
+        .map(|x| (x as f32) * scalar)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
     drop(array);
@@ -268,10 +268,10 @@ fn sub_scalar_contiguous() {
         .unwrap();
     let scalar = module.array_from_vector(&[20.], &[1]).unwrap();
 
-    let result = module.sub(&array, &scalar).unwrap();
+    let result = module.mul(&array, &scalar).unwrap();
     let check = (512..2048)
         .into_iter()
-        .map(|x| (x as f32) - 20.)
+        .map(|x| (x as f32) * 20.)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
     drop(array);
@@ -279,7 +279,7 @@ fn sub_scalar_contiguous() {
 }
 
 #[test]
-fn sub_scalar_view() {
+fn mul_scalar_view() {
     let module = ArrOgpuModule::init(crate::ArrOgpuModuleInit {
         heap_size: crate::HeapSize::Item(4096),
         ..Default::default()
@@ -291,10 +291,10 @@ fn sub_scalar_view() {
         .unwrap();
     let scalar = 10.;
 
-    let result = module.sub(&array.view().unwrap(), &scalar).unwrap();
+    let result = module.mul(&array.view().unwrap(), &scalar).unwrap();
     let check = (0..512)
         .into_iter()
-        .map(|x| (x as f32) - scalar)
+        .map(|x| (x as f32) * scalar)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
     drop(array);
@@ -306,11 +306,11 @@ fn sub_scalar_view() {
     let scalar = module.array_from_vector(&[20.], &[1]).unwrap();
 
     let result = module
-        .sub(&array.view().unwrap(), &scalar.view().unwrap())
+        .mul(&array.view().unwrap(), &scalar.view().unwrap())
         .unwrap();
     let check = (512..2048)
         .into_iter()
-        .map(|x| (x as f32) - 20.)
+        .map(|x| (x as f32) * 20.)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
     drop(array);
@@ -318,7 +318,7 @@ fn sub_scalar_view() {
 }
 
 #[test]
-fn sub_execute_opt_contiguous() {
+fn mul_execute_opt_contiguous() {
     let module = ArrOgpuModule::init(crate::ArrOgpuModuleInit {
         heap_size: crate::HeapSize::Item(4096),
         limits: crate::WgpuLimits {
@@ -327,14 +327,14 @@ fn sub_execute_opt_contiguous() {
             ..Default::default()
         },
         function_execute_opt: crate::FunctionExecuteOpt {
-            sub: SubOpt {
+            mul: MulOpt {
                 compute_workgroup_size_x: 512,
             },
             ..Default::default()
         },
         ..Default::default()
     })
-    .expect("module init in sub error");
+    .expect("module init in mul error");
 
     // 256
     let array_a = ArangeArray::arange(0..256)
@@ -345,12 +345,12 @@ fn sub_execute_opt_contiguous() {
         .to_GpuArray_with_shape(&[16, 16], &module)
         .unwrap();
 
-    let result = module.sub(&array_a, &array_b).unwrap();
+    let result = module.mul(&array_a, &array_b).unwrap();
 
     let check = (0..256)
         .into_iter()
         .zip((256..512).into_iter())
-        .map(|(a, b)| (a - b) as f32)
+        .map(|(a, b)| (a * b) as f32)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
 
@@ -367,12 +367,12 @@ fn sub_execute_opt_contiguous() {
         .to_GpuArray_with_shape(&[8, 8, 8], &module)
         .unwrap();
 
-    let result = module.sub(&array_a, &array_b).unwrap();
+    let result = module.mul(&array_a, &array_b).unwrap();
 
     let check = (0..512)
         .into_iter()
         .zip((512..1024).into_iter())
-        .map(|(a, b)| (a - b) as f32)
+        .map(|(a, b)| (a * b) as f32)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
 
@@ -389,12 +389,12 @@ fn sub_execute_opt_contiguous() {
         .to_GpuArray_with_shape(&[32, 32], &module)
         .unwrap();
 
-    let result = module.sub(&array_a, &array_b).unwrap();
+    let result = module.mul(&array_a, &array_b).unwrap();
 
     let check = (0..1024)
         .into_iter()
         .zip((1024..2048).into_iter())
-        .map(|(a, b)| (a - b) as f32)
+        .map(|(a, b)| (a * b) as f32)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
 
@@ -404,21 +404,21 @@ fn sub_execute_opt_contiguous() {
 }
 
 #[test]
-fn sub_execute_opt_view() {
+fn mul_execute_opt_view() {
     let module = ArrOgpuModule::init(crate::ArrOgpuModuleInit {
         heap_size: crate::HeapSize::Item(4096),
         limits: crate::WgpuLimits {
             ..Default::default()
         },
         function_execute_opt: crate::FunctionExecuteOpt {
-            sub: SubOpt {
+            mul: MulOpt {
                 compute_workgroup_size_x: 128,
             },
             ..Default::default()
         },
         ..Default::default()
     })
-    .expect("module init in sub error");
+    .expect("module init in mul error");
 
     // 256
     let array_a = ArangeArray::arange(0..256)
@@ -429,12 +429,12 @@ fn sub_execute_opt_view() {
         .to_GpuArray_with_shape(&[16, 16], &module)
         .unwrap();
 
-    let result = module.sub(&array_a, &array_b).unwrap();
+    let result = module.mul(&array_a, &array_b).unwrap();
 
     let check = (0..256)
         .into_iter()
         .zip((256..512).into_iter())
-        .map(|(a, b)| (a - b) as f32)
+        .map(|(a, b)| (a * b) as f32)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
 
@@ -451,12 +451,12 @@ fn sub_execute_opt_view() {
         .to_GpuArray_with_shape(&[8, 8, 8], &module)
         .unwrap();
 
-    let result = module.sub(&array_a, &array_b).unwrap();
+    let result = module.mul(&array_a, &array_b).unwrap();
 
     let check = (0..512)
         .into_iter()
         .zip((512..1024).into_iter())
-        .map(|(a, b)| (a - b) as f32)
+        .map(|(a, b)| (a * b) as f32)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
 
@@ -473,12 +473,12 @@ fn sub_execute_opt_view() {
         .to_GpuArray_with_shape(&[32, 32], &module)
         .unwrap();
 
-    let result = module.sub(&array_a, &array_b).unwrap();
+    let result = module.mul(&array_a, &array_b).unwrap();
 
     let check = (0..1024)
         .into_iter()
         .zip((1024..2048).into_iter())
-        .map(|(a, b)| (a - b) as f32)
+        .map(|(a, b)| (a * b) as f32)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
 
@@ -488,7 +488,7 @@ fn sub_execute_opt_view() {
 }
 
 #[test]
-fn sub_execute_opt_scalar_contiguous() {
+fn mul_execute_opt_scalar_contiguous() {
     let module = ArrOgpuModule::init(crate::ArrOgpuModuleInit {
         heap_size: crate::HeapSize::Item(4096),
         limits: crate::WgpuLimits {
@@ -497,24 +497,24 @@ fn sub_execute_opt_scalar_contiguous() {
             ..Default::default()
         },
         function_execute_opt: crate::FunctionExecuteOpt {
-            sub: SubOpt {
+            mul: MulOpt {
                 compute_workgroup_size_x: 512,
             },
             ..Default::default()
         },
         ..Default::default()
     })
-    .expect("module init in sub error");
+    .expect("module init in mul error");
 
     let array = ArangeArray::arange(0..512)
         .to_GpuArray_with_shape(&[8, 8, 8], &module)
         .unwrap();
     let scalar = 10.;
 
-    let result = module.sub(&array, &scalar).unwrap();
+    let result = module.mul(&array, &scalar).unwrap();
     let check = (0..512)
         .into_iter()
-        .map(|x| (x as f32) - scalar)
+        .map(|x| (x as f32) * scalar)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
     drop(array);
@@ -525,10 +525,10 @@ fn sub_execute_opt_scalar_contiguous() {
         .unwrap();
     let scalar = module.array_from_vector(&[20.], &[1]).unwrap();
 
-    let result = module.sub(&array, &scalar).unwrap();
+    let result = module.mul(&array, &scalar).unwrap();
     let check = (512..2048)
         .into_iter()
-        .map(|x| (x as f32) - 20.)
+        .map(|x| (x as f32) * 20.)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
     drop(array);
@@ -536,31 +536,31 @@ fn sub_execute_opt_scalar_contiguous() {
 }
 
 #[test]
-fn sub_execute_opt_scalar_view() {
+fn mul_execute_opt_scalar_view() {
     let module = ArrOgpuModule::init(crate::ArrOgpuModuleInit {
         heap_size: crate::HeapSize::Item(4096),
         limits: crate::WgpuLimits {
             ..Default::default()
         },
         function_execute_opt: crate::FunctionExecuteOpt {
-            sub: SubOpt {
+            mul: MulOpt {
                 compute_workgroup_size_x: 64,
             },
             ..Default::default()
         },
         ..Default::default()
     })
-    .expect("module init in sub error");
+    .expect("module init in mul error");
 
     let array = ArangeArray::arange(0..512)
         .to_GpuArray_with_shape(&[8, 8, 8], &module)
         .unwrap();
     let scalar = 10.;
 
-    let result = module.sub(&array.view().unwrap(), &scalar).unwrap();
+    let result = module.mul(&array.view().unwrap(), &scalar).unwrap();
     let check = (0..512)
         .into_iter()
-        .map(|x| (x as f32) - scalar)
+        .map(|x| (x as f32) * scalar)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
     drop(array);
@@ -572,11 +572,11 @@ fn sub_execute_opt_scalar_view() {
     let scalar = module.array_from_vector(&[20.], &[1]).unwrap();
 
     let result = module
-        .sub(&array.view().unwrap(), &scalar.view().unwrap())
+        .mul(&array.view().unwrap(), &scalar.view().unwrap())
         .unwrap();
     let check = (512..2048)
         .into_iter()
-        .map(|x| (x as f32) - 20.)
+        .map(|x| (x as f32) * 20.)
         .collect::<Vec<f32>>();
     assert_eq!(check, result.get_heap());
     drop(array);
