@@ -127,7 +127,7 @@ impl ArrOgpuModule {
             pipeline.set_pipeline_begin_compute_pass(&mut begin_compute_pass);
             begin_compute_pass.set_bind_group(0, Some(&self.heap_binding().binding_groups), &[]);
 
-            let (x, y, z) = matmul_operate.get_x_y_z(1, 1);
+            let (x, y, z) = matmul_operate.get_x_y_z(16);
             begin_compute_pass.dispatch_workgroups(x, y, z);
         }
 

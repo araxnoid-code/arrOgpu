@@ -1,4 +1,4 @@
-use crate::{AddOpt, DivOpt, MulOpt, SubOpt};
+use crate::{AddOpt, DivOpt, MatmulOpt, MulOpt, SubOpt};
 
 #[derive(Clone)]
 pub struct FunctionExecuteOpt {
@@ -6,6 +6,7 @@ pub struct FunctionExecuteOpt {
     pub sub: SubOpt,
     pub mul: MulOpt,
     pub div: DivOpt,
+    pub matmul: MatmulOpt,
 }
 
 impl Default for FunctionExecuteOpt {
@@ -15,6 +16,7 @@ impl Default for FunctionExecuteOpt {
             sub: Default::default(),
             div: Default::default(),
             mul: Default::default(),
+            matmul: Default::default(),
         }
     }
 }
