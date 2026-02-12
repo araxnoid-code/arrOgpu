@@ -22,7 +22,7 @@ where
         let dim = array_a.dim();
         if array_a.shape().len() <= 1 || array_b.shape().len() <= 1 {
             let err = format!(
-                "Array Matmul 2d Error, Shape Of Array A Is {:?} And Shape Of Array B Is {:?}",
+                "Array Matmul Error, Shape Of Array A Is {:?} And Shape Of Array B Is {:?}",
                 array_a.shape(),
                 array_b.shape()
             );
@@ -39,7 +39,7 @@ where
             Ok(Self::ND(array_a, array_b))
         } else {
             let err = format!(
-                "Array Matmul 2d Error, Shape Of Array A Is {:?} And Shape Of Array B Is {:?}",
+                "Array Matmul Error, Shape Of Array A Is {:?} And Shape Of Array B Is {:?}",
                 array_a.shape(),
                 array_b.shape()
             );

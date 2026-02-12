@@ -65,7 +65,7 @@ fn matmul_2d_testing_a() {
     let array_a = module.array_from_vector(&data, &shape).unwrap();
     let array_b = module.array_from_vector(&data, &shape).unwrap();
     let result = module.matmul(&array_a, &array_b).unwrap();
-    let check_result = testing_matmul_2d(
+    let check_result = matmul_2d_checker(
         &array_a.get_heap(),
         &array_a.shape(),
         &array_b.get_heap(),
@@ -84,7 +84,7 @@ fn matmul_2d_testing_a() {
     let array_a = module.array_from_vector(&data, &shape).unwrap();
     let array_b = module.array_from_vector(&data, &shape).unwrap();
     let result = module.matmul(&array_a, &array_b).unwrap();
-    let check_result = testing_matmul_2d(
+    let check_result = matmul_2d_checker(
         &array_a.get_heap(),
         &array_a.shape(),
         &array_b.get_heap(),
@@ -103,7 +103,7 @@ fn matmul_2d_testing_a() {
     let array_a = module.array_from_vector(&data, &shape).unwrap();
     let array_b = module.array_from_vector(&data, &shape).unwrap();
     let result = module.matmul(&array_a, &array_b).unwrap();
-    let check_result = testing_matmul_2d(
+    let check_result = matmul_2d_checker(
         &array_a.get_heap(),
         &array_a.shape(),
         &array_b.get_heap(),
@@ -122,7 +122,7 @@ fn matmul_2d_testing_a() {
     let array_a = module.array_from_vector(&data, &shape).unwrap();
     let array_b = module.array_from_vector(&data, &shape).unwrap();
     let result = module.matmul(&array_a, &array_b).unwrap();
-    let check_result = testing_matmul_2d(
+    let check_result = matmul_2d_checker(
         &array_a.get_heap(),
         &array_a.shape(),
         &array_b.get_heap(),
@@ -149,7 +149,7 @@ fn matmul_2d_testing_a() {
     let array_a = module.array_from_vector(&data, &shape).unwrap();
     let array_b = module.array_from_vector(&data, &shape).unwrap();
     let result = module.matmul(&array_a, &array_b).unwrap();
-    let check_result = testing_matmul_2d(
+    let check_result = matmul_2d_checker(
         &array_a.get_heap(),
         &array_a.shape(),
         &array_b.get_heap(),
@@ -187,7 +187,7 @@ fn matmul_2d_testing_b() {
         .to_GpuArray_with_shape(&[23, 10], &module)
         .unwrap();
     let result = module.matmul(&array_a, &array_b).unwrap();
-    let check_result = testing_matmul_2d(
+    let check_result = matmul_2d_checker(
         &array_a.get_heap(),
         &array_a.shape(),
         &array_b.get_heap(),
@@ -205,7 +205,7 @@ fn matmul_2d_testing_b() {
         .to_GpuArray_with_shape(&[47, 29], &module)
         .unwrap();
     let result = module.matmul(&array_a, &array_b).unwrap();
-    let check_result = testing_matmul_2d(
+    let check_result = matmul_2d_checker(
         &array_a.get_heap(),
         &array_a.shape(),
         &array_b.get_heap(),
@@ -223,7 +223,7 @@ fn matmul_2d_testing_b() {
         .to_GpuArray_with_shape(&[41, 53], &module)
         .unwrap();
     let result = module.matmul(&array_a, &array_b).unwrap();
-    let check_result = testing_matmul_2d(
+    let check_result = matmul_2d_checker(
         &array_a.get_heap(),
         &array_a.shape(),
         &array_b.get_heap(),
@@ -241,7 +241,7 @@ fn matmul_2d_testing_b() {
         .to_GpuArray_with_shape(&[111, 98], &module)
         .unwrap();
     let result = module.matmul(&array_a, &array_b).unwrap();
-    let check_result = testing_matmul_2d(
+    let check_result = matmul_2d_checker(
         &array_a.get_heap(),
         &array_a.shape(),
         &array_b.get_heap(),
@@ -267,7 +267,7 @@ fn matmul_2d_testing_b() {
         .to_GpuArray_with_shape(&[509, 497], &module)
         .unwrap();
     let result = module.matmul(&array_a, &array_b).unwrap();
-    let check_result = testing_matmul_2d(
+    let check_result = matmul_2d_checker(
         &array_a.get_heap(),
         &array_a.shape(),
         &array_b.get_heap(),
@@ -285,7 +285,7 @@ fn matmul_2d_testing_b() {
     drop(array_b);
 }
 
-fn testing_matmul_2d(data_a: &[f32], shape_a: &[u32], data_b: &[f32], shape_b: &[u32]) -> Vec<f32> {
+fn matmul_2d_checker(data_a: &[f32], shape_a: &[u32], data_b: &[f32], shape_b: &[u32]) -> Vec<f32> {
     let stride_row_a = shape_a[1];
     let stride_coll_a = 1;
 
