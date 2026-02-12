@@ -1,7 +1,11 @@
+// cache
+// will be adjusted to WORKGROUP_SIZE before compilation
+var<workgroup> tile_a: array<array<f32, 16>, 16>;
+var<workgroup> tile_b: array<array<f32, 16>, 16>;
+
 // override
 override LEN_HEAP_MINUS_ONE: u32;
 override WORKGROUP_SIZE: u32 = 16;
-
 // INIT
 struct ArrayMetadata{
 	pointer: vec2<u32>, // 8
@@ -18,7 +22,6 @@ struct ArrayMetadata{
 	m_n_origin_stride: array<vec4<u32>, 2>, // 32
 	padding3: array<vec4<u32>, 4>,
 }
-
 // MODULE
 // // heap
 @group(0) @binding(0)
@@ -26,11 +29,6 @@ var<storage, read_write> heap: array<f32>;
 // // execute_args
 @group(0) @binding(1)
 var<uniform> execute_args: array<ArrayMetadata, 3>;
-
-// cache
-// akan disesuaikan dengan WORKGROUP_SIZE saat sebelum kompilasi
-var<workgroup> tile_a: array<array<f32, 16>, 16>;
-var<workgroup> tile_b: array<array<f32, 16>, 16>;
 
 @compute @workgroup_size(WORKGROUP_SIZE, WORKGROUP_SIZE, 1)
 fn main(
@@ -42,7 +40,7 @@ fn main(
     let k = execute_args[0].shape[0][1];
     let n = execute_args[1].shape[0][1];
 
-    let iter = (k + 15) / WORKGROUP_SIZE;
+    let iter = (k + WORKGROUP_SIZE - 1) / WORKGROUP_SIZE;
     var acc = 0.;
     for (var i = 0u; i < iter; i++){
         // A

@@ -1,3 +1,8 @@
+// workgroup
+// will be adjusted to WORKGROUP_SIZE before compilation
+var<workgroup> tile_a: array<array<f32, 16>, 16>;
+var<workgroup> tile_b: array<array<f32, 16>, 16>;
+
 // override
 override LEN_HEAP_MINUS_ONE: u32;
 override WORKGROUP_SIZE: u32 = 16;
@@ -26,11 +31,6 @@ var<storage, read_write> heap: array<f32>;
 // execute_args
 @group(0) @binding(1)
 var<uniform> execute_args: array<ArrayMetadata, 3>;
-
-// workgroup
-// akan disesuaikan dengan WORKGROUP_SIZE saat sebelum kompilasi
-var<workgroup> tile_a: array<array<f32, 16>, 16>;
-var<workgroup> tile_b: array<array<f32, 16>, 16>;
 
 @compute @workgroup_size(WORKGROUP_SIZE, WORKGROUP_SIZE, 1)
 fn main(

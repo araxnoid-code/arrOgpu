@@ -1,4 +1,5 @@
 mod matmul_operate;
+mod shaders_updater;
 use std::sync::Arc;
 use wgpu::{Buffer, CommandEncoder, ComputePipeline, Device, PipelineLayout};
 
@@ -8,7 +9,9 @@ use crate::{
         compute_shaders::{
             MATMUL_2D_SHADERS_PATH, MATMUL_ND_CONTIGUOUS_SHADERS_PATH, MATMUL_ND_VIEW_SHADERS_PATH,
         },
-        module::method::function::operation::matmul::matmul_operate::MatmulOperate,
+        module::method::function::operation::matmul::{
+            matmul_operate::MatmulOperate, shaders_updater::workgroup_matmul_shader_updater,
+        },
     },
     vector_padding,
 };
@@ -61,6 +64,7 @@ impl ArrOgpuModule {
                         &self.common_pipeline_layout,
                         *self.maximum as f64,
                         MATMUL_2D_SHADERS_PATH,
+                        self.function_execute_opt.matmul.workgroup_size,
                     ),
                     PIPELINE_MATMUL2D,
                 )
@@ -80,6 +84,7 @@ impl ArrOgpuModule {
                                 &self.common_pipeline_layout,
                                 *self.maximum as f64,
                                 MATMUL_ND_CONTIGUOUS_SHADERS_PATH,
+                                self.function_execute_opt.matmul.workgroup_size,
                             ),
                             PIPELINE_MATMULND_CONTIGUOUS,
                         )
@@ -96,6 +101,7 @@ impl ArrOgpuModule {
                                 &self.common_pipeline_layout,
                                 *self.maximum as f64,
                                 MATMUL_ND_VIEW_SHADERS_PATH,
+                                self.function_execute_opt.matmul.workgroup_size,
                             ),
                             PIPELINE_MATMULND_VIEW,
                         )
@@ -127,7 +133,8 @@ impl ArrOgpuModule {
             pipeline.set_pipeline_begin_compute_pass(&mut begin_compute_pass);
             begin_compute_pass.set_bind_group(0, Some(&self.heap_binding().binding_groups), &[]);
 
-            let (x, y, z) = matmul_operate.get_x_y_z(16);
+            let workgroup_size = self.function_execute_opt.matmul.workgroup_size;
+            let (x, y, z) = matmul_operate.get_x_y_z(workgroup_size);
             begin_compute_pass.dispatch_workgroups(x, y, z);
         }
 
@@ -181,17 +188,22 @@ fn create_pipeline(
     pipeline_layout: &PipelineLayout,
     heap_len: f64,
     path: &'static str,
+    workgroup_size: u32,
 ) -> ComputePipeline {
+    let shaders = workgroup_matmul_shader_updater(path, workgroup_size);
     device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
         label: Some("Create Pipeline For Matmul"),
         layout: Some(pipeline_layout),
         module: &device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Create Shaders Module For Matmul"),
-            source: wgpu::ShaderSource::Wgsl(path.into()),
+            source: wgpu::ShaderSource::Wgsl(shaders.into()),
         }),
         entry_point: Some("main"),
         compilation_options: wgpu::PipelineCompilationOptions {
-            constants: &[("LEN_HEAP", heap_len - 1.)],
+            constants: &[
+                ("LEN_HEAP_MINUS_ONE", heap_len - 1.),
+                ("WORKGROUP_SIZE", workgroup_size as f64),
+            ],
             zero_initialize_workgroup_memory: true,
         },
         cache: None,

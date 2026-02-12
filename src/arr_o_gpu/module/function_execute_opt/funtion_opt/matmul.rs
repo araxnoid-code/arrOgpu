@@ -1,6 +1,6 @@
 #[derive(Clone)]
 pub struct MatmulOpt {
-    workgroup_size: u32,
+    pub workgroup_size: u32,
 }
 
 impl Default for MatmulOpt {

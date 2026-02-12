@@ -93,8 +93,10 @@ where
                 (x, y, 1)
             }
             Self::ND(arr_a, arr_b) => {
-                let x = (arr_a.shape()[arr_a.shape().len() - 2] + 15) / 16;
-                let y = (arr_b.shape()[arr_b.shape().len() - 1] + 15) / 16;
+                let x = (arr_a.shape()[arr_a.shape().len() - 2] + work_group_size_x - 1)
+                    / work_group_size_x;
+                let y = (arr_b.shape()[arr_b.shape().len() - 1] + work_group_size_x - 1)
+                    / work_group_size_x;
                 let z = arr_a.shape()[..arr_a.dim() - 2].iter().product::<u32>();
                 (x, y, z)
             }

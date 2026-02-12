@@ -22,6 +22,7 @@ webgpu   = ["wgpu/webgpu"]
 [dependencies]
 bytemuck = "1.23.2"
 monagement = "0.0.3"
+ndarray = "0.17.2"
 pollster = "=0.2.4"
 wgpu = { version = "28.0.0", default-features = false, features = ["wgsl"] }
 
