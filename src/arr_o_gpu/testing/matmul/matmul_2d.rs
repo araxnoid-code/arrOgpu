@@ -1,10 +1,130 @@
-use arr_o_gpu::{
-    AddOpt, ArangeArray, ArangeIteratorTrait, ArrOgpuModule, ArrOgpuModuleInit, FunctionExecuteOpt,
-    MATMUL_2D_SHADERS_PATH, WgpuLimits,
-};
-use ndarray::Array2;
+use crate::{ArangeArray, ArangeIteratorTrait, ArrOgpuModule, FunctionExecuteOpt, arr_o_gpu};
 
-fn main() {
+#[test]
+fn matmul_testing_a() {
+    let module = ArrOgpuModule::init(crate::ArrOgpuModuleInit {
+        heap_size: arr_o_gpu::HeapSize::Item(1_000_000),
+        function_execute_opt: FunctionExecuteOpt {
+            matmul: arr_o_gpu::MatmulOpt { workgroup_size: 16 },
+            ..Default::default()
+        },
+        ..Default::default()
+    })
+    .unwrap();
+
+    // 8 x 8
+    let shape = [8, 8];
+    let data = (0..shape.iter().product::<u32>())
+        .into_iter()
+        .map(|x| x as f32)
+        .collect::<Vec<f32>>();
+    let array_a = module.array_from_vector(&data, &shape).unwrap();
+    let array_b = module.array_from_vector(&data, &shape).unwrap();
+    let result = module.matmul(&array_a, &array_b).unwrap();
+    let check_result = testing_matmul_2d(
+        &array_a.get_heap(),
+        &array_a.shape(),
+        &array_b.get_heap(),
+        &array_b.shape(),
+    );
+    assert_eq!(result.get_heap(), check_result);
+    drop(array_a);
+    drop(array_b);
+
+    // 16 x 16
+    let shape = [16, 16];
+    let data = (0..shape.iter().product::<u32>())
+        .into_iter()
+        .map(|x| x as f32)
+        .collect::<Vec<f32>>();
+    let array_a = module.array_from_vector(&data, &shape).unwrap();
+    let array_b = module.array_from_vector(&data, &shape).unwrap();
+    let result = module.matmul(&array_a, &array_b).unwrap();
+    let check_result = testing_matmul_2d(
+        &array_a.get_heap(),
+        &array_a.shape(),
+        &array_b.get_heap(),
+        &array_b.shape(),
+    );
+    assert_eq!(result.get_heap(), check_result);
+    drop(array_a);
+    drop(array_b);
+
+    // 32 x 32
+    let shape = [32, 32];
+    let data = (0..shape.iter().product::<u32>())
+        .into_iter()
+        .map(|x| x as f32)
+        .collect::<Vec<f32>>();
+    let array_a = module.array_from_vector(&data, &shape).unwrap();
+    let array_b = module.array_from_vector(&data, &shape).unwrap();
+    let result = module.matmul(&array_a, &array_b).unwrap();
+    let check_result = testing_matmul_2d(
+        &array_a.get_heap(),
+        &array_a.shape(),
+        &array_b.get_heap(),
+        &array_b.shape(),
+    );
+    assert_eq!(result.get_heap(), check_result);
+    drop(array_a);
+    drop(array_b);
+
+    // 128 x 128
+    let shape = [128, 128];
+    let data = (0..shape.iter().product::<u32>())
+        .into_iter()
+        .map(|x| x as f32)
+        .collect::<Vec<f32>>();
+    let array_a = module.array_from_vector(&data, &shape).unwrap();
+    let array_b = module.array_from_vector(&data, &shape).unwrap();
+    let result = module.matmul(&array_a, &array_b).unwrap();
+    let check_result = testing_matmul_2d(
+        &array_a.get_heap(),
+        &array_a.shape(),
+        &array_b.get_heap(),
+        &array_b.shape(),
+    );
+
+    let tolerance: f32 = 1e-5;
+    for (a, b) in result.get_heap().iter().zip(check_result.iter()) {
+        if a != b {
+            if (a - b).abs() / 1.15e9 > tolerance {
+                panic!("the difference has exceeded the tolerance limit")
+            }
+        }
+    }
+    drop(array_a);
+    drop(array_b);
+
+    // 512 x 512
+    let shape = [512, 512];
+    let data = (0..shape.iter().product::<u32>())
+        .into_iter()
+        .map(|x| x as f32)
+        .collect::<Vec<f32>>();
+    let array_a = module.array_from_vector(&data, &shape).unwrap();
+    let array_b = module.array_from_vector(&data, &shape).unwrap();
+    let result = module.matmul(&array_a, &array_b).unwrap();
+    let check_result = testing_matmul_2d(
+        &array_a.get_heap(),
+        &array_a.shape(),
+        &array_b.get_heap(),
+        &array_b.shape(),
+    );
+    let tolerance: f32 = 1e-5;
+    for (a, b) in result.get_heap().iter().zip(check_result.iter()) {
+        if a != b {
+            if (a - b).abs() / 3.8e12 > tolerance {
+                panic!("the difference has exceeded the tolerance limit")
+            }
+        }
+    }
+    drop(array_a);
+    drop(array_b);
+}
+
+#[test]
+fn matmul_testing_b() {
     let module = ArrOgpuModule::init(crate::ArrOgpuModuleInit {
         heap_size: arr_o_gpu::HeapSize::Item(1_000_000),
         function_execute_opt: FunctionExecuteOpt {
