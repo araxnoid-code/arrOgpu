@@ -1,7 +1,51 @@
 use crate::{ArangeArray, ArangeIteratorTrait, ArrOgpuModule, FunctionExecuteOpt, arr_o_gpu};
 
 #[test]
-fn matmul_testing_a() {
+fn matmul_2d_error() {
+    let module = ArrOgpuModule::default();
+
+    let array_a = ArangeArray::arange(0..12)
+        .to_GpuArray_with_shape(&[12], &module)
+        .unwrap();
+    let array_b = ArangeArray::arange(0..12)
+        .to_GpuArray_with_shape(&[12], &module)
+        .unwrap();
+    let result = module.matmul(&array_a, &array_b);
+    if let Ok(_) = result {
+        panic!("dot product is not allowed in matmul")
+    }
+    drop(array_a);
+    drop(array_b);
+
+    let array_a = ArangeArray::arange(0..12)
+        .to_GpuArray_with_shape(&[3, 4], &module)
+        .unwrap();
+    let array_b = ArangeArray::arange(0..12)
+        .to_GpuArray_with_shape(&[2, 6], &module)
+        .unwrap();
+    let result = module.matmul(&array_a, &array_b);
+    if let Ok(_) = result {
+        panic!("the allowed shapes are [m, k] x [k, n]")
+    }
+    drop(array_a);
+    drop(array_b);
+
+    let array_a = ArangeArray::arange(0..24)
+        .to_GpuArray_with_shape(&[24], &module)
+        .unwrap();
+    let array_b = ArangeArray::arange(0..240)
+        .to_GpuArray_with_shape(&[24, 10], &module)
+        .unwrap();
+    let result = module.matmul(&array_a, &array_b);
+    if let Ok(_) = result {
+        panic!("shape is not the same")
+    }
+    drop(array_a);
+    drop(array_b);
+}
+
+#[test]
+fn matmul_2d_testing_a() {
     let module = ArrOgpuModule::init(crate::ArrOgpuModuleInit {
         heap_size: arr_o_gpu::HeapSize::Item(1_000_000),
         function_execute_opt: FunctionExecuteOpt {
@@ -124,7 +168,7 @@ fn matmul_testing_a() {
 }
 
 #[test]
-fn matmul_testing_b() {
+fn matmul_2d_testing_b() {
     let module = ArrOgpuModule::init(crate::ArrOgpuModuleInit {
         heap_size: arr_o_gpu::HeapSize::Item(1_000_000),
         function_execute_opt: FunctionExecuteOpt {
