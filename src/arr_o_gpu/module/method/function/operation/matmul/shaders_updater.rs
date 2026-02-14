@@ -16,5 +16,7 @@ pub(crate) fn workgroup_matmul_shader_updater(
     lines[2] = tile_a.as_str();
     lines[3] = tile_b.as_str();
 
+    println!("{:?}", lines);
+
     lines.join("\n")
 }

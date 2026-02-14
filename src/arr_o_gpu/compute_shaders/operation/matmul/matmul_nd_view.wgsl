@@ -50,7 +50,7 @@ fn main(
     for(var i = 0u; i < array_a.dim - 2; i++){
         let idx0 = i >> 2;
         let idx1 = i & 3;
-        let permute = (global_id.z / array_a.o_stride[idx0][idx1]) % array_a.shape[idx0][idx1];
+        let permute = ((m * k * global_id.z) / array_a.o_stride[idx0][idx1]) % array_a.shape[idx0][idx1];
         batch_stride_a += permute * array_a.stride[idx0][idx1];
     }
 
@@ -58,7 +58,7 @@ fn main(
     for(var i = 0u; i < array_a.dim - 2; i++){
         let idx0 = i >> 2;
         let idx1 = i & 3;
-        let permute = (global_id.z / array_b.o_stride[idx0][idx1]) % array_b.shape[idx0][idx1];
+        let permute = ((k * n * global_id.z) / array_b.o_stride[idx0][idx1]) % array_b.shape[idx0][idx1];
         batch_stride_b += permute * array_b.stride[idx0][idx1];
     }
 
@@ -119,5 +119,4 @@ fn indexing_o(row: u32, coll: u32, z:u32) -> u32{
     let other_stride = arr.stride[(index - 2) >> 2][(index - 2) & 3];
 
     return arr.offset + arr.pointer.x + row * row_stride + coll * coll_stride + other_stride * z;
-
 }
