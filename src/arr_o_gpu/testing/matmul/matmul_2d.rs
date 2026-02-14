@@ -51,7 +51,9 @@ fn matmul_2d_testing_a() {
     let module = ArrOgpuModule::init(crate::ArrOgpuModuleInit {
         heap_size: arr_o_gpu::HeapSize::Item(1_000_000),
         function_execute_opt: FunctionExecuteOpt {
-            matmul: arr_o_gpu::MatmulOpt { workgroup_size: 16 },
+            matmul: arr_o_gpu::MatmulOpt {
+                workgroup_size_x_and_y: 16,
+            },
             ..Default::default()
         },
         ..Default::default()
@@ -174,7 +176,9 @@ fn matmul_2d_testing_b() {
     let module = ArrOgpuModule::init(crate::ArrOgpuModuleInit {
         heap_size: arr_o_gpu::HeapSize::Item(1_000_000),
         function_execute_opt: FunctionExecuteOpt {
-            matmul: arr_o_gpu::MatmulOpt { workgroup_size: 16 },
+            matmul: arr_o_gpu::MatmulOpt {
+                workgroup_size_x_and_y: 16,
+            },
             ..Default::default()
         },
         ..Default::default()
@@ -292,7 +296,9 @@ fn matmul_2d_testing_a_execute_opt_32() {
     let module = ArrOgpuModule::init(crate::ArrOgpuModuleInit {
         heap_size: arr_o_gpu::HeapSize::Item(1_000_000),
         function_execute_opt: FunctionExecuteOpt {
-            matmul: arr_o_gpu::MatmulOpt { workgroup_size: 32 },
+            matmul: arr_o_gpu::MatmulOpt {
+                workgroup_size_x_and_y: 32,
+            },
             ..Default::default()
         },
         limits: WgpuLimits {
@@ -419,7 +425,9 @@ fn matmul_2d_testing_a_execute_opt_10() {
     let module = ArrOgpuModule::init(crate::ArrOgpuModuleInit {
         heap_size: arr_o_gpu::HeapSize::Item(1_000_000),
         function_execute_opt: FunctionExecuteOpt {
-            matmul: arr_o_gpu::MatmulOpt { workgroup_size: 10 },
+            matmul: arr_o_gpu::MatmulOpt {
+                workgroup_size_x_and_y: 10,
+            },
             ..Default::default()
         },
         ..Default::default()
@@ -542,7 +550,9 @@ fn matmul_2d_testing_a_execute_opt_8() {
     let module = ArrOgpuModule::init(crate::ArrOgpuModuleInit {
         heap_size: arr_o_gpu::HeapSize::Item(1_000_000),
         function_execute_opt: FunctionExecuteOpt {
-            matmul: arr_o_gpu::MatmulOpt { workgroup_size: 8 },
+            matmul: arr_o_gpu::MatmulOpt {
+                workgroup_size_x_and_y: 8,
+            },
             ..Default::default()
         },
         ..Default::default()

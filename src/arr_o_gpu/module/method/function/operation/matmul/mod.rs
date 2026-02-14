@@ -64,7 +64,7 @@ impl ArrOgpuModule {
                         &self.common_pipeline_layout,
                         *self.maximum as f64,
                         MATMUL_2D_SHADERS_PATH,
-                        self.function_execute_opt.matmul.workgroup_size,
+                        self.function_execute_opt.matmul.workgroup_size_x_and_y,
                     ),
                     PIPELINE_MATMUL2D,
                 )
@@ -84,7 +84,7 @@ impl ArrOgpuModule {
                                 &self.common_pipeline_layout,
                                 *self.maximum as f64,
                                 MATMUL_ND_CONTIGUOUS_SHADERS_PATH,
-                                self.function_execute_opt.matmul.workgroup_size,
+                                self.function_execute_opt.matmul.workgroup_size_x_and_y,
                             ),
                             PIPELINE_MATMULND_CONTIGUOUS,
                         )
@@ -101,7 +101,7 @@ impl ArrOgpuModule {
                                 &self.common_pipeline_layout,
                                 *self.maximum as f64,
                                 MATMUL_ND_VIEW_SHADERS_PATH,
-                                self.function_execute_opt.matmul.workgroup_size,
+                                self.function_execute_opt.matmul.workgroup_size_x_and_y,
                             ),
                             PIPELINE_MATMULND_VIEW,
                         )
@@ -133,7 +133,7 @@ impl ArrOgpuModule {
             pipeline.set_pipeline_begin_compute_pass(&mut begin_compute_pass);
             begin_compute_pass.set_bind_group(0, Some(&self.heap_binding().binding_groups), &[]);
 
-            let workgroup_size = self.function_execute_opt.matmul.workgroup_size;
+            let workgroup_size = self.function_execute_opt.matmul.workgroup_size_x_and_y;
             let (x, y, z) = matmul_operate.get_x_y_z(workgroup_size);
             begin_compute_pass.dispatch_workgroups(x, y, z);
         }

@@ -1,4 +1,7 @@
-use crate::{ArangeArray, ArangeIteratorTrait, ArrOgpuModule, arr_o_gpu};
+use crate::{
+    ArangeArray, ArangeIteratorTrait, ArrOgpuModule, FunctionExecuteOpt, MatmulOpt, WgpuLimits,
+    arr_o_gpu,
+};
 
 #[test]
 fn matmul_nd_error() {
@@ -174,6 +177,1042 @@ fn matmul_nd_testing_view() {
     let module = ArrOgpuModule::init(arr_o_gpu::ArrOgpuModuleInit {
         heap_size: arr_o_gpu::HeapSize::Item(1000000),
 
+        ..Default::default()
+    })
+    .unwrap();
+
+    // testing 1
+    let array_a = ArangeArray::arange(0..8)
+        .to_GpuArray_with_shape(&[2, 2, 2], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(8..8 * 2)
+        .to_GpuArray_with_shape(&[2, 2, 2], &module)
+        .unwrap();
+
+    let result = module
+        .matmul(&array_a.view().unwrap(), &array_b.view().unwrap())
+        .unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 2
+    let array_a = ArangeArray::arange(0..1024)
+        .to_GpuArray_with_shape(&[2, 32, 16], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(1024..1024 * 2)
+        .to_GpuArray_with_shape(&[2, 16, 32], &module)
+        .unwrap();
+
+    let result = module
+        .matmul(&array_a.view().unwrap(), &array_b.view().unwrap())
+        .unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 3
+    let array_a = ArangeArray::arange(0..37422)
+        .to_GpuArray_with_shape(&[2, 189, 99], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(7920..7920 * 2)
+        .to_GpuArray_with_shape(&[2, 99, 40], &module)
+        .unwrap();
+
+    let result = module
+        .matmul(&array_a.view().unwrap(), &array_b.view().unwrap())
+        .unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+
+    result
+        .get_heap()
+        .iter()
+        .zip(check.iter())
+        .for_each(|(a, b)| {
+            let error = (a - b).abs() / a.max(*b);
+            if error > 0.00001 {
+                panic!("error exceeding tolerance")
+            }
+        });
+    drop(array_a);
+    drop(array_b);
+
+    // testing 4
+    let array_a = ArangeArray::arange(0..1536)
+        .to_GpuArray_with_shape(&[2, 3, 16, 16], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(1536..1536 * 2)
+        .to_GpuArray_with_shape(&[2, 3, 16, 16], &module)
+        .unwrap();
+
+    let result = module
+        .matmul(&array_a.view().unwrap(), &array_b.view().unwrap())
+        .unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 4
+    let array_a = ArangeArray::arange(0..3584)
+        .to_GpuArray_with_shape(&[4, 2, 14, 32], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(4608..4608 * 2)
+        .to_GpuArray_with_shape(&[4, 2, 32, 18], &module)
+        .unwrap();
+
+    let result = module
+        .matmul(&array_a.view().unwrap(), &array_b.view().unwrap())
+        .unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    result
+        .get_heap()
+        .iter()
+        .zip(check.iter())
+        .for_each(|(a, b)| {
+            let error = (a - b).abs() / a.max(*b);
+            if error > 0.00001 {
+                panic!("error exceeding tolerance")
+            }
+        });
+    drop(array_a);
+    drop(array_b);
+}
+
+#[test]
+fn matmul_nd_testing_contiguous_execute_opt_32() {
+    let module = ArrOgpuModule::init(arr_o_gpu::ArrOgpuModuleInit {
+        heap_size: arr_o_gpu::HeapSize::Item(1_000_000),
+        limits: WgpuLimits {
+            max_compute_workgroups_per_dimension: 1024,
+            ..Default::default()
+        },
+        function_execute_opt: FunctionExecuteOpt {
+            matmul: MatmulOpt {
+                workgroup_size_x_and_y: 32,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+        ..Default::default()
+    })
+    .unwrap();
+
+    // testing 1
+    let array_a = ArangeArray::arange(0..192)
+        .to_GpuArray_with_shape(&[3, 8, 8], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(192..192 * 2)
+        .to_GpuArray_with_shape(&[3, 8, 8], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 2
+    let array_a = ArangeArray::arange(0..1024)
+        .to_GpuArray_with_shape(&[2, 32, 16], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(1024..1024 * 2)
+        .to_GpuArray_with_shape(&[2, 16, 32], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 3
+    let array_a = ArangeArray::arange(0..37422)
+        .to_GpuArray_with_shape(&[2, 189, 99], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(7920..7920 * 2)
+        .to_GpuArray_with_shape(&[2, 99, 40], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+
+    result
+        .get_heap()
+        .iter()
+        .zip(check.iter())
+        .for_each(|(a, b)| {
+            let error = (a - b).abs() / a.max(*b);
+            if error > 0.00001 {
+                panic!("error exceeding tolerance")
+            }
+        });
+    drop(array_a);
+    drop(array_b);
+
+    // testing 4
+    let array_a = ArangeArray::arange(0..1536)
+        .to_GpuArray_with_shape(&[2, 3, 16, 16], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(1536..1536 * 2)
+        .to_GpuArray_with_shape(&[2, 3, 16, 16], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 4
+    let array_a = ArangeArray::arange(0..3584)
+        .to_GpuArray_with_shape(&[4, 2, 14, 32], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(4608..4608 * 2)
+        .to_GpuArray_with_shape(&[4, 2, 32, 18], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    result
+        .get_heap()
+        .iter()
+        .zip(check.iter())
+        .for_each(|(a, b)| {
+            let error = (a - b).abs() / a.max(*b);
+            if error > 0.00001 {
+                panic!("error exceeding tolerance")
+            }
+        });
+    drop(array_a);
+    drop(array_b);
+}
+
+#[test]
+fn matmul_nd_testing_contiguous_execute_opt_10() {
+    let module = ArrOgpuModule::init(arr_o_gpu::ArrOgpuModuleInit {
+        heap_size: arr_o_gpu::HeapSize::Item(1_000_000),
+        limits: WgpuLimits {
+            max_compute_workgroups_per_dimension: 1024,
+            ..Default::default()
+        },
+        function_execute_opt: FunctionExecuteOpt {
+            matmul: MatmulOpt {
+                workgroup_size_x_and_y: 10,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+        ..Default::default()
+    })
+    .unwrap();
+
+    // testing 1
+    let array_a = ArangeArray::arange(0..192)
+        .to_GpuArray_with_shape(&[3, 8, 8], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(192..192 * 2)
+        .to_GpuArray_with_shape(&[3, 8, 8], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 2
+    let array_a = ArangeArray::arange(0..1024)
+        .to_GpuArray_with_shape(&[2, 32, 16], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(1024..1024 * 2)
+        .to_GpuArray_with_shape(&[2, 16, 32], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 3
+    let array_a = ArangeArray::arange(0..37422)
+        .to_GpuArray_with_shape(&[2, 189, 99], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(7920..7920 * 2)
+        .to_GpuArray_with_shape(&[2, 99, 40], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+
+    result
+        .get_heap()
+        .iter()
+        .zip(check.iter())
+        .for_each(|(a, b)| {
+            let error = (a - b).abs() / a.max(*b);
+            if error > 0.00001 {
+                panic!("error exceeding tolerance")
+            }
+        });
+    drop(array_a);
+    drop(array_b);
+
+    // testing 4
+    let array_a = ArangeArray::arange(0..1536)
+        .to_GpuArray_with_shape(&[2, 3, 16, 16], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(1536..1536 * 2)
+        .to_GpuArray_with_shape(&[2, 3, 16, 16], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 4
+    let array_a = ArangeArray::arange(0..3584)
+        .to_GpuArray_with_shape(&[4, 2, 14, 32], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(4608..4608 * 2)
+        .to_GpuArray_with_shape(&[4, 2, 32, 18], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    result
+        .get_heap()
+        .iter()
+        .zip(check.iter())
+        .for_each(|(a, b)| {
+            let error = (a - b).abs() / a.max(*b);
+            if error > 0.00001 {
+                panic!("error exceeding tolerance")
+            }
+        });
+    drop(array_a);
+    drop(array_b);
+}
+
+#[test]
+fn matmul_nd_testing_contiguous_execute_opt_8() {
+    let module = ArrOgpuModule::init(arr_o_gpu::ArrOgpuModuleInit {
+        heap_size: arr_o_gpu::HeapSize::Item(1_000_000),
+        limits: WgpuLimits {
+            max_compute_workgroups_per_dimension: 1024,
+            ..Default::default()
+        },
+        function_execute_opt: FunctionExecuteOpt {
+            matmul: MatmulOpt {
+                workgroup_size_x_and_y: 8,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+        ..Default::default()
+    })
+    .unwrap();
+
+    // testing 1
+    let array_a = ArangeArray::arange(0..192)
+        .to_GpuArray_with_shape(&[3, 8, 8], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(192..192 * 2)
+        .to_GpuArray_with_shape(&[3, 8, 8], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 2
+    let array_a = ArangeArray::arange(0..1024)
+        .to_GpuArray_with_shape(&[2, 32, 16], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(1024..1024 * 2)
+        .to_GpuArray_with_shape(&[2, 16, 32], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 3
+    let array_a = ArangeArray::arange(0..37422)
+        .to_GpuArray_with_shape(&[2, 189, 99], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(7920..7920 * 2)
+        .to_GpuArray_with_shape(&[2, 99, 40], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+
+    result
+        .get_heap()
+        .iter()
+        .zip(check.iter())
+        .for_each(|(a, b)| {
+            let error = (a - b).abs() / a.max(*b);
+            if error > 0.00001 {
+                panic!("error exceeding tolerance")
+            }
+        });
+    drop(array_a);
+    drop(array_b);
+
+    // testing 4
+    let array_a = ArangeArray::arange(0..1536)
+        .to_GpuArray_with_shape(&[2, 3, 16, 16], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(1536..1536 * 2)
+        .to_GpuArray_with_shape(&[2, 3, 16, 16], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 4
+    let array_a = ArangeArray::arange(0..3584)
+        .to_GpuArray_with_shape(&[4, 2, 14, 32], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(4608..4608 * 2)
+        .to_GpuArray_with_shape(&[4, 2, 32, 18], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    result
+        .get_heap()
+        .iter()
+        .zip(check.iter())
+        .for_each(|(a, b)| {
+            let error = (a - b).abs() / a.max(*b);
+            if error > 0.00001 {
+                panic!("error exceeding tolerance")
+            }
+        });
+    drop(array_a);
+    drop(array_b);
+}
+
+#[test]
+fn matmul_nd_testing_contiguous_execute_opt_4() {
+    let module = ArrOgpuModule::init(arr_o_gpu::ArrOgpuModuleInit {
+        heap_size: arr_o_gpu::HeapSize::Item(1_000_000),
+        limits: WgpuLimits {
+            max_compute_workgroups_per_dimension: 1024,
+            ..Default::default()
+        },
+        function_execute_opt: FunctionExecuteOpt {
+            matmul: MatmulOpt {
+                workgroup_size_x_and_y: 8,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+        ..Default::default()
+    })
+    .unwrap();
+
+    // testing 1
+    let array_a = ArangeArray::arange(0..192)
+        .to_GpuArray_with_shape(&[3, 8, 8], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(192..192 * 2)
+        .to_GpuArray_with_shape(&[3, 8, 8], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 2
+    let array_a = ArangeArray::arange(0..1024)
+        .to_GpuArray_with_shape(&[2, 32, 16], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(1024..1024 * 2)
+        .to_GpuArray_with_shape(&[2, 16, 32], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 3
+    let array_a = ArangeArray::arange(0..37422)
+        .to_GpuArray_with_shape(&[2, 189, 99], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(7920..7920 * 2)
+        .to_GpuArray_with_shape(&[2, 99, 40], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+
+    result
+        .get_heap()
+        .iter()
+        .zip(check.iter())
+        .for_each(|(a, b)| {
+            let error = (a - b).abs() / a.max(*b);
+            if error > 0.00001 {
+                panic!("error exceeding tolerance")
+            }
+        });
+    drop(array_a);
+    drop(array_b);
+
+    // testing 4
+    let array_a = ArangeArray::arange(0..1536)
+        .to_GpuArray_with_shape(&[2, 3, 16, 16], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(1536..1536 * 2)
+        .to_GpuArray_with_shape(&[2, 3, 16, 16], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 4
+    let array_a = ArangeArray::arange(0..3584)
+        .to_GpuArray_with_shape(&[4, 2, 14, 32], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(4608..4608 * 2)
+        .to_GpuArray_with_shape(&[4, 2, 32, 18], &module)
+        .unwrap();
+
+    let result = module.matmul(&array_a, &array_b).unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    result
+        .get_heap()
+        .iter()
+        .zip(check.iter())
+        .for_each(|(a, b)| {
+            let error = (a - b).abs() / a.max(*b);
+            if error > 0.00001 {
+                panic!("error exceeding tolerance")
+            }
+        });
+    drop(array_a);
+    drop(array_b);
+}
+
+#[test]
+fn matmul_nd_testing_view_execute_opt_32() {
+    let module = ArrOgpuModule::init(arr_o_gpu::ArrOgpuModuleInit {
+        heap_size: arr_o_gpu::HeapSize::Item(1000000),
+        function_execute_opt: FunctionExecuteOpt {
+            matmul: MatmulOpt {
+                workgroup_size_x_and_y: 32,
+            },
+            ..Default::default()
+        },
+        limits: WgpuLimits {
+            max_compute_workgroups_per_dimension: 1024,
+            ..Default::default()
+        },
+        ..Default::default()
+    })
+    .unwrap();
+
+    // testing 1
+    let array_a = ArangeArray::arange(0..8)
+        .to_GpuArray_with_shape(&[2, 2, 2], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(8..8 * 2)
+        .to_GpuArray_with_shape(&[2, 2, 2], &module)
+        .unwrap();
+
+    let result = module
+        .matmul(&array_a.view().unwrap(), &array_b.view().unwrap())
+        .unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 2
+    let array_a = ArangeArray::arange(0..1024)
+        .to_GpuArray_with_shape(&[2, 32, 16], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(1024..1024 * 2)
+        .to_GpuArray_with_shape(&[2, 16, 32], &module)
+        .unwrap();
+
+    let result = module
+        .matmul(&array_a.view().unwrap(), &array_b.view().unwrap())
+        .unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 3
+    let array_a = ArangeArray::arange(0..37422)
+        .to_GpuArray_with_shape(&[2, 189, 99], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(7920..7920 * 2)
+        .to_GpuArray_with_shape(&[2, 99, 40], &module)
+        .unwrap();
+
+    let result = module
+        .matmul(&array_a.view().unwrap(), &array_b.view().unwrap())
+        .unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+
+    result
+        .get_heap()
+        .iter()
+        .zip(check.iter())
+        .for_each(|(a, b)| {
+            let error = (a - b).abs() / a.max(*b);
+            if error > 0.00001 {
+                panic!("error exceeding tolerance")
+            }
+        });
+    drop(array_a);
+    drop(array_b);
+
+    // testing 4
+    let array_a = ArangeArray::arange(0..1536)
+        .to_GpuArray_with_shape(&[2, 3, 16, 16], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(1536..1536 * 2)
+        .to_GpuArray_with_shape(&[2, 3, 16, 16], &module)
+        .unwrap();
+
+    let result = module
+        .matmul(&array_a.view().unwrap(), &array_b.view().unwrap())
+        .unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 4
+    let array_a = ArangeArray::arange(0..3584)
+        .to_GpuArray_with_shape(&[4, 2, 14, 32], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(4608..4608 * 2)
+        .to_GpuArray_with_shape(&[4, 2, 32, 18], &module)
+        .unwrap();
+
+    let result = module
+        .matmul(&array_a.view().unwrap(), &array_b.view().unwrap())
+        .unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    result
+        .get_heap()
+        .iter()
+        .zip(check.iter())
+        .for_each(|(a, b)| {
+            let error = (a - b).abs() / a.max(*b);
+            if error > 0.00001 {
+                panic!("error exceeding tolerance")
+            }
+        });
+    drop(array_a);
+    drop(array_b);
+}
+
+#[test]
+fn matmul_nd_testing_view_execute_opt_12() {
+    let module = ArrOgpuModule::init(arr_o_gpu::ArrOgpuModuleInit {
+        heap_size: arr_o_gpu::HeapSize::Item(1000000),
+        function_execute_opt: FunctionExecuteOpt {
+            matmul: MatmulOpt {
+                workgroup_size_x_and_y: 12,
+            },
+            ..Default::default()
+        },
+        limits: WgpuLimits {
+            ..Default::default()
+        },
+        ..Default::default()
+    })
+    .unwrap();
+
+    // testing 1
+    let array_a = ArangeArray::arange(0..8)
+        .to_GpuArray_with_shape(&[2, 2, 2], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(8..8 * 2)
+        .to_GpuArray_with_shape(&[2, 2, 2], &module)
+        .unwrap();
+
+    let result = module
+        .matmul(&array_a.view().unwrap(), &array_b.view().unwrap())
+        .unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 2
+    let array_a = ArangeArray::arange(0..1024)
+        .to_GpuArray_with_shape(&[2, 32, 16], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(1024..1024 * 2)
+        .to_GpuArray_with_shape(&[2, 16, 32], &module)
+        .unwrap();
+
+    let result = module
+        .matmul(&array_a.view().unwrap(), &array_b.view().unwrap())
+        .unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 3
+    let array_a = ArangeArray::arange(0..37422)
+        .to_GpuArray_with_shape(&[2, 189, 99], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(7920..7920 * 2)
+        .to_GpuArray_with_shape(&[2, 99, 40], &module)
+        .unwrap();
+
+    let result = module
+        .matmul(&array_a.view().unwrap(), &array_b.view().unwrap())
+        .unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+
+    result
+        .get_heap()
+        .iter()
+        .zip(check.iter())
+        .for_each(|(a, b)| {
+            let error = (a - b).abs() / a.max(*b);
+            if error > 0.00001 {
+                panic!("error exceeding tolerance")
+            }
+        });
+    drop(array_a);
+    drop(array_b);
+
+    // testing 4
+    let array_a = ArangeArray::arange(0..1536)
+        .to_GpuArray_with_shape(&[2, 3, 16, 16], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(1536..1536 * 2)
+        .to_GpuArray_with_shape(&[2, 3, 16, 16], &module)
+        .unwrap();
+
+    let result = module
+        .matmul(&array_a.view().unwrap(), &array_b.view().unwrap())
+        .unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    assert_eq!(check, result.get_heap());
+    drop(array_a);
+    drop(array_b);
+
+    // testing 4
+    let array_a = ArangeArray::arange(0..3584)
+        .to_GpuArray_with_shape(&[4, 2, 14, 32], &module)
+        .unwrap();
+
+    let array_b = ArangeArray::arange(4608..4608 * 2)
+        .to_GpuArray_with_shape(&[4, 2, 32, 18], &module)
+        .unwrap();
+
+    let result = module
+        .matmul(&array_a.view().unwrap(), &array_b.view().unwrap())
+        .unwrap();
+
+    let check = matmul_nd_checker(
+        &array_a.get_heap(),
+        &array_b.get_heap(),
+        &array_a.shape(),
+        &array_b.shape(),
+    );
+    result
+        .get_heap()
+        .iter()
+        .zip(check.iter())
+        .for_each(|(a, b)| {
+            let error = (a - b).abs() / a.max(*b);
+            if error > 0.00001 {
+                panic!("error exceeding tolerance")
+            }
+        });
+    drop(array_a);
+    drop(array_b);
+}
+
+#[test]
+fn matmul_nd_testing_view_execute_opt_7() {
+    let module = ArrOgpuModule::init(arr_o_gpu::ArrOgpuModuleInit {
+        heap_size: arr_o_gpu::HeapSize::Item(1000000),
+        function_execute_opt: FunctionExecuteOpt {
+            matmul: MatmulOpt {
+                workgroup_size_x_and_y: 7,
+            },
+            ..Default::default()
+        },
+        limits: WgpuLimits {
+            ..Default::default()
+        },
         ..Default::default()
     })
     .unwrap();
