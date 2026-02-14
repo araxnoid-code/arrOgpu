@@ -7,7 +7,7 @@ use arr_o_gpu::ArrOgpuModule;
 fn main() {
     let module = ArrOgpuModule::default();
     let driver_limit = module.get_adapter_limit();// driver limit
-    let device_limit = module.get_device_limit();// limits used by wgpu
+    let device_limit = module.get_device_limit();// limit used by the device
 }
 ```
 - execute_opt feature,provides the option to set workgroup_size.The operation that can do this currently:
