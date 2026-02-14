@@ -38,7 +38,6 @@ fn main(
     @builtin (global_invocation_id) global_id: vec3<u32>,
     @builtin (workgroup_id) work_id: vec3<u32>,
 ){
-    // let size = WORKGROUP_SIZE;
     let array_a = execute_args[0];
     let array_b = execute_args[1];
     let dim = array_a.dim;
@@ -68,20 +67,18 @@ fn main(
     for (var i = 0u; i < iteration; i++){
         let row_a = global_id.x;
         let coll_a = local_id.y + WORKGROUP_SIZE * i;
-
         let value_a = select(0., heap[indexing_a(row_a, coll_a, batch_stride_a)], row_a < m && coll_a < k);
         tile_a[local_id.x][local_id.y] = value_a;
 
         let row_b = local_id.x + WORKGROUP_SIZE * i;
         let coll_b = global_id.y;
         let value_b = select(0., heap[indexing_b(row_b, coll_b, batch_stride_b)], row_b < k && coll_b < n);
+        tile_b[local_id.x][local_id.y] = value_b;
 
         workgroupBarrier();
-
         for (var ii = 0u; ii < WORKGROUP_SIZE; ii++){
            acc += tile_a[local_id.x][ii] * tile_b[ii][local_id.y];
         }
-
         workgroupBarrier();
     }
 

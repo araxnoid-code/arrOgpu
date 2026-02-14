@@ -85,18 +85,18 @@ where
         }
     }
 
-    pub fn get_x_y_z(&self, work_group_size_x: u32) -> (u32, u32, u32) {
+    pub fn get_x_y_z(&self, work_group_size: u32) -> (u32, u32, u32) {
         match self {
             Self::_2D(arr_a, arr_b) => {
-                let x = (arr_a.shape()[0] + work_group_size_x - 1) / work_group_size_x;
-                let y = (arr_b.shape()[1] + work_group_size_x - 1) / work_group_size_x;
+                let x = (arr_a.shape()[0] + work_group_size - 1) / work_group_size;
+                let y = (arr_b.shape()[1] + work_group_size - 1) / work_group_size;
                 (x, y, 1)
             }
             Self::ND(arr_a, arr_b) => {
-                let x = (arr_a.shape()[arr_a.shape().len() - 2] + work_group_size_x - 1)
-                    / work_group_size_x;
-                let y = (arr_b.shape()[arr_b.shape().len() - 1] + work_group_size_x - 1)
-                    / work_group_size_x;
+                let x = (arr_a.shape()[arr_a.shape().len() - 2] + work_group_size - 1)
+                    / work_group_size;
+                let y = (arr_b.shape()[arr_b.shape().len() - 1] + work_group_size - 1)
+                    / work_group_size;
                 let z = arr_a.shape()[..arr_a.dim() - 2].iter().product::<u32>();
                 (x, y, z)
             }
