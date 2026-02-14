@@ -4,7 +4,7 @@
     <b><p>Array Operations On Gpu</p></b>
     <p>⚙️ under development ⚙️</p>
     <b>
-        <p>Version / 0.2.0</p>
+        <p>Version / 0.2.1</p>
     </b>
 </div>
 
@@ -12,7 +12,7 @@
 This library uses [`WGPU`](https://wgpu.rs/) to perform array operations
 
 ## What's New
-Version / 0.2.0: [version.md](./version.md)
+Version / 0.2.1: [version.md](./version.md)
 
 ## Version Changelog
 version changelog: [changelog.md](./changelog.md)
@@ -25,7 +25,7 @@ cargo add arrOgpu
 ```
 Or add the following line to your Cargo.toml:
 ```toml
-arrOgpu = "0.2.0"
+arrOgpu = "0.2.1"
 ```
 
 ### Code
