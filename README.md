@@ -17,6 +17,9 @@ Version / 0.2.1: [version.md](./version.md)
 ## Version Changelog
 version changelog: [changelog.md](./changelog.md)
 
+## Tutorial dan pengenalan singkat melalui pengenalan.md(masih dalam bahasa indonesia)
+pengenalan.md: [pengenalan.md](./pengenalan.md)
+
 ## Starting
 ### install
 Run the following Cargo command in your project directory:
